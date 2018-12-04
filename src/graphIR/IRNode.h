@@ -31,10 +31,26 @@ class IRNode
       return (*_childNode)[i];
     }
 
+    std::string name() {
+      return _name;
+    }
+
+    void setName(std::string name) {
+      _name = name;
+    }
+
+    inline int fatherNum() {
+      return (*_fatherNode).size();
+    }
+
+    inline int childNum() {
+      return (*_childNode).size();
+    }
+
   private:
     std::shared_ptr<std::vector<IRNode*> > _fatherNode;
     std::shared_ptr<std::vector<IRNode*> > _childNode;
-
+    std::string _name;
 };
 
 } //namespace swc

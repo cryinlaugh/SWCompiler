@@ -18,8 +18,9 @@ IRNode::IRNode()
   _childNode = NULL;
 }
 
-IRNode::~IRNode() {}
-  
-
+IRNode::~IRNode() 
+{
+  printf("free:%s\n", _name.c_str());
+}
 
 } //namespace swc
