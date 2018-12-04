@@ -5,7 +5,6 @@
 	> Created Time: 二 12/ 4 15:56:42 2018
  ************************************************************************/
 
-#include<iostream>
 #include "tensor.h"
 
 namespace swc{

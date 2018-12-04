@@ -8,6 +8,9 @@
 #ifndef _COMMON_H
 #define _COMMON_H
 
+#include <memory>
+#include <vector>
+
 template <typename Dtype>
 class SWMem{
 private:
