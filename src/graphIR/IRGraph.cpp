@@ -10,14 +10,15 @@
 
 #include "IRGraph.h"
 
-template<typename Dtype>
-IRGraph<Dtype>::IRGraph()
+IRGraph::IRGraph()
 {
   _tensors = NULL;
   _operations = NULL;
 }
 
+IRGraph::~IRGraph() {}
 
-template<typename Dtype>
-IRGraph<Dtype>::~IRGraph() {}
-  
+void IRGraph::setTopology()
+{
+  return;
+}

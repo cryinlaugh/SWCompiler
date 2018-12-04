@@ -9,28 +9,27 @@
 #define TENSORNODE_H
 
 
-#include "tensor.h"
+#include "../tensor/tensor.h"
 
 namespace swc {
 
-template <typename Dtype>
-class TensorNode : public IRNode<Dtype> 
+class TensorNode : public IRNode
 {
   
   public:
     TensorNode();
     ~TensorNode();
 
-    void setTensor(Tensor<Dtype> tensor) {
+    void setTensor(Tensor<Dtype>* tensor) {
       _tensor = tensor; 
     }
 
-    TensorDtype& Operation() {
+    TensorDtype* tensor() {
       return _tensor;
     }
 
   private:
-    Tensor<Dtype> _tensor; 
+    Tensor<Dtype>* _tensor; 
 }
 
 #endif /* !TENSORNODE_H */
