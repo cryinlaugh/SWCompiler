@@ -14,13 +14,31 @@ namespace swc {
 
 IRNode::IRNode()
 {
-  _fatherNode = NULL;
-  _childNode = NULL;
+  _parentNodes = NULL;
+  _childNodes = NULL;
+}
+
+IRNode::IRNode(std::vector<IRNode*>* parentNodes,
+               std::vector<IRNode*>* childNodes,
+               std::string name)
+{
+  _parentNodes = parentNodes;
+  _childNodes = childNodes;
+  _name = name;
 }
 
 IRNode::~IRNode() 
 {
   printf("free:%s\n", _name.c_str());
+}
+
+void IRNode::init(std::vector<IRNode*>* parentNodes,
+                  std::vector<IRNode*>* childNodes,
+                  std::string name)
+{
+  _parentNodes = parentNodes;
+  _childNodes = childNodes;
+  _name = name;
 }
 
 } //namespace swc
