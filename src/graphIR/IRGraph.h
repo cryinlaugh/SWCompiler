@@ -1,21 +1,24 @@
 /*
- * IRNode.h
+ * IRGraph.h
  * Copyright (C) 2018 Hongkun Yu <staryhk@gmail.com>
  *
  * Distributed under terms of the MIT license.
  */
 
-#ifndef IRNODE_H
-#define IRNODE_H
+#ifndef IRGRAPH_H
+#define IRGRAPH_H
+
+#include "IRNode.h"
+#include "IRGraph.h"
 
 namespace swc {
 
 template <typename Dtype>
-class IRNode 
+class IRGraph 
 {
   public:
-    IRNode();
-    ~IRNode();
+    IRGraph();
+    ~IRGraph();
 
     setFatherNode(vector<IRNode*> fatherNode) {
       _fatherNode = fatherNode;
@@ -31,12 +34,11 @@ class IRNode
     }
 
   private:
-    vector<IRNode<Dtype> * > _fatherNode;
-    vector<IRNode<Dtype> * > _childNode;
+    vector<TensorNode<Dtype> * > _tensors;
+    vector<OPNode<Dtype> * > _operations;
 
 }
 
 } //namespace swc
 
-
-#endif /* !IRNODE_H */
+#endif /* !IRGRAPH_H */
