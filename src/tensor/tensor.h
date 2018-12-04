@@ -12,10 +12,10 @@
 
 namespace swc{
 
-enum TensorType{
-    2D,
-    1D,
-    0D,
+typedef enum TensorType{
+    D2,
+    D1,
+    D0,
     UNKNOWN
 };
 
