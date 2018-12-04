@@ -8,8 +8,6 @@
 #ifndef _TENSOR_H
 #define _TENSOR_H
 
-#include <memory>
-#include <vector>
 #include "../common.h"
 
 namespace swc{

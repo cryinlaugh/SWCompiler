@@ -26,7 +26,6 @@ public:
     Op(std::shared_ptr<std::vector<std::shared_ptr<Tensor<Dtype> > > > inputTensors,
             std::shared_ptr<std::vector<std::shared_ptr<Tensor<Dtype> > > > outputTensors);
     ~Op(){};
-
 };
 
 }
