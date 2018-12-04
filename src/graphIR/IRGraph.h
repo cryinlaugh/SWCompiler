@@ -8,33 +8,31 @@
 #ifndef IRGRAPH_H
 #define IRGRAPH_H
 
-#include <iostream>
-
-
+#include <vector>
 #include "TensorNode.h"
 #include "OpNode.h"
-#include "IRGraph.h"
 
 namespace swc {
 
+template<typename Dtype>
 class IRGraph 
 {
   public:
     IRGraph();
     ~IRGraph();
 
-    TensorNode* getTensorNode(int i) const { return _tensors[i] };
-    OPNode* getOpNode(int i) const { return _operations[i] };
+    TensorNode<Dtype>* getTensorNode(int i) const { return _tensors[i]; };
+    OpNode<Dtype>* getOpNode(int i) const { return _ops[i]; };
     
-    void pushTensorNode(TensorNode *t) { _tensors.push_back(t) };
-    void pushOpNode(OpNode *o) { _operations.push_back(o) };
+    void pushTensorNode(TensorNode<Dtype> *t) { _tensors.push_back(t); };
+    void pushOpNode(OpNode<Dtype> *o) { _ops.push_back(o); };
 
     void setTopology();
 
   private:
-    std::vector<TensorNode* > _tensors;
-    std::vector<OpNode* > _operations;
-}
+    std::vector<TensorNode<Dtype>* > _tensors;
+    std::vector<OpNode<Dtype>* > _ops;
+};
 
 } //namespace swc
 

@@ -10,15 +10,16 @@
 
 #include "IRNode.h"
 
+namespace swc {
 
-template<typename Dtype>
-IRNode<Dtype>::IRNode()
+IRNode::IRNode()
 {
   _fatherNode = NULL;
   _childNode = NULL;
 }
 
-
-template<typename Dtype>
-IRNode<Dtype>::~IRNode() {}
+IRNode::~IRNode() {}
   
+
+
+} //namespace swc

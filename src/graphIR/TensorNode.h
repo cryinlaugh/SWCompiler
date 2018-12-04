@@ -8,11 +8,12 @@
 #ifndef TENSORNODE_H
 #define TENSORNODE_H
 
-
+#include "IRNode.h"
 #include "../tensor/tensor.h"
 
 namespace swc {
 
+template <typename Dtype>
 class TensorNode : public IRNode
 {
   
@@ -24,12 +25,16 @@ class TensorNode : public IRNode
       _tensor = tensor; 
     }
 
-    TensorDtype* tensor() {
+    Tensor<Dtype>* getTensor() {
       return _tensor;
     }
 
   private:
     Tensor<Dtype>* _tensor; 
+
 };
+
+} //namespace swc
+
 
 #endif /* !TENSORNODE_H */

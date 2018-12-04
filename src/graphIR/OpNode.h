@@ -8,28 +8,31 @@
 #ifndef OPNODE_H
 #define OPNODE_H
 
+#include "IRNode.h"
 #include "../basicOp/Op.h"
 
 namespace swc {
 
-class OpNode : public IRNode 
+template <typename Dtype>
+class OpNode : public IRNode
 {
   
   public:
     OpNode();
     ~OpNode();
 
-    void setOperation(Operation<Dtype>* op) {
+    void setOp(Op<Dtype>* op) {
       _op = op;
     }
 
-    Operation& Operation() {
+    Op<Dtype>* getOp() {
       return _op;
     }
 
   private:
-    Operation<Dtype>* _op; 
-}
+    Op<Dtype>* _op; 
+};
 
+} //namespace swc
 
 #endif /* !OPNODE_H */

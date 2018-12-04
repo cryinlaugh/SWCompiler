@@ -10,15 +10,22 @@
 
 #include "IRGraph.h"
 
-IRGraph::IRGraph()
+namespace swc {
+
+template<typename Dtype>
+IRGraph<Dtype>::IRGraph()
 {
   _tensors = NULL;
-  _operations = NULL;
+  _ops = NULL;
 }
 
-IRGraph::~IRGraph() {}
+template<typename Dtype>
+IRGraph<Dtype>::~IRGraph() {}
 
-void IRGraph::setTopology()
+template<typename Dtype>
+void IRGraph<Dtype>::setTopology()
 {
   return;
+}
+
 }

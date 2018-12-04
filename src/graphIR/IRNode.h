@@ -8,33 +8,34 @@
 #ifndef IRNODE_H
 #define IRNODE_H
 
-#include <iostream>
+#include "../common.h"
+
 namespace swc {
 
-class IRNode 
+class IRNode
 {
   public:
     IRNode();
     ~IRNode();
 
-    setFatherNode(std::vector<IRNode*> fatherNode) {
+    void setFatherNode(std::shared_ptr<std::vector<IRNode*> > fatherNode) {
       _fatherNode = fatherNode;
     }
-    setChildNode(std::vector<IRNode*> ChildNode) {
-      _childNode = ChildNode;
+    void setChildNode(std::shared_ptr<std::vector<IRNode*> > childNode) {
+      _childNode = childNode;
     }
     IRNode* getFatherNode(int i) const{
-      return _fatherNode[i];
+      return (*_fatherNode)[i];
     }
     IRNode* getChildNode(int i) const{
-      return _childNode[i];
+      return (*_childNode)[i];
     }
 
   private:
-    std::vector<IRNode*> _fatherNode;
-    std::vector<IRNode*> _childNode;
+    std::shared_ptr<std::vector<IRNode*> > _fatherNode;
+    std::shared_ptr<std::vector<IRNode*> > _childNode;
 
-}
+};
 
 } //namespace swc
 
