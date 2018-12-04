@@ -106,6 +106,8 @@ int main() {
   tensorNodeVec.push_back(&tNode5);
   opNodeVec.push_back(&oNode1);
   opNodeVec.push_back(&oNode2);
+  
+  IRGraph<float> graph;
 
   graph.setTensorNodes(std::shared_ptr<std::vector<TensorNode<float>* > >(&tensorNodeVec));
   graph.setOpNodes(std::shared_ptr<std::vector<OpNode<float>* > > (&opNodeVec));
