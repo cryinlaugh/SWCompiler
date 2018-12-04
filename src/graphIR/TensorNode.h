@@ -30,6 +30,6 @@ class TensorNode : public IRNode
 
   private:
     Tensor<Dtype>* _tensor; 
-}
+};
 
 #endif /* !TENSORNODE_H */

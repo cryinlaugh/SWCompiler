@@ -28,7 +28,7 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 # Flags
 set (COMMON_FLAGS "-Wall -Wno-uninitialized -Wno-deprecated-declarations -Wno-unknown-pragmas -Wsign-compare ${ADDITIONAL_FLAGS}")
 set (CMAKE_C_FLAGS "${COMMON_FLAGS} -fno-strict-aliasing")
-set (CMAKE_CXX_FLAGS "${COMMON_FLAGS}")
+set (CMAKE_CXX_FLAGS "${COMMON_FLAGS} -std=c++0x")
 # Definitions
 
 

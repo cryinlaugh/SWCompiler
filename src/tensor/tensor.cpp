@@ -29,7 +29,7 @@ Tensor<Dtype>::Tensor(){
 }
 
 template <typename Dtype>
-Tensor<Dtype>::Tensor(TensorType t, TensorShape shape, shared_ptr<SWMem<Dtype> > tdata){
+Tensor<Dtype>::Tensor(TensorType t, TensorShape shape, std::shared_ptr<SWMem<Dtype> > tdata){
     _type = t;
     _shape = shape;
     _data = tdata; 
