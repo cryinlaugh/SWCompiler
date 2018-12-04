@@ -79,7 +79,6 @@ int main() {
   oNode1.init(&o1parent, &o1child, string("Op1"));
   oNode2.init(&o2parent, &o2child, string("Op2"));
 
-  
   //TensorNode<float>* > tensorNodeVec;
   //OpNode<float>* > opNodeVec;
   //
