@@ -18,8 +18,8 @@ class OpNode : public IRNode
 {
   
   public:
-    OpNode();
-    ~OpNode();
+    OpNode(){};
+    ~OpNode(){};
 
     void setOp(Op<Dtype>* op) {
       _op = op;

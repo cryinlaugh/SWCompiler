@@ -41,7 +41,13 @@ add_library(graphcore STATIC ${SOURCES})
 # Libraries are compiled. Now compile the programs
 link_libraries(graphcore)
 
-file(GLOB TEST_SOURCES ${PROJECT_SOURCE_DIR}/testsrc/*.cpp)
+include_directories(${PROJECT_SOURCE_DIR}/src
+                    ${PROJECT_SOURCE_DIR}/src/basicOp
+                    ${PROJECT_SOURCE_DIR}/src/dlOp
+                    ${PROJECT_SOURCE_DIR}/src/graphIR
+                    ${PROJECT_SOURCE_DIR}/src/tensor)
+
+file(GLOB TEST_SOURCES ${PROJECT_SOURCE_DIR}/test/*.cpp)
 foreach(TESTSRC ${TEST_SOURCES})
     get_filename_component(TESTNAME ${TESTSRC} NAME_WE) # file name without directories or longest extension
     add_executable(${TESTNAME} ${TESTSRC})
