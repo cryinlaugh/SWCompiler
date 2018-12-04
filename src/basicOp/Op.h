@@ -7,4 +7,20 @@
 
 #ifndef _OP_H
 #define _OP_H
+namespace swc{
+
+template <typename Dtype>
+class Op{
+private:
+    int nInputTensor;
+    int nOutputTensor;
+
+public:
+    Op();
+    ~Op(){};
+
+}
+
+}
+
 #endif

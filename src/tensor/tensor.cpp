@@ -8,7 +8,9 @@
 #include<iostream>
 #include "tensor.h"
 
-TensorShape::TensorShape(unsigned ndim, std::vector<unsigned> shape){
+namespace swc{
+
+TensorShape::TensorShape(unsigned ndim, std::shared_ptr<std::vector<unsigned long> > shape){
     _ndim = ndim;
     _shape = shape;
 }
@@ -18,7 +20,7 @@ const int TensorShape::getNDim() const{
 }
 
 const int unsigned long TensorShape::getDim(int idx) const{
-    return *(_shape)[idx];
+    return (*_shape)[idx];
 }
 
 template <typename Dtype>
@@ -29,7 +31,7 @@ Tensor<Dtype>::Tensor(){
 }
 
 template <typename Dtype>
-Tensor<Dtype>::Tensor(TensorType t, TensorShape shape, std::shared_ptr<SWMem<Dtype> > tdata){
+Tensor<Dtype>::Tensor(TensorType t, std::shared_ptr<TensorShape> shape, std::shared_ptr<SWMem<Dtype> > tdata){
     _type = t;
     _shape = shape;
     _data = tdata; 
@@ -44,5 +46,7 @@ const int Tensor<Dtype>::getNDim() const{
 template <typename Dtype>
 const unsigned long Tensor<Dtype>::getDim(int dim) const{
     return _shape->getDim(dim);
+}
+
 }
 

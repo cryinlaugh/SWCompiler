@@ -14,7 +14,7 @@
 
 namespace swc{
 
-typedef enum TensorType{
+enum TensorType{
     D2,
     D1,
     D0,
@@ -26,7 +26,7 @@ private:
     int _ndim;
     std::shared_ptr<std::vector<unsigned long> > _shape;
 public:
-    TensorShape(unsigned ndim, std::shared_ptr<std::vector<unsigned> > shape);
+    TensorShape(unsigned ndim, std::shared_ptr<std::vector<unsigned long> > shape);
     ~TensorShape(){};
     const int getNDim() const;
     const unsigned long getDim(int idx) const;
