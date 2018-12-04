@@ -8,19 +8,19 @@
 #ifndef IRNODE_H
 #define IRNODE_H
 
+#include <iostream>
 namespace swc {
 
-template <typename Dtype>
-class IRNode {
-  
+class IRNode 
+{
   public:
     IRNode();
     ~IRNode();
 
-    setFatherNode(vector<IRNode*> fatherNode) {
+    setFatherNode(std::vector<IRNode*> fatherNode) {
       _fatherNode = fatherNode;
     }
-    setChildNode(vector<IRNode*> ChildNode) {
+    setChildNode(std::vector<IRNode*> ChildNode) {
       _childNode = ChildNode;
     }
     IRNode* getFatherNode(int i) const{
@@ -31,8 +31,8 @@ class IRNode {
     }
 
   private:
-    vector<IRNode<Dtype> * > _fatherNode;
-    vector<IRNode<Dtype> * > _childNode;
+    std::vector<IRNode*> _fatherNode;
+    std::vector<IRNode*> _childNode;
 
 }
 
