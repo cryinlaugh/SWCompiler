@@ -14,23 +14,22 @@
 namespace swc {
 
 template <typename Dtype>
-class TensorNode : public IRNode
-{
-  
-  public:
-    TensorNode(){};
-    ~TensorNode(){};
+class TensorNode : public IRNode {
 
-    void setTensor(Tensor<Dtype>* tensor) {
-      _tensor = tensor; 
-    }
+public:
+	TensorNode(){};
+	~TensorNode(){};
 
-    Tensor<Dtype>* getTensor() {
-      return _tensor;
-    }
+	void setTensor(Tensor<Dtype>* tensor) {
+		_tensor = tensor; 
+	}
 
-  private:
-    Tensor<Dtype>* _tensor; 
+	Tensor<Dtype>* getTensor() {
+		return _tensor;
+	}
+
+private:
+	Tensor<Dtype>* _tensor; 
 
 };
 

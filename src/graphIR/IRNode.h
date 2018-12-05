@@ -8,59 +8,52 @@
 #ifndef IRNODE_H
 #define IRNODE_H
 
+#include <string>
 #include "../common.h"
 
 namespace swc {
 
-class IRNode
-{
-  public:
-    IRNode();
-    IRNode(std::vector<IRNode*>* parentNodes,
-           std::vector<IRNode*>* childNodes,
-           std::string name);
+class IRNode {
 
-    ~IRNode();
+public:
+	IRNode();
+	IRNode(std::vector<IRNode*>* parentNodes,
+	       std::vector<IRNode*>* childNodes,
+	       std::string           name);
 
-    void init(std::vector<IRNode*>* parentNodes,
-              std::vector<IRNode*>* childNodes,
-              std::string name);
+	~IRNode();
 
-    void setParentNodes(std::vector<IRNode*>* parentNodes) {
-      _parentNodes = parentNodes;
-    }
-    void setChildNodes(std::vector<IRNode*>* childNodes) {
-      _childNodes = childNodes;
-    }
-    
-    const std::vector<IRNode*>* getParentNodes() const {
-      return _parentNodes;
-    }
-    const std::vector<IRNode*>* getChildNode() const {
-      return _childNodes;
-    }
+	void init(std::vector<IRNode*>* parentNodes,
+	          std::vector<IRNode*>* childNodes,
+	          std::string           name);
 
-    IRNode* getParentNode(int i) const{
-      return (*_parentNodes)[i];
-    }
-    IRNode* getChildNode(int i) const{
-      return (*_childNodes)[i];
-    }
+	void setParentNodes(std::vector<IRNode*>* parentNodes) {
+		_parentNodes = parentNodes;
+	}
+	void setChildNodes(std::vector<IRNode*>* childNodes) {
+		_childNodes = childNodes;
+	}
+	
+	const std::vector<IRNode*>* getParentNodes() const { return _parentNodes; }
+	const std::vector<IRNode*>* getChildNode()   const { return _childNodes;  }
 
-    const std::string name() const { return _name; };
-    void setName(std::string name) { _name = name; };
+	IRNode* getParentNode(int i) const { return (*_parentNodes)[i]; }
+	IRNode* getChildNode(int i)  const { return (*_childNodes)[i];  }
 
-    inline const int parentNum() const {
-      return (*_parentNodes).size();
-    }
-    inline const int childNum() const {
-      return (*_childNodes).size();
-    }
+	const std::string name() const { return _name; };
+	void setName(std::string name) { _name = name; };
 
-  private:
-    std::vector<IRNode*>* _parentNodes;
-    std::vector<IRNode*>* _childNodes;
-    std::string _name;
+	inline const int parentNum() const { return (*_parentNodes).size(); }
+	inline const int childNum()  const { return (*_childNodes).size();  }
+
+	// dot generation
+	std::string dotGen(); 
+
+
+private:
+	std::vector<IRNode*>* _parentNodes;
+	std::vector<IRNode*>* _childNodes;
+	std::string           _name;
 };
 
 } //namespace swc
