@@ -12,20 +12,48 @@
 namespace swc{
 
 template <typename Dtype>
-class MatrixMatrixFCOp : public Op{
+class MatrixMatrixFCOp : public Op<Dtype>{
 public:
-    MatrixMatrixFCOp():nInput(2), nOutput(1) {};
-    MatrixMatrixFCOp(std::shared_ptr<std::vector<std::shared_ptr<Tensor<Dtype> > > > inputTensors,
-            std::shared_ptr<std::vector<std::shared_ptr<Tensor<Dtype> > > > outputTensors) 
-        : Op(inputTensors, outputTensors),
-            nInput(2), nOutput(1) {};
-    ~MatrixMatrixFCOp();
-
-private:
-    const int nInput;
-    const int nOutput;
+    MatrixMatrixFCOp():Op<Dtype>(2, 1){
+        this->_inputNDims.push_back(2);
+        this->_inputNDims.push_back(2);
+        this->_outputNDims.push_back(2);
+    }
+    ~MatrixMatrixFCOp(){}
 
 };
+
+template <typename Dtype>
+class MatrixTanhOp : public Op<Dtype>{
+public:
+    MatrixTanhOp():Op<Dtype>(1,1) {
+        this->inputNDims.push_back(2);
+        this->outputNDims.push_back(2);
+    };
+    ~MatrixTanhOp();
+};
+
+template <typename Dtype>
+class MatrixSoftmaxOp : public Op<Dtype>{
+public:
+    MatrixSoftmaxOp(): Op<Dtype>(1,1) {
+        this->inputNDims.push_back(2);
+        this->outputNDims.push_back(2);
+    };
+    ~MatrixSoftmaxOp();
+
+};
+
+template <typename Dtype>
+class MatrixLogNegLossOp : public Op<Dtype>{
+public:
+    MatrixLogNegLossOp():Op<Dtype>(1,1) {
+        this->inputNDims.push_back(2);
+        this->outputNDims.push_back(0);
+    };
+    ~MatrixLogNegLossOp();
+};
+
 
 }
 

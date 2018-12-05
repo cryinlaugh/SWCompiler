@@ -10,21 +10,35 @@
 namespace swc{
 
 template<typename Dtype>
-Op<Dtype>::Op(){
+Op<Dtype>::Op(int nInput, int nOutput){
+    _nInput = nInput;
+    _nOutput = nOutput;
     _nInputTensor = 0;
     _nOutputTensor = 0;
-    _inputTensors = NULL;
-    _outputTensors = NULL;
 }
 
 template<typename Dtype>
-Op<Dtype>::Op(
-        std::shared_ptr<std::vector<std::shared_ptr<Tensor<Dtype> > > > inputTensors, 
-        std::shared_ptr<std::vector<std::shared_ptr<Tensor<Dtype> > > > outputTensors){
-    _inputTensors = inputTensors;
-    _outputTensors = outputTensors;
-    _nInputTensor = (*inputTensors).size();
-    _nOutputTensor = (*outputTensors).size();
+void Op<Dtype>::addInputTensor(Tensor<Dtype>* inputTensor){
+    _inputTensors.push_back(inputTensor);
+    _nInputTensor++;
 }
 
+template<typename Dtype>
+void Op<Dtype>::addOutputTensor(Tensor<Dtype>* outputTensor){
+    _outputTensors.push_back(outputTensor);
+    _nOutputTensor++;
+}
+
+template<typename Dtype>
+bool Op<Dtype>::check(){
+    if(_nInputTensor != _nInput) return false;
+    if(_nOutputTensor != _nOutput) return false;
+    for(int i=0; i<_nInput; i++){
+        if(_inputTensors[i]->getNDim() != _inputNDims[i]) return false;
+    }
+    for(int i=0; i<_nOutput; i++){
+        if(_outputTensors[i]->getNDim() != _inputNDims[i]) return false;
+    }
+    return true;
+}
 }

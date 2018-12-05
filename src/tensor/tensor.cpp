@@ -9,9 +9,9 @@
 
 namespace swc{
 
-TensorShape::TensorShape(unsigned ndim, std::shared_ptr<std::vector<unsigned long> > shape){
+TensorShape::TensorShape(unsigned ndim, std::vector<unsigned long> shape){
     _ndim = ndim;
-    _shape = shape;
+    _shape.assign(shape.begin(), shape.end());
 }
 
 const int TensorShape::getNDim() const{
@@ -19,7 +19,7 @@ const int TensorShape::getNDim() const{
 }
 
 const int unsigned long TensorShape::getDim(int idx) const{
-    return (*_shape)[idx];
+    return _shape[idx];
 }
 
 template <typename Dtype>
@@ -30,7 +30,7 @@ Tensor<Dtype>::Tensor(){
 }
 
 template <typename Dtype>
-Tensor<Dtype>::Tensor(TensorType t, std::shared_ptr<TensorShape> shape, std::shared_ptr<SWMem<Dtype> > tdata){
+Tensor<Dtype>::Tensor(TensorType t, TensorShape* shape, std::shared_ptr<SWMem<Dtype> > tdata){
     _type = t;
     _shape = shape;
     _data = tdata; 

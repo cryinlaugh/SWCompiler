@@ -15,17 +15,26 @@ namespace swc{
 
 template <typename Dtype>
 class Op{
-private:
+public: 
+    //The following variables are constant values in a specific Op Class
+    //indicating what kind of input/output tensors it should keep.
+    const int _nInput;
+    const int _nOutput;
+    std::vector<int> _inputNDims;
+    std::vector<int> _outputNDims;
+
+    //The following variables indicating the real input/output tensors 
+    //that the Op really have.
     int _nInputTensor;
     int _nOutputTensor;
-    std::shared_ptr<std::vector<std::shared_ptr<Tensor<Dtype> > > > _inputTensors;
-    std::shared_ptr<std::vector<std::shared_ptr<Tensor<Dtype> > > > _outputTensors;
+    std::vector<Tensor<Dtype>* > _inputTensors;
+    std::vector<Tensor<Dtype>* > _outputTensors;
 
-public:
-    Op();
-    Op(std::shared_ptr<std::vector<std::shared_ptr<Tensor<Dtype> > > > inputTensors,
-            std::shared_ptr<std::vector<std::shared_ptr<Tensor<Dtype> > > > outputTensors);
+    Op(int nInput = 0, int nOutput = 0);
     ~Op(){};
+    void addInputTensor(Tensor<Dtype>* inputTensor);
+    void addOutputTensor(Tensor<Dtype>* outputTensor);
+    bool check();
 };
 
 }

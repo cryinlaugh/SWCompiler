@@ -22,9 +22,9 @@ enum TensorType{
 class TensorShape{
 private:
     int _ndim;
-    std::shared_ptr<std::vector<unsigned long> > _shape;
+    std::vector<unsigned long> _shape;
 public:
-    TensorShape(unsigned ndim, std::shared_ptr<std::vector<unsigned long> > shape);
+    TensorShape(unsigned ndim, std::vector<unsigned long> shape);
     ~TensorShape(){};
     const int getNDim() const;
     const unsigned long getDim(int idx) const;
@@ -35,12 +35,12 @@ template <typename Dtype>
 class Tensor{
 private:
     TensorType _type;
-    std::shared_ptr<TensorShape> _shape;
+    TensorShape* _shape;
     std::shared_ptr<SWMem<Dtype> > _data;
 
 public:
     Tensor();
-    Tensor(TensorType t, std::shared_ptr<TensorShape> shape, std::shared_ptr<SWMem<Dtype> > tdata);
+    Tensor(TensorType t, TensorShape* shape, std::shared_ptr<SWMem<Dtype> > tdata);
     ~Tensor(){}; 
 
     const int getNDim() const;
