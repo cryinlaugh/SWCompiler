@@ -23,9 +23,22 @@ class IRGraph
 
     TensorNode<Dtype>* getTensorNode(int i) const { return _tensors[i]; };
     OpNode<Dtype>* getOpNode(int i) const { return _ops[i]; };
-    
-    void pushTensorNode(TensorNode<Dtype> *t) { _tensors.push_back(t); };
+   
+
+    void pushTensorNode() {};
+    template<typename T, typename... Types>
+    void pushTensorNode(const T& firstArg, const Types&... args) {
+      _tensors.push_back(firstArg);
+      pushTensorNode(args...);
+    }
+
     void pushOpNode(OpNode<Dtype> *o) { _ops.push_back(o); };
+    void pushOpNode() {};
+    template<typename T, typename... Types>
+    void pushOpNode(const T& firstArg, const Types&... args) {
+      _ops.push_back(firstArg);
+      pushOpNode(args...);
+    }
 
     int ternsorNodeNum() { return _tensors.size(); };
     int opNodeNum() { return _ops.size(); }

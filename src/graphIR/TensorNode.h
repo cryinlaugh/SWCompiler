@@ -18,7 +18,8 @@ class TensorNode : public IRNode
 {
   
   public:
-    TensorNode(){};
+    TensorNode() : _tensor(NULL) {};
+    TensorNode(const char name[]) : IRNode(name) {};
     ~TensorNode(){};
 
     void setTensor(Tensor<Dtype>* tensor) {
