@@ -26,7 +26,7 @@ int main() {
   TensorNode<float> tNode5;
   OpNode<float> oNode1;
   OpNode<float> oNode2;
-  printf("size of tnode: %d  onode: %d\n", sizeof(tNode1), sizeof(oNode1));
+  printf("size of tnode: %ld  onode: %ld\n", sizeof(tNode1), sizeof(oNode1));
   
   vector<IRNode*> t1parent;
   vector<IRNode*> t2parent;
@@ -92,7 +92,7 @@ int main() {
 
   IRGraph<float> graph;
 
-  printf("Before push, size of graph: %d\n", sizeof(graph));
+  printf("Before push, size of graph: %ld\n", sizeof(graph));
 
   graph.pushTensorNode(&tNode1);
   graph.pushTensorNode(&tNode2);
@@ -102,7 +102,7 @@ int main() {
   graph.pushOpNode(&oNode1);
   graph.pushOpNode(&oNode2);
 
-  printf("After push, size of graph: %d\n", sizeof(graph));
+  printf("After push, size of graph: %ld\n", sizeof(graph));
   
   printf ("Generate graph done!\n");
   
