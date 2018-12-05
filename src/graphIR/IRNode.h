@@ -16,40 +16,50 @@ class IRNode
 {
   public:
     IRNode();
+    IRNode(std::vector<IRNode*>* parentNodes,
+           std::vector<IRNode*>* childNodes,
+           std::string name);
+
     ~IRNode();
 
-    void setFatherNode(std::shared_ptr<std::vector<IRNode*> > fatherNode) {
-      _fatherNode = fatherNode;
+    void init(std::vector<IRNode*>* parentNodes,
+              std::vector<IRNode*>* childNodes,
+              std::string name);
+
+    void setParentNodes(std::vector<IRNode*>* parentNodes) {
+      _parentNodes = parentNodes;
     }
-    void setChildNode(std::shared_ptr<std::vector<IRNode*> > childNode) {
-      _childNode = childNode;
+    void setChildNodes(std::vector<IRNode*>* childNodes) {
+      _childNodes = childNodes;
     }
-    IRNode* getFatherNode(int i) const{
-      return (*_fatherNode)[i];
+    
+    const std::vector<IRNode*>* getParentNodes() const {
+      return _parentNodes;
+    }
+    const std::vector<IRNode*>* getChildNode() const {
+      return _childNodes;
+    }
+
+    IRNode* getParentNode(int i) const{
+      return (*_parentNodes)[i];
     }
     IRNode* getChildNode(int i) const{
-      return (*_childNode)[i];
+      return (*_childNodes)[i];
     }
 
-    std::string name() {
-      return _name;
-    }
+    const std::string name() const { return _name; };
+    void setName(std::string name) { _name = name; };
 
-    void setName(std::string name) {
-      _name = name;
+    inline const int parentNum() const {
+      return (*_parentNodes).size();
     }
-
-    inline int fatherNum() {
-      return (*_fatherNode).size();
-    }
-
-    inline int childNum() {
-      return (*_childNode).size();
+    inline const int childNum() const {
+      return (*_childNodes).size();
     }
 
   private:
-    std::shared_ptr<std::vector<IRNode*> > _fatherNode;
-    std::shared_ptr<std::vector<IRNode*> > _childNode;
+    std::vector<IRNode*>* _parentNodes;
+    std::vector<IRNode*>* _childNodes;
     std::string _name;
 };
 

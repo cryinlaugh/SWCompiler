@@ -13,60 +13,53 @@
 #include "common.h"
 
 using namespace swc;
+using namespace std;
 
 int main() {
 
   printf ("start!\n");
-
-  swc::TensorNode<float> tNode1;
-  swc::TensorNode<float> tNode2;
-  swc::TensorNode<float> tNode3;
-  swc::TensorNode<float> tNode4;
-  swc::TensorNode<float> tNode5;
-  swc::OpNode<float> oNode1;
-  swc::OpNode<float> oNode2;
-
-  tNode1.setName(std::string("Tensor1"));
-  tNode2.setName(std::string("Tensor2"));
-  tNode3.setName(std::string("Tensor3"));
-  tNode4.setName(std::string("Tensor4"));
-  tNode5.setName(std::string("Tensor5"));
-  oNode1.setName(std::string("Op1"));
-  oNode2.setName(std::string("Op2"));
-
-  std::vector<swc::IRNode*> t1father;
-  std::vector<swc::IRNode*> t2father;
-  std::vector<swc::IRNode*> t3father;
-  std::vector<swc::IRNode*> t4father;
-  std::vector<swc::IRNode*> t5father;
-  std::vector<swc::IRNode*> o1father;
-  std::vector<swc::IRNode*> o2father;
-  std::vector<swc::IRNode*> t1child;
-  std::vector<swc::IRNode*> t2child;
-  std::vector<swc::IRNode*> t3child;
-  std::vector<swc::IRNode*> t4child;
-  std::vector<swc::IRNode*> t5child;
-  std::vector<swc::IRNode*> o1child;
-  std::vector<swc::IRNode*> o2child;
+  //Actually data hold node
+  TensorNode<float> tNode1;
+  TensorNode<float> tNode2;
+  TensorNode<float> tNode3;
+  TensorNode<float> tNode4;
+  TensorNode<float> tNode5;
+  OpNode<float> oNode1;
+  OpNode<float> oNode2;
+  printf("size of tnode: %d  onode: %d\n", sizeof(tNode1), sizeof(oNode1));
   
+  vector<IRNode*> t1parent;
+  vector<IRNode*> t2parent;
+  vector<IRNode*> t3parent;
+  vector<IRNode*> t4parent;
+  vector<IRNode*> t5parent;
+  vector<IRNode*> o1parent;
+  vector<IRNode*> o2parent;
+  vector<IRNode*> t1child;
+  vector<IRNode*> t2child;
+  vector<IRNode*> t3child;
+  vector<IRNode*> t4child;
+  vector<IRNode*> t5child;
+  vector<IRNode*> o1child;
+  vector<IRNode*> o2child;
   
   t1child.push_back(&oNode2);
   t3child.push_back(&oNode2);
 
-  o2father.push_back(&tNode1);
-  o2father.push_back(&tNode3);
+  o2parent.push_back(&tNode1);
+  o2parent.push_back(&tNode3);
   o2child.push_back(&tNode5);
   o2child.push_back(&tNode2);
   o2child.push_back(&tNode4);
   
-  t5father.push_back(&oNode2);
+  t5parent.push_back(&oNode2);
   t5child.push_back(&oNode1);
-  t2father.push_back(&oNode2);
+  t2parent.push_back(&oNode2);
   t2child.push_back(&oNode1);
-  t4father.push_back(&oNode2);
+  t4parent.push_back(&oNode2);
 
-  o1father.push_back(&tNode5);
-  o1father.push_back(&tNode2);
+  o1parent.push_back(&tNode5);
+  o1parent.push_back(&tNode2);
 
   ///////////////////////////
   //    t1   t3
@@ -78,53 +71,52 @@ int main() {
   //   \   /
   //     o1
   //     
-  tNode1.setChildNode(std::shared_ptr<std::vector<swc::IRNode*> >(&t1child));
-  tNode2.setChildNode(std::shared_ptr<std::vector<swc::IRNode*> >(&t2child));
-  tNode3.setChildNode(std::shared_ptr<std::vector<swc::IRNode*> >(&t3child));
-  tNode4.setChildNode(std::shared_ptr<std::vector<swc::IRNode*> >(&t4child));
-  tNode5.setChildNode(std::shared_ptr<std::vector<swc::IRNode*> >(&t5child));
-  oNode1.setChildNode(std::shared_ptr<std::vector<swc::IRNode*> >(&o1child));
-  oNode2.setChildNode(std::shared_ptr<std::vector<swc::IRNode*> >(&o2child));
-  
-  tNode1.setFatherNode(std::shared_ptr<std::vector<swc::IRNode*> >(&t1father));
-  tNode2.setFatherNode(std::shared_ptr<std::vector<swc::IRNode*> >(&t2father));
-  tNode3.setFatherNode(std::shared_ptr<std::vector<swc::IRNode*> >(&t3father));
-  tNode4.setFatherNode(std::shared_ptr<std::vector<swc::IRNode*> >(&t4father));
-  tNode5.setFatherNode(std::shared_ptr<std::vector<swc::IRNode*> >(&t5father));
-  oNode1.setFatherNode(std::shared_ptr<std::vector<swc::IRNode*> >(&o1father));
-  oNode2.setFatherNode(std::shared_ptr<std::vector<swc::IRNode*> >(&o2father));
+  tNode1.init(&t1parent, &t1child, string("Tensor1"));
+  tNode2.init(&t2parent, &t2child, string("Tensor2"));
+  tNode3.init(&t3parent, &t3child, string("Tensor3"));
+  tNode4.init(&t4parent, &t4child, string("Tensor4"));
+  tNode5.init(&t5parent, &t5child, string("Tensor5"));
+  oNode1.init(&o1parent, &o1child, string("Op1"));
+  oNode2.init(&o2parent, &o2child, string("Op2"));
 
-  return 0;
-  
-  std::vector<TensorNode<float>* > tensorNodeVec;
-  std::vector<OpNode<float>* > opNodeVec;
+  //TensorNode<float>* > tensorNodeVec;
+  //OpNode<float>* > opNodeVec;
+  //
+  //tensorNodeVec.push_back(&tNode1);
+  //tensorNodeVec.push_back(&tNode2);
+  //tensorNodeVec.push_back(&tNode3);
+  //tensorNodeVec.push_back(&tNode4);
+  //tensorNodeVec.push_back(&tNode5);
+  //opNodeVec.push_back(&oNode1);
+  //opNodeVec.push_back(&oNode2);
 
-  tensorNodeVec.push_back(&tNode1);
-  tensorNodeVec.push_back(&tNode2);
-  tensorNodeVec.push_back(&tNode3);
-  tensorNodeVec.push_back(&tNode4);
-  tensorNodeVec.push_back(&tNode5);
-  opNodeVec.push_back(&oNode1);
-  opNodeVec.push_back(&oNode2);
-  
   IRGraph<float> graph;
 
-  graph.setTensorNodes(std::shared_ptr<std::vector<TensorNode<float>* > >(&tensorNodeVec));
-  graph.setOpNodes(std::shared_ptr<std::vector<OpNode<float>* > > (&opNodeVec));
+  printf("Before push, size of graph: %d\n", sizeof(graph));
 
+  graph.pushTensorNode(&tNode1);
+  graph.pushTensorNode(&tNode2);
+  graph.pushTensorNode(&tNode3);
+  graph.pushTensorNode(&tNode4);
+  graph.pushTensorNode(&tNode5);
+  graph.pushOpNode(&oNode1);
+  graph.pushOpNode(&oNode2);
+
+  printf("After push, size of graph: %d\n", sizeof(graph));
+  
   printf ("Generate graph done!\n");
   
   for (int i = 0; i < graph.ternsorNodeNum(); i++) {
     printf("ID:%d, ", i);
     printf("Name:%s, ", graph.getTensorNode(i)->name().c_str());
-    printf("in:%d, ", graph.getTensorNode(i)->fatherNum());
+    printf("in:%d, ", graph.getTensorNode(i)->parentNum());
     printf("out:%d\n", graph.getTensorNode(i)->childNum());
   }
 
   for (int i = 0; i < graph.opNodeNum(); i++) {
     printf("ID:%d, ", i);
     printf("Name:%s, ", graph.getOpNode(i)->name().c_str());
-    printf("in:%d, ", graph.getOpNode(i)->fatherNum());
+    printf("in:%d, ", graph.getOpNode(i)->parentNum());
     printf("out:%d\n", graph.getOpNode(i)->childNum());
   }
 
