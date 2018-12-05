@@ -12,16 +12,22 @@
 #include <vector>
 
 template <typename Dtype>
-class SWMem{
+
+class SWMem {
+    
 private:
+    
     size_t _len;
     Dtype* _data;
+    
 public:
+    
     SWMem(size_t len, Dtype* data);
     ~SWMem();
     
     Dtype* data();
     Dtype* mutable_data();
+    
 };
 
 #endif

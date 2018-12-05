@@ -123,6 +123,8 @@ int main(){
 
     printf ("Generate MLP layer done!\n");
 
+    dotGen(*MLPLayer);
+
     for (int i = 0; i < MLPLayer->ternsorNodeNum(); i++) {
         printf("ID:%d, ", i);
         printf("Name:%s, ", MLPLayer->getTensorNode(i)->name().c_str());

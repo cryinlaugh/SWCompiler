@@ -14,23 +14,23 @@
 namespace swc {
 
 template <typename Dtype>
-class OpNode : public IRNode
-{
-  
-  public:
-    OpNode(){};
-    ~OpNode(){};
+class OpNode : public IRNode {
+	
+public:
+	OpNode(){};
+	~OpNode(){};
 
-    void setOp(Op<Dtype>* op) {
-      _op = op;
-    }
+	void setOp(Op<Dtype>* op) {
+		_op = op;
+	}
 
-    Op<Dtype>* getOp() {
-      return _op;
-    }
+	Op<Dtype>* getOp() {
+		return _op;
+	}
 
-  private:
-    Op<Dtype>* _op; 
+private:
+	Op<Dtype>* _op; 
+	
 };
 
 } //namespace swc
