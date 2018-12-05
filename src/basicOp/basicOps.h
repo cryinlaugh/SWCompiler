@@ -11,50 +11,159 @@
 #include "Op.h"
 namespace swc{
 
+
+
+//=====================================================
+//Definition of 2-D basic operations.
+//Version v0.1: basic ops for simple-MLP-nobias-fw listed below
+//--Tensor operations:
+//----Not implemented.
+//--Math Operations:
+//----MatrixMatrixMul 
+//----VectorMatrixMul
+//----MatrixVectorMul
+//=====================================================
+
 template <typename Dtype>
-class MatrixMatrixFCOp : public Op<Dtype>{
+class MatrixMatrixMulOp : public Op<Dtype>{
 public:
-    MatrixMatrixFCOp():Op<Dtype>(2, 1){
+    MatrixMatrixMulOp():Op<Dtype>(2, 1){
         this->_inputNDims.push_back(2);
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
     }
-    ~MatrixMatrixFCOp(){}
-
+    ~MatrixMatrixMulOp(){}
 };
 
 template <typename Dtype>
-class MatrixTanhOp : public Op<Dtype>{
+class VectorMatrixMulOp : public Op<Dtype>{
 public:
-    MatrixTanhOp():Op<Dtype>(1,1) {
-        this->inputNDims.push_back(2);
-        this->outputNDims.push_back(2);
-    };
-    ~MatrixTanhOp();
+    VectorMatrixMulOp():Op<Dtype>(2, 1){
+        this->_inputNDims.push_back(1);
+        this->_inputNDims.push_back(2);
+        this->_outputNDims.push_back(1);
+    }
+    ~VectorMatrixMulOp(){}
 };
 
 template <typename Dtype>
-class MatrixSoftmaxOp : public Op<Dtype>{
+class MatrixVectorMulOp : public Op<Dtype>{
 public:
-    MatrixSoftmaxOp(): Op<Dtype>(1,1) {
-        this->inputNDims.push_back(2);
-        this->outputNDims.push_back(2);
-    };
-    ~MatrixSoftmaxOp();
+    MatrixVectorMulOp():Op<Dtype>(2, 1){
+        this->_inputNDims.push_back(2);
+        this->_inputNDims.push_back(1);
+        this->_outputNDims.push_back(1);
+    }
+    ~MatrixVectorMulOp(){}
+};
 
+//=====================================================
+//Definition of 1-D basic operations.
+//Version v0.1: basic ops for simple-MLP listed below
+//--Tensor operations:
+//----Not implemented.
+//--Math Operations:
+//----VectorVectorInnerProduct 
+//=====================================================
+
+template <typename Dtype>
+class VectorVectorInnerProductOp : public Op<Dtype>{
+public:
+    VectorVectorInnerProductOp():Op<Dtype>(2, 1){
+        this->_inputNDims.push_back(1);
+        this->_inputNDims.push_back(1);
+        this->_outputNDims.push_back(0);
+    }
+    ~VectorVectorInnerProductOp(){}
+};
+
+//=====================================================
+//Definition of 0-D basic operations.
+//Version v0.1: basic ops for simple-MLP listed below
+//--Tensor operations:
+//----Not implemented.
+//--Math Operations:
+//----ScalarMul
+//----ScalarAdd
+//----ScalarExp
+//----ScalarNeg
+//----ScalarDiv
+//----ScalarLog
+//=====================================================
+
+
+template <typename Dtype>
+class ScalarMulOp : public Op<Dtype>{
+public:
+    ScalarMulOp():Op<Dtype>(2, 1){
+        this->_inputNDims.push_back(0);
+        this->_inputNDims.push_back(0);
+        this->_outputNDims.push_back(0);
+    }
+    ~ScalarMulOp(){}
 };
 
 template <typename Dtype>
-class MatrixLogNegLossOp : public Op<Dtype>{
+class ScalarAddOp : public Op<Dtype>{
 public:
-    MatrixLogNegLossOp():Op<Dtype>(1,1) {
-        this->inputNDims.push_back(2);
-        this->outputNDims.push_back(0);
-    };
-    ~MatrixLogNegLossOp();
+    ScalarAddOp():Op<Dtype>(2, 1){
+        this->_inputNDims.push_back(0);
+        this->_inputNDims.push_back(0);
+        this->_outputNDims.push_back(0);
+    }
+    ~ScalarAddOp(){}
 };
 
+template <typename Dtype>
+class ScalarMaxOp : public Op<Dtype>{
+public:
+    ScalarMaxOp():Op<Dtype>(2, 1){
+        this->_inputNDims.push_back(0);
+        this->_inputNDims.push_back(0);
+        this->_outputNDims.push_back(0);
+    }
+    ~ScalarMaxOp(){}
+};
 
+template <typename Dtype>
+class ScalarExpOp : public Op<Dtype>{
+public:
+    ScalarExpOp():Op<Dtype>(1, 1){
+        this->_inputNDims.push_back(0);
+        this->_outputNDims.push_back(0);
+    }
+    ~ScalarExpOp(){}
+};
+
+template <typename Dtype>
+class ScalarNegOp : public Op<Dtype>{
+public:
+    ScalarNegOp():Op<Dtype>(1, 1){
+        this->_inputNDims.push_back(0);
+        this->_outputNDims.push_back(0);
+    }
+    ~ScalarNegOp(){}
+};
+
+template <typename Dtype>
+class ScalarDivOp : public Op<Dtype>{
+public:
+    ScalarDivOp():Op<Dtype>(1, 1){
+        this->_inputNDims.push_back(0);
+        this->_outputNDims.push_back(0);
+    }
+    ~ScalarDivOp(){}
+};
+
+template <typename Dtype>
+class ScalarLogOp : public Op<Dtype>{
+public:
+    ScalarLogOp():Op<Dtype>(1, 1){
+        this->_inputNDims.push_back(0);
+        this->_outputNDims.push_back(0);
+    }
+    ~ScalarLogOp(){}
+};
 }
 
 #endif
