@@ -24,17 +24,36 @@ public:
     std::vector<int> _outputNDims;
 
     //The following variables indicating the real input/output tensors 
-    //that the Op really have.
+    //that the Op really have, its useful in analyses or ref-code-generation.
     int _nInputTensor;
     int _nOutputTensor;
     std::vector<Tensor<Dtype>* > _inputTensors;
     std::vector<Tensor<Dtype>* > _outputTensors;
 
-    Op(int nInput = 0, int nOutput = 0);
+    Op(int nInput = 0, int nOutput = 0):_nInput(nInput), _nOutput(nOutput){ 
+        _nInputTensor = 0;
+        _nOutputTensor = 0;
+    };
     ~Op(){};
-    void addInputTensor(Tensor<Dtype>* inputTensor);
-    void addOutputTensor(Tensor<Dtype>* outputTensor);
-    bool check();
+    void addInputTensor(Tensor<Dtype>* inputTensor){
+        _inputTensors.push_back(inputTensor);
+        _nInputTensor++;
+    }
+    void addOutputTensor(Tensor<Dtype>* outputTensor){ 
+        _outputTensors.push_back(outputTensor);
+        _nOutputTensor++;
+    }
+    bool check(){
+        if(_nInputTensor != _nInput) return false;
+        if(_nOutputTensor != _nOutput) return false;
+        for(int i=0; i<_nInput; i++){
+            if(_inputTensors[i]->getNDim() != _inputNDims[i]) return false;
+        }
+        for(int i=0; i<_nOutput; i++){
+            if(_outputTensors[i]->getNDim() != _inputNDims[i]) return false;
+        }
+        return true;
+    };
 };
 
 }

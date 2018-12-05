@@ -13,18 +13,18 @@
 namespace swc{
 
 enum TensorType{
-    D2,
-    D1,
-    D0,
-    UNKNOWN
+    D2=2,
+    D1=1,
+    D0=0,
+    UNKNOWN=-1
 };
 
 class TensorShape{
 private:
     int _ndim;
-    std::vector<unsigned long> _shape;
+    std::vector<unsigned long>* _shape;
 public:
-    TensorShape(unsigned ndim, std::vector<unsigned long> shape);
+    TensorShape(std::vector<unsigned long>* shape);
     ~TensorShape(){};
     const int getNDim() const;
     const unsigned long getDim(int idx) const;
@@ -39,12 +39,23 @@ private:
     std::shared_ptr<SWMem<Dtype> > _data;
 
 public:
-    Tensor();
-    Tensor(TensorType t, TensorShape* shape, std::shared_ptr<SWMem<Dtype> > tdata);
+    Tensor(){ 
+        _type = UNKNOWN;
+        _shape = NULL;
+        _data = NULL;
+    }
+    Tensor(TensorShape* shape){
+        _type = TensorType(shape->getNDim());
+        _shape = shape;
+    }
     ~Tensor(){}; 
 
-    const int getNDim() const;
-    const unsigned long getDim(int dim) const;
+    const int getNDim() const{
+        return _shape->getNDim();
+    };
+    const unsigned long getDim(int dim) const{
+        return _shape->getDim(dim);
+    };
 };
 
 }

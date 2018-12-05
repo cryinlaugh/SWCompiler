@@ -40,8 +40,8 @@ template <typename Dtype>
 class MatrixTanhOp : public Op<Dtype>{
 public:
     MatrixTanhOp():Op<Dtype>(1,1) {
-        this->inputNDims.push_back(2);
-        this->outputNDims.push_back(2);
+        this->_inputNDims.push_back(2);
+        this->_outputNDims.push_back(2);
     };
     ~MatrixTanhOp();
 };
@@ -50,8 +50,8 @@ template <typename Dtype>
 class MatrixSoftmaxOp : public Op<Dtype>{
 public:
     MatrixSoftmaxOp(): Op<Dtype>(1,1) {
-        this->inputNDims.push_back(2);
-        this->outputNDims.push_back(2);
+        this->_inputNDims.push_back(2);
+        this->_outputNDims.push_back(2);
     };
     ~MatrixSoftmaxOp();
 
@@ -61,8 +61,8 @@ template <typename Dtype>
 class MatrixLogNegLossOp : public Op<Dtype>{
 public:
     MatrixLogNegLossOp():Op<Dtype>(1,1) {
-        this->inputNDims.push_back(2);
-        this->outputNDims.push_back(0);
+        this->_inputNDims.push_back(2);
+        this->_outputNDims.push_back(0);
     };
     ~MatrixLogNegLossOp();
 };
@@ -82,8 +82,8 @@ template <typename Dtype>
 class VectorTanhOp : public Op<Dtype>{
 public:
     VectorTanhOp():Op<Dtype>(1,1) {
-        this->inputNDims.push_back(1);
-        this->outputNDims.push_back(1);
+        this->_inputNDims.push_back(1);
+        this->_outputNDims.push_back(1);
     };
     ~VectorTanhOp();
 };
@@ -92,8 +92,8 @@ template <typename Dtype>
 class VectorSoftmaxOp : public Op<Dtype>{
 public:
     VectorSoftmaxOp(): Op<Dtype>(1,1) {
-        this->inputNDims.push_back(1);
-        this->outputNDims.push_back(1);
+        this->_inputNDims.push_back(1);
+        this->_outputNDims.push_back(1);
     };
     ~VectorSoftmaxOp();
 };
@@ -103,8 +103,8 @@ template <typename Dtype>
 class VectorLogNegLossOp : public Op<Dtype>{
 public:
     VectorLogNegLossOp():Op<Dtype>(1,1) {
-        this->inputNDims.push_back(1);
-        this->outputNDims.push_back(0);
+        this->_inputNDims.push_back(1);
+        this->_outputNDims.push_back(0);
     };
     ~VectorLogNegLossOp();
 };
@@ -120,8 +120,8 @@ template <typename Dtype>
 class ScalarTanhOp : public Op<Dtype>{
 public:
     ScalarTanhOp():Op<Dtype>(1,1) {
-        this->inputNDims.push_back(0);
-        this->outputNDims.push_back(0);
+        this->_inputNDims.push_back(0);
+        this->_outputNDims.push_back(0);
     };
     ~ScalarTanhOp();
 };
