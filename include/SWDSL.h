@@ -14,32 +14,32 @@ using namespace swc;
 using namespace std;
 
 //check TensorNode
-#define CHECKT(prefix, id) \
+#define CHECKT(tname) \
   cout << "======================================================" << endl;\
-  cout << "Name: " << prefix##TensorNode_##id->name().c_str() << endl; \
-  cout << "NDim: " << prefix##TensorNode_##id->getTensor()->getNDim() << endl; \
-  for (int i = 0; i < prefix##TensorNode_##id->getTensor()->getNDim(); i++) \
-    cout << "Dim[" << i << "]: " << prefix##TensorNode_##id->getTensor()->getDim(i) << endl;
+  cout << "Name: " << tname->name().c_str() << endl; \
+  cout << "NDim: " << tname->getTensor()->getNDim() << endl; \
+  for (int i = 0; i < tname->getTensor()->getNDim(); i++) \
+    cout << "Dim[" << i << "]: " << tname->getTensor()->getDim(i) << endl;
 
 
 //TensorNode
-#define TENSOR(prefix, id, name, dimX, dimY) \
-  TensorNode<Dtype>* prefix##TensorNode_##id = new TensorNode<Dtype>(#name);\
-  TensorShape* prefix##TensorShape_##id = new TensorShape(\
+#define TENSOR(name, dimX, dimY) \
+  TensorNode<Dtype>* name = new TensorNode<Dtype>(#name);\
+  TensorShape* name##_TensorShape = new TensorShape(\
       new vector<unsigned long>({ dimX, dimY })); \
-  Tensor<Dtype>* prefix##Tensor_##id = new Tensor<Dtype>(prefix##TensorShape_##id);\
-  prefix##TensorNode_##id->setTensor(prefix##Tensor_##id);
+  Tensor<Dtype>* name##_Tensor = new Tensor<Dtype>(name##_TensorShape);\
+  name->setTensor(name##_Tensor);
 
 //check OpNode
-#define CHECKO(prefix, id) \
+#define CHECKO(oname) \
   cout << "======================================================" << endl;\
-  cout << "Name: " << prefix##OpNode_##id->name().c_str() << endl; \
+  cout << "Name: " << oname->name().c_str() << endl; \
 
 //OpNode
-#define OP(prefix, id, name, method) \
-  OpNode<Dtype>* prefix##OpNode_##id = new OpNode<Dtype>(#name);\
-  method<Dtype>* prefix##Op_##id = new method<Dtype>();\
-  prefix##OpNode_##id->setOp(prefix##Op_##id);
+#define OP(name, method) \
+  OpNode<Dtype>* name = new OpNode<Dtype>(#name);\
+  method<Dtype>* name##_Op = new method<Dtype>();\
+  name->setOp(name##_Op);
 
 
 //link FATHER
@@ -54,9 +54,6 @@ using namespace std;
 #define LINKUPPER(self, upperNode...) \
   self->exlinkUpperNode(upperNode);
 
-#define T(prefix, id) prefix##TensorNode_##id
-#define O(prefix, id) prefix##OpNode_##id
-
 #define G(name) IRGraph<Dtype>* name = new IRGraph<Dtype>();
 
 #define GpT(name, tensorNodes...) \
@@ -67,7 +64,7 @@ using namespace std;
 
 
 
-#define checkG(g) \
+#define CHECKG(g) \
     printf ( "Generate MLP layer done!\n");\
     for (int i = 0; i < g->ternsorNodeNum(); i++) {\
         printf( "ID:%d, ", i);\

@@ -20,36 +20,33 @@ int main()
     //      T:data_2
     //=============================
 
-  TENSOR(data, 0, Data_0, 1000 , 1000)
-  CHECKT(data, 0)
+  TENSOR(Data_0, 1000 , 1000)
+  TENSOR(Weight_0, 1000, 1000)
 
-  TENSOR(weight, 0, Weight_0, 1000, 1000)
-  CHECKT(weight, 0)
+  OP(FC_0, MatrixMatrixFCOp)
+  LINKUPPER(FC_0, Data_0, Weight_0)
 
-  OP(fc, 0, FC_0, MatrixMatrixFCOp)
-  CHECKO(fc, 0)
-
-  TENSOR(data, 1, Data_1, 1000 , 1000)
-  CHECKT(data, 1)
+  TENSOR(Data_1, 1000 , 1000)
+  LINKUPPER(Data_1, FC_0)
   
-  OP(tanh, 0, Tanh_1, MatrixTanhOp)
-  CHECKO(tanh, 0)
+  OP(Tanh_0, MatrixTanhOp)
+  LINKUPPER(Tanh_0, Data_1)
   
-  TENSOR(data, 2, Data_2, 1000 , 1000)
-  CHECKT(data, 2)
-
-  LINKUPPER(O(fc, 0), T(data, 0), T(weight, 0))
-  LINKUPPER(T(data, 1), O(fc, 0))
-  LINKUPPER(O(tanh, 0), T(data, 1))
-  LINKUPPER(T(data, 2), O(tanh, 0))
+  TENSOR(Data_2, 1000 , 1000)
+  LINKUPPER(Data_2, Tanh_0)
 
   //define IR graph
   G(MLPLayer)
+  GpT(MLPLayer, Data_0, Data_1, Data_2, Weight_0)
+  GpO(MLPLayer, FC_0, Tanh_0)
 
-  GpT(MLPLayer, T(data, 0), T(data, 1), T(data, 2), T(weight, 0))
-  GpO(MLPLayer, O(fc, 0), O(tanh, 0))
-
-  checkG(MLPLayer)
+  CHECKT(Data_0)
+  CHECKT(Weight_0)
+  CHECKO(FC_0)
+  CHECKT(Data_1)
+  CHECKO(Tanh_0)
+  CHECKT(Data_2)
+  CHECKG(MLPLayer)
 
   return 0;
 }
