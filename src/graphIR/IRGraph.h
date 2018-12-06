@@ -15,28 +15,39 @@
 namespace swc {
 
 template<typename Dtype>
+class IRGraph 
+{
+  public:
+    IRGraph(){};
+    ~IRGraph(){};
 
-class IRGraph {
+    TensorNode<Dtype>* getTensorNode(int i) const { return _tensors[i]; };
+    OpNode<Dtype>* getOpNode(int i) const { return _ops[i]; };
+   
 
-public:
+    void pushTensorNode() {};
+    template<typename T, typename... Types>
+    void pushTensorNode(const T& firstArg, const Types&... args) {
+      _tensors.push_back(firstArg);
+      pushTensorNode(args...);
+    }
 
-	IRGraph(){};
-	~IRGraph(){};
+    void pushOpNode(OpNode<Dtype> *o) { _ops.push_back(o); };
+    void pushOpNode() {};
+    template<typename T, typename... Types>
+    void pushOpNode(const T& firstArg, const Types&... args) {
+      _ops.push_back(firstArg);
+      pushOpNode(args...);
+    }
 
-	TensorNode<Dtype>* getTensorNode(int i) const { return _tensors[i]; };
-	OpNode<Dtype>*     getOpNode(int i)     const { return _ops[i];     };
-	
-	void pushTensorNode(TensorNode<Dtype> *t) { _tensors.push_back(t); };
-	void pushOpNode(OpNode<Dtype> *o)         { _ops.push_back(o);     };
+    int ternsorNodeNum() { return _tensors.size(); };
+    int opNodeNum() { return _ops.size(); }
+    
+    void setTopology() {};
 
-	int ternsorNodeNum() { return _tensors.size(); };
-	int opNodeNum()      { return _ops.size(); }
-	
-	void setTopology() {};
-
-private:
-	std::vector<TensorNode<Dtype>* > _tensors;
-	std::vector<OpNode<Dtype>* >     _ops;
+  private:
+    std::vector<TensorNode<Dtype>* > _tensors;
+    std::vector<OpNode<Dtype>* > _ops;
 };
 
 } //namespace swc

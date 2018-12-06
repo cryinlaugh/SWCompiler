@@ -8,36 +8,9 @@
  */
 
 #include "IRNode.h"
-// #include <string>
 
 namespace swc {
 
-IRNode::IRNode() {
-	_parentNodes = NULL;
-	_childNodes = NULL;
-}
-
-IRNode::IRNode(std::vector<IRNode*>* parentNodes,
-               std::vector<IRNode*>* childNodes,
-               std::string           name) 
-{
-	_parentNodes = parentNodes;
-	_childNodes  = childNodes;
-	_name        = name;
-}
-
-IRNode::~IRNode() {
-	printf("free:%s\n", _name.c_str());
-}
-
-void IRNode::init(std::vector<IRNode*>* parentNodes,
-                  std::vector<IRNode*>* childNodes,
-                  std::string           name) 
-{
-	_parentNodes = parentNodes;
-	_childNodes  = childNodes;
-	_name        = name;
-}
 
 std::string IRNode::dotGen() {
 

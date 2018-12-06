@@ -14,23 +14,24 @@
 namespace swc {
 
 template <typename Dtype>
-class TensorNode : public IRNode {
+class TensorNode : public IRNode
+{
+  
+  public:
+    TensorNode() : _tensor(NULL) {};
+    TensorNode(const char name[]) : IRNode(name) {};
+    ~TensorNode(){};
 
-public:
-	TensorNode(){};
-	~TensorNode(){};
+    void setTensor(Tensor<Dtype>* tensor) {
+      _tensor = tensor; 
+    }
 
-	void setTensor(Tensor<Dtype>* tensor) {
-		_tensor = tensor; 
-	}
+    Tensor<Dtype>* getTensor() {
+      return _tensor;
+    }
 
-	Tensor<Dtype>* getTensor() {
-		return _tensor;
-	}
-
-private:
-	Tensor<Dtype>* _tensor; 
-
+  private:
+    Tensor<Dtype>* _tensor; 
 };
 
 } //namespace swc
