@@ -19,7 +19,7 @@ class OpNode : public IRNode
   
   public:
     OpNode() :  _op(NULL) {};
-    OpNode(const char name[]) : IRNode(name) {};
+    OpNode(const char name[]) : IRNode(OP_NODE, name) {};
     ~OpNode(){};
 
     void setOp(Op<Dtype>* op) {

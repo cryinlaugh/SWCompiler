@@ -11,8 +11,29 @@
 #include <memory>
 #include <vector>
 
-template <typename Dtype>
+#define NODETYPE int
+#define OPTYPE int
+#define TENSORTYPE int
 
+enum OpType {
+  TENSOR_OP,
+  BASIC_OP,
+  DL_OP
+};
+
+enum NodeType {
+  TENSOR_NODE,
+  OP_NODE
+};
+
+enum TensorType {
+    D2=2,
+    D1=1,
+    D0=0,
+    UNKNOWN=-1
+};
+
+template <typename Dtype>
 class SWMem {
     
 private:

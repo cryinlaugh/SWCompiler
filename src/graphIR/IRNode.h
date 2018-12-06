@@ -16,8 +16,10 @@ namespace swc {
 class IRNode
 {
   public:
+    
     IRNode();
-    IRNode(const char name[]) : _name(std::string(name)) {};
+    IRNode(const NodeType nodeType, const char name[]) : 
+      _name(std::string(name)), _nodeType(nodeType) {};
     ~IRNode() { printf("free:%s\n", _name.c_str()); };
     
     void pushParentNode() {};
@@ -49,10 +51,10 @@ class IRNode
       return &_childNodes;
     }
 
-    IRNode* getParentNode(int i) const{
+    const IRNode* const getParentNode(int i) const{
       return _parentNodes[i];
     }
-    IRNode* getChildNode(int i) const{
+    const IRNode* const getChildNode(int i) const{
       return _childNodes[i];
     }
 
@@ -66,12 +68,15 @@ class IRNode
       return _childNodes.size();
     }
 
-	// dot generation
-	std::string dotGen(); 
+	  // dot generation
+	  std::string dotGen(); 
+  
   private:
     std::vector<IRNode*> _parentNodes;
     std::vector<IRNode*> _childNodes;
     std::string _name;
+
+    NodeType _nodeType;
 };
 
 } //namespace swc

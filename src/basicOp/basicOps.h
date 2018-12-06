@@ -27,7 +27,7 @@ namespace swc{
 template <typename Dtype>
 class MatrixMatrixMulOp : public Op<Dtype>{
 public:
-    MatrixMatrixMulOp():Op<Dtype>(2, 1){
+    MatrixMatrixMulOp():Op<Dtype>(BASIC_OP, 2, 1){
         this->_inputNDims.push_back(2);
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
@@ -38,7 +38,7 @@ public:
 template <typename Dtype>
 class VectorMatrixMulOp : public Op<Dtype>{
 public:
-    VectorMatrixMulOp():Op<Dtype>(2, 1){
+    VectorMatrixMulOp():Op<Dtype>(BASIC_OP, 2, 1){
         this->_inputNDims.push_back(1);
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(1);
@@ -49,7 +49,7 @@ public:
 template <typename Dtype>
 class MatrixVectorMulOp : public Op<Dtype>{
 public:
-    MatrixVectorMulOp():Op<Dtype>(2, 1){
+    MatrixVectorMulOp():Op<Dtype>(BASIC_OP, 2, 1){
         this->_inputNDims.push_back(2);
         this->_inputNDims.push_back(1);
         this->_outputNDims.push_back(1);
@@ -69,7 +69,7 @@ public:
 template <typename Dtype>
 class VectorVectorInnerProductOp : public Op<Dtype>{
 public:
-    VectorVectorInnerProductOp():Op<Dtype>(2, 1){
+    VectorVectorInnerProductOp():Op<Dtype>(BASIC_OP, 2, 1){
         this->_inputNDims.push_back(1);
         this->_inputNDims.push_back(1);
         this->_outputNDims.push_back(0);
@@ -95,7 +95,7 @@ public:
 template <typename Dtype>
 class ScalarMulOp : public Op<Dtype>{
 public:
-    ScalarMulOp():Op<Dtype>(2, 1){
+    ScalarMulOp():Op<Dtype>(BASIC_OP, 2, 1){
         this->_inputNDims.push_back(0);
         this->_inputNDims.push_back(0);
         this->_outputNDims.push_back(0);
@@ -106,7 +106,7 @@ public:
 template <typename Dtype>
 class ScalarAddOp : public Op<Dtype>{
 public:
-    ScalarAddOp():Op<Dtype>(2, 1){
+    ScalarAddOp():Op<Dtype>(BASIC_OP, 2, 1){
         this->_inputNDims.push_back(0);
         this->_inputNDims.push_back(0);
         this->_outputNDims.push_back(0);
@@ -117,7 +117,7 @@ public:
 template <typename Dtype>
 class ScalarMaxOp : public Op<Dtype>{
 public:
-    ScalarMaxOp():Op<Dtype>(2, 1){
+    ScalarMaxOp():Op<Dtype>(BASIC_OP, 2, 1){
         this->_inputNDims.push_back(0);
         this->_inputNDims.push_back(0);
         this->_outputNDims.push_back(0);
@@ -128,7 +128,7 @@ public:
 template <typename Dtype>
 class ScalarExpOp : public Op<Dtype>{
 public:
-    ScalarExpOp():Op<Dtype>(1, 1){
+    ScalarExpOp():Op<Dtype>(BASIC_OP, 1, 1){
         this->_inputNDims.push_back(0);
         this->_outputNDims.push_back(0);
     }
@@ -138,7 +138,7 @@ public:
 template <typename Dtype>
 class ScalarNegOp : public Op<Dtype>{
 public:
-    ScalarNegOp():Op<Dtype>(1, 1){
+    ScalarNegOp():Op<Dtype>(BASIC_OP, 1, 1){
         this->_inputNDims.push_back(0);
         this->_outputNDims.push_back(0);
     }
@@ -148,7 +148,7 @@ public:
 template <typename Dtype>
 class ScalarDivOp : public Op<Dtype>{
 public:
-    ScalarDivOp():Op<Dtype>(1, 1){
+    ScalarDivOp():Op<Dtype>(BASIC_OP, 1, 1){
         this->_inputNDims.push_back(0);
         this->_outputNDims.push_back(0);
     }
@@ -158,7 +158,7 @@ public:
 template <typename Dtype>
 class ScalarLogOp : public Op<Dtype>{
 public:
-    ScalarLogOp():Op<Dtype>(1, 1){
+    ScalarLogOp():Op<Dtype>(BASIC_OP, 1, 1){
         this->_inputNDims.push_back(0);
         this->_outputNDims.push_back(0);
     }

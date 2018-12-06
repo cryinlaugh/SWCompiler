@@ -48,5 +48,7 @@ int main()
   CHECKT(Data_2)
   CHECKG(MLPLayer)
 
+  dotGen(*MLPLayer);
+
   return 0;
 }

@@ -69,6 +69,8 @@ int main() {
   graph.pushOpNode(&oNode1);
   graph.pushOpNode(&oNode2);
 
+  dotGen(graph);
+
   printf("After push, size of graph: %ld\n", sizeof(graph));
   
   printf ("Generate graph done!\n");

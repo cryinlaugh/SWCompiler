@@ -12,13 +12,6 @@
 
 namespace swc{
 
-enum TensorType{
-    D2=2,
-    D1=1,
-    D0=0,
-    UNKNOWN=-1
-};
-
 class TensorShape{
 private:
     int _ndim;

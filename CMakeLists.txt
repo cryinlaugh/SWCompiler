@@ -23,6 +23,7 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
 # Headers
 include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR}/src)
 
 # Generic compilation options 
 # Flags
@@ -36,7 +37,6 @@ set (CMAKE_CXX_FLAGS "${COMMON_FLAGS} -std=c++0x")
 file(GLOB_RECURSE SOURCES 
     ${PROJECT_SOURCE_DIR}/src/*.cpp)
 add_library(graphcore STATIC ${SOURCES})
-
 
 # Libraries are compiled. Now compile the programs
 link_libraries(graphcore)
