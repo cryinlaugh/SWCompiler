@@ -69,9 +69,9 @@ class IRNode
     }
 
 	  // dot generation
-	  std::string dotGen(std::string tensorInfo, std::string opInfo); 
+	  std::string dotGen(std::string tensorInfo, std::string opInfo);
     std::string dotGen();
-    
+
   private:
     std::vector<IRNode*> _parentNodes;
     std::vector<IRNode*> _childNodes;

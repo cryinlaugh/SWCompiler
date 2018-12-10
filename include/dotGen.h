@@ -42,7 +42,6 @@ void dotGen(IRGraph<float> graph, string dotFileName) {
 	dotfile << dot_end << endl;
 
 	// make PNG
-	// string dotFileName = "dotGen.dot";
 	string svgFileName = "IRGraph.svg";
 	string dotGenCMD   = "dot -T svg " + dotFileName + " -o " + svgFileName;
 
