@@ -69,7 +69,7 @@ class IRNode
     }
 
 	  // dot generation
-	  std::string dotGen(std::string tensorInfo, std::string opInfo);
+    std::string dotGen(std::string tensorInfo, std::string opInfo);
     std::string dotGen();
 
   private:
