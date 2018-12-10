@@ -10,11 +10,14 @@
 
 #include <fstream>
 #include <iostream>
+#include <stdlib.h>
+
 #include "SWC.h"
 
 using namespace std;
 using namespace swc;
-void dotGen(IRGraph<float> graph) {
+
+void dotGen(IRGraph<float> graph, string dotFileName) {
 
 	cout << "Generate the dotFile for drawing." << endl;
 
@@ -32,14 +35,26 @@ void dotGen(IRGraph<float> graph) {
 	string dot_end   = "\n}";
 
 	// dotFile Genrate
-	ofstream dotfile("dotGen.dot", fstream::out);
-	// ofstream dotfile;
-	// dotfile.open("./IRtest.dot");
+	ofstream dotfile(dotFileName, fstream::out);
 
 	dotfile << dot_title << endl;
 	dotfile << dot_Total;
 	dotfile << dot_end << endl;
 
-	// dotfile.close();
+	// make PNG
+	// string dotFileName = "dotGen.dot";
+	string svgFileName = "IRGraph.svg";
+	string dotGenCMD   = "dot -T svg " + dotFileName + " -o " + svgFileName;
+
+	char *cmd = (char*)dotGenCMD.data();
+
+	system(cmd);
 }
+
+void dotGen(IRGraph<float> graph) {
+
+	dotGen(graph, "IRGraph.dot");
+
+}
+
 #endif

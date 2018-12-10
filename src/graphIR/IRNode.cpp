@@ -40,12 +40,12 @@ std::string IRNode::dotGen() {
 	// Generate dot codes.
 	str_total = str_total + "	// Generate one Node!\n";
 
-	// 生成不同 parentNodess 的类型 (Tensor or OP)
+	// Generate Types (Tensor or OP)
 	for (int i = 0; i < parentNum(); ++i) {
 
-		if (parentNodes[i].substr(0,1) == "O") 
+		if (_nodeType == TENSOR_NODE) 
 			str_tmp = "	" + parentNodes[i] + NodeEx[0];
-		else if (parentNodes[i].substr(0,1) == "T")
+		else if (_nodeType == OP_NODE)
 			str_tmp = "	" + parentNodes[i] + NodeEx[1];
 
 		str_total = str_total + str_tmp;
@@ -53,12 +53,12 @@ std::string IRNode::dotGen() {
 
 	// str_total = str_total + "\n";
 
-	// 生成不同 childNodess 的类型 (Tensor or OP)
+	// Generate Types (Tensor or OP)
 	for (int i = 0; i < childNum(); ++i) {
 
-		if (childNodes[i].substr(0,1) == "O") 
+		if (_nodeType == TENSOR_NODE) 
 			str_tmp = "	" + childNodes[i] + NodeEx[0];
-		else if (childNodes[i].substr(0,1) == "T")
+		else if (_nodeType == OP_NODE)
 			str_tmp = "	" + childNodes[i] + NodeEx[1];
 
 		str_total = str_total + str_tmp;
@@ -66,7 +66,7 @@ std::string IRNode::dotGen() {
 
 	str_total = str_total + "\n";
 
-	// // 生成 Father -> This
+	// // Generate Father -> This
 	// for (int i = 0; i < parentNum(); ++i) {
 	// 	str_tmp   = "	" + parentNodes[i] + " -> " + thisNode + ";\n";
 	// 	str_total = str_total + str_tmp;
@@ -74,7 +74,7 @@ std::string IRNode::dotGen() {
 
 	// str_total = str_total + "\n";
 
-	// 生成 This   -> Children
+	// Generate -> Children
 	for (int i = 0; i < childNum(); ++i) {
 		str_tmp   = "	" + thisNode + " -> " + childNodes[i] + ";\n";
 		str_total = str_total + str_tmp;
