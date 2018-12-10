@@ -23,10 +23,10 @@ using namespace std;
 
 
 //TensorNode
-#define TENSOR(name, ...) \
+#define TENSOR(name, args...) \
   TensorNode<Dtype>* name = new TensorNode<Dtype>(#name);\
   TensorShape* name##_TensorShape = new TensorShape(\
-      new vector<unsigned long>({ __VA_ARGS__ })); \
+      new vector<unsigned long>({ args })); \
   Tensor<Dtype>* name##_Tensor = new Tensor<Dtype>(name##_TensorShape);\
   name->setTensor(name##_Tensor);
 
