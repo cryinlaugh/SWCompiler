@@ -11,25 +11,26 @@
 
 namespace swc {
 
-std::string IRNode::dotGen() {
+std::string IRNode::dotGen(std::string tensorInfo, std::string opInfo) {
 
+	std::string              thisNode;
 	std::vector<std::string> parentNodes;
 	std::vector<std::string> childNodes;
 	
 	std::string str_tmp;
 	std::string str_total;
-	std::string thisNode;
-	std::string NodeInfo[2] = { " [shape = box];\n", ";\n" };
+
+	std::vector<std::string> NodeInfo;
+	NodeInfo.push_back(tensorInfo);
+	NodeInfo.push_back(opInfo);	
 
 	// init parentNodes
 	for (int i = 0; i < parentNum(); ++i) {
-		// str_tmp = to_string(i);
 		parentNodes.push_back(getParentNode(i)->name());
 	}
 
 	// init childNodes
 	for (int i = 0; i < childNum(); ++i) {
-		// str_tmp = to_string(i);
 		childNodes.push_back(getChildNode(i)->name());
 	}
 
@@ -57,4 +58,11 @@ std::string IRNode::dotGen() {
 	return str_total;
 }
 
-} //namespace swc
+std::string IRNode::dotGen() {
+
+	return IRNode::dotGen(" [shape = box];\n", ";\n");
+}
+
+}
+
+// namespace swc
