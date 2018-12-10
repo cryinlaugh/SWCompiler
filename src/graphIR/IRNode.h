@@ -68,7 +68,7 @@ class IRNode
       return _childNodes.size();
     }
 
-	  // dot generation
+    // dot generation
     std::string dotGen(std::string tensorInfo, std::string opInfo);
     std::string dotGen();
 
