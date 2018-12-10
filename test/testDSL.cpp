@@ -20,8 +20,8 @@ int main()
     //      T:data_2
     //=============================
 
-  TENSOR(Data_0, 1000 , 1000)
-  TENSOR(Weight_0, 1000, 1000)
+  TENSOR(Data_0, 1000 , 1000, 1000)
+  TENSOR(Weight_0, 1000, 1000, 1000)
 
   OP(FC_0, MatrixMatrixFCOp)
   LINKUPPER(FC_0, Data_0, Weight_0)

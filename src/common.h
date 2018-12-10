@@ -27,6 +27,9 @@ enum NodeType {
 };
 
 enum TensorType {
+    D5=5,
+    D4=4,
+    D3=3,
     D2=2,
     D1=1,
     D0=0,
