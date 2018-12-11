@@ -52,7 +52,7 @@ std::string TensorNode<Dtype>::dotGen() {
     if (i < NDim-1) 
       tensorInfo = tensorInfo + "Dim[" + std::to_string(i) + "]:" + std::to_string(getTensor()->getDim(i)) + " |";
     else         
-      tensorInfo = tensorInfo + "Dim[" + std::to_string(i) + "]:" + std::to_string(getTensor()->getDim(i)) + " }\"];";
+      tensorInfo = tensorInfo + "Dim[" + std::to_string(i) + "]:" + std::to_string(getTensor()->getDim(i)) + " }\"];\n";
   }
 
   return IRNode::dotGen(tensorInfo, ";\n");
