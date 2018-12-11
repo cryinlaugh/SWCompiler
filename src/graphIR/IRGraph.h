@@ -12,13 +12,17 @@
 #include "TensorNode.h"
 #include "OpNode.h"
 
+
 namespace swc {
+
+template<typename Dtype>
+class Optimizer;
 
 template<typename Dtype>
 class IRGraph 
 {
   public:
-    IRGraph(){};
+    IRGraph() :  _optimizer(new Optimizer<Dtype>()){};
     ~IRGraph(){};
 
     TensorNode<Dtype>* getTensorNode(int i) const { return _tensors[i]; };
@@ -45,9 +49,13 @@ class IRGraph
     
     void setTopology() {};
 
+    void runOptimize() { _optimizer->runOptimize(this); };
+
   private:
     std::vector<TensorNode<Dtype>* > _tensors;
     std::vector<OpNode<Dtype>* > _ops;
+    Optimizer<Dtype>* _optimizer;
+
 };
 
 } //namespace swc

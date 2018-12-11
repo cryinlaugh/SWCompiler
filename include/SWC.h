@@ -13,6 +13,7 @@
 #include "../src/dlOp/dlOp.h"
 #include "../src/graphIR/IRGraph.h"
 #include "../src/graphIR/IRNode.h"
+#include "../src/pass/Optimizer.h"
 #include "dotGen.h"
 
 #endif

@@ -45,7 +45,9 @@ include_directories(${PROJECT_SOURCE_DIR}/src
                     ${PROJECT_SOURCE_DIR}/src/basicOp
                     ${PROJECT_SOURCE_DIR}/src/dlOp
                     ${PROJECT_SOURCE_DIR}/src/graphIR
-                    ${PROJECT_SOURCE_DIR}/src/tensor)
+                    ${PROJECT_SOURCE_DIR}/src/tensor
+                    ${PROJECT_SOURCE_DIR}/src/pass
+                    )
 
 file(GLOB TEST_SOURCES ${PROJECT_SOURCE_DIR}/test/*.cpp)
 foreach(TESTSRC ${TEST_SOURCES})

@@ -11,10 +11,6 @@
 #include <memory>
 #include <vector>
 
-#define NODETYPE int
-#define OPTYPE int
-#define TENSORTYPE int
-
 enum OpType {
   TENSOR_OP,
   BASIC_OP,
