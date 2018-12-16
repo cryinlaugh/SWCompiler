@@ -11,10 +11,6 @@
 #include <memory>
 #include <vector>
 
-#define NODETYPE int
-#define OPTYPE int
-#define TENSORTYPE int
-
 enum OpType {
   TENSOR_OP,
   BASIC_OP,
@@ -50,5 +46,21 @@ public:
     Dtype* mutable_data();
     
 };
+
+
+template<typename U, typename V>
+int delVecMember(std::vector<U>& vec, V& del) {
+  int delDone = 0;
+  for (typename std::vector<U>::iterator it = vec.begin(); it != vec.end(); ) {
+    if (*it == del) {
+      it = vec.erase(it);
+      delDone = 1;
+      break;
+    } else {
+      ++it;
+    }
+  }
+  return delDone;
+}
 
 #endif
