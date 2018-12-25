@@ -14,6 +14,7 @@
 #include "../src/graphIR/IRGraph.h"
 #include "../src/graphIR/IRNode.h"
 #include "../src/pass/Optimizer.h"
+#include "../src/pass/Label.h"
 #include "dotGen.h"
 
 #endif

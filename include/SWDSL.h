@@ -66,7 +66,7 @@ using namespace std;
 
 #define CHECKG(g) \
     printf ( "Generate MLP layer done!\n");\
-    for (int i = 0; i < g->ternsorNodeNum(); i++) {\
+    for (int i = 0; i < g->tensorNodeNum(); i++) {\
         printf( "ID:%d, ", i);\
         printf( "Name:%s, ", g->getTensorNode(i)->name().c_str());\
         printf( "in:%d, ", g->getTensorNode(i)->parentNum());\

@@ -50,7 +50,9 @@ int main()
   CHECKG(MLPLayer)
 
   dotGen(*MLPLayer);
-  MLPLayer->runOptimize();
+
+  Optimizer* opt = new Optimizer();
+  opt->runOptimize(MLPLayer);
 
   SWLOG_INFO << "this is LOG"<<endl;
   return 0;

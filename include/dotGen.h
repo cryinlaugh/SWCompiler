@@ -23,7 +23,7 @@ void dotGen(IRGraph<float> graph, string dotFileName) {
 
 	string dot_Total;
 
-	for (int i = 0; i < graph.ternsorNodeNum(); i++) {
+	for (int i = 0; i < graph.tensorNodeNum(); i++) {
 		dot_Total = dot_Total + graph.getTensorNode(i)->dotGen();
 	}
 

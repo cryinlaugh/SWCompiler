@@ -10,6 +10,7 @@
 
 #include <string>
 #include "../common.h"
+#include "Label.h"
 
 namespace swc {
 
@@ -19,7 +20,9 @@ class IRNode
     
     IRNode();
     IRNode(const NodeType nodeType, const char name[]) : 
-      _name(std::string(name)), _nodeType(nodeType) {};
+      _name(std::string(name)), 
+      _nodeType(nodeType),
+      _label(new Label()) {};
     ~IRNode() { printf("free:%s\n", _name.c_str()); };
     
     void pushParentNode() {};
@@ -68,6 +71,10 @@ class IRNode
       return _childNodes.size();
     }
 
+    Label* getLabel() const{
+        return _label;
+    }
+
     // dot generation
     std::string dotGen(std::string tensorInfo, std::string opInfo);
     std::string dotGen();
@@ -78,6 +85,9 @@ class IRNode
     std::string _name;
 
     NodeType _nodeType;
+
+    Label* _label;
+
 };
 
 } //namespace swc

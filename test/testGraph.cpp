@@ -75,7 +75,7 @@ int main() {
   
   printf ("Generate graph done!\n");
   
-  for (int i = 0; i < graph.ternsorNodeNum(); i++) {
+  for (int i = 0; i < graph.tensorNodeNum(); i++) {
     printf("ID:%d, ", i);
     printf("Name:%s, ", graph.getTensorNode(i)->name().c_str());
     printf("in:%d, ", graph.getTensorNode(i)->parentNum());

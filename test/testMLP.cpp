@@ -98,7 +98,7 @@ int main(){
 
     dotGen(*MLPLayer);
 
-    for (int i = 0; i < MLPLayer->ternsorNodeNum(); i++) {
+    for (int i = 0; i < MLPLayer->tensorNodeNum(); i++) {
         printf("ID:%d, ", i);
         printf("Name:%s, ", MLPLayer->getTensorNode(i)->name().c_str());
         printf("in:%d, ", MLPLayer->getTensorNode(i)->parentNum());

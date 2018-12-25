@@ -16,13 +16,10 @@
 namespace swc {
 
 template<typename Dtype>
-class Optimizer;
-
-template<typename Dtype>
 class IRGraph 
 {
   public:
-    IRGraph() :  _optimizer(new Optimizer<Dtype>()){};
+    IRGraph(){};
     ~IRGraph(){};
 
     TensorNode<Dtype>* getTensorNode(int i) const { return _tensors[i]; };
@@ -44,17 +41,15 @@ class IRGraph
       pushOpNode(args...);
     }
 
-    int ternsorNodeNum() { return _tensors.size(); };
+    int tensorNodeNum() { return _tensors.size(); };
     int opNodeNum() { return _ops.size(); }
     
     void setTopology() {};
 
-    void runOptimize() { _optimizer->runOptimize(this); };
 
   private:
     std::vector<TensorNode<Dtype>* > _tensors;
     std::vector<OpNode<Dtype>* > _ops;
-    Optimizer<Dtype>* _optimizer;
 
 };
 
