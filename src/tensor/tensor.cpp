@@ -22,5 +22,7 @@ const int unsigned long TensorShape::getDim(int idx) const{
     return (*_shape)[idx];
 }
 
+INSTANTIATE_CLASS(Tensor);
+
 }
 

@@ -11,6 +11,12 @@
 #include <memory>
 #include <vector>
 
+// Instantiate a class with float and double specifications.
+#define INSTANTIATE_CLASS(classname) \
+  char gInstantiationGuard##classname; \
+  template class classname<float>; \
+  template class classname<double>
+
 enum OpType {
   TENSOR_OP,
   BASIC_OP,
@@ -49,5 +55,21 @@ public:
     Dtype* mutable_data();
     
 };
+
+
+template<typename U, typename V>
+int delVecMember(std::vector<U>& vec, V& del) {
+  int delDone = 0;
+  for (typename std::vector<U>::iterator it = vec.begin(); it != vec.end(); ) {
+    if (*it == del) {
+      it = vec.erase(it);
+      delDone = 1;
+      break;
+    } else {
+      ++it;
+    }
+  }
+  return delDone;
+}
 
 #endif

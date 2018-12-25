@@ -16,6 +16,7 @@ using namespace std;
 //check TensorNode
 #define CHECKT(tname) \
   cout << "======================================================" << endl;\
+  cout << "Topology ID: " << tname->topologyId() << endl; \
   cout << "Name: " << tname->name().c_str() << endl; \
   cout << "NDim: " << tname->getTensor()->getNDim() << endl; \
   for (int i = 0; i < tname->getTensor()->getNDim(); i++) \
@@ -33,6 +34,7 @@ using namespace std;
 //check OpNode
 #define CHECKO(oname) \
   cout << "======================================================" << endl;\
+  cout << "Topology ID: " << oname->topologyId() << endl; \
   cout << "Name: " << oname->name().c_str() << endl; \
 
 //OpNode
@@ -63,11 +65,11 @@ using namespace std;
   name->pushOpNode(OpNodes);
 
 
-
 #define CHECKG(g) \
     printf ( "Generate MLP layer done!\n");\
     for (int i = 0; i < g->tensorNodeNum(); i++) {\
         printf( "ID:%d, ", i);\
+        printf( "TopologyID:%d, ", g->getTensorNode(i)->topologyId());\
         printf( "Name:%s, ", g->getTensorNode(i)->name().c_str());\
         printf( "in:%d, ", g->getTensorNode(i)->parentNum());\
         printf( "out:%d\n", g->getTensorNode(i)->childNum());\
@@ -75,6 +77,7 @@ using namespace std;
 \
     for (int i = 0; i < g->opNodeNum(); i++) {\
         printf( "ID:%d, ", i);\
+        printf( "TopologyID:%d, ", g->getOpNode(i)->topologyId());\
         printf( "Name:%s, ", g->getOpNode(i)->name().c_str());\
         printf( "in:%d, ", g->getOpNode(i)->parentNum());\
         printf( "out:%d\n", g->getOpNode(i)->childNum());\

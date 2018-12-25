@@ -7,5 +7,12 @@
  * @VERSION:     2018-11-23
  */
 
+#include "OpNode.h"
 
+namespace swc {
+
+
+INSTANTIATE_CLASS(OpNode);
+
+} //namespace swc
 

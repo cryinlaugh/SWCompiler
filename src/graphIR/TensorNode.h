@@ -5,8 +5,8 @@
  * Distributed under terms of the MIT license.
  */
 
-#ifndef TENSORNODE_H
-#define TENSORNODE_H
+#ifndef TENSORNODE_H_
+#define TENSORNODE_H_
 
 #include "IRNode.h"
 #include "../tensor/tensor.h"
@@ -19,7 +19,7 @@ class TensorNode : public IRNode
   
   public:
     TensorNode() : _tensor(NULL) {};
-    TensorNode(const char name[]) : IRNode(TENSOR_NODE, name) {};
+    explicit TensorNode(const char name[]) : IRNode(TENSOR_NODE, name) {};
     ~TensorNode(){};
 
     void setTensor(Tensor<Dtype>* tensor) {
@@ -61,4 +61,4 @@ std::string TensorNode<Dtype>::dotGen() {
 } //namespace swc
 
 
-#endif /* !TENSORNODE_H */
+#endif /* !TENSORNODE_H_ */
