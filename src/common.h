@@ -11,6 +11,13 @@
 #include <memory>
 #include <vector>
 
+// Instantiate a class with float and double specifications.
+#define INSTANTIATE_CLASS(classname) \
+  char gInstantiationGuard##classname; \
+  template class classname<float>; \
+  template class classname<double>
+
+
 enum OpType {
   TENSOR_OP,
   BASIC_OP,

@@ -34,7 +34,7 @@ class IRGraph {
   int getNumInTopoLevel(int i) const { 
     return _nodesByTopology[i].size(); 
   }
-  std::vector<IRNode>& getNodeInTopoLevel(int i) const { 
+  std::vector<IRNode*> getNodeInTopoLevel(int i) const { 
     return _nodesByTopology[i]; 
   }
   IRNode* getNodeInTopo(int i, int j) const { 
@@ -95,81 +95,13 @@ class IRGraph {
   inline const int outNodeNum() const { return _outNodes.size(); }
   inline const int topologyNum() const { return _nodesByTopology.size(); }
 
-  void findInOut() {
-    _inNodes.clear();
-    _outNodes.clear();
-    typename std::vector<TensorNode<Dtype>* >::iterator tnIter; 
-    
-    for (tnIter = _tensors.begin(); tnIter != _tensors.end(); tnIter++) {
-      if ((*tnIter)->parentNum() == 0)
-        _inNodes.push_back(*tnIter);
-    }
-    for (tnIter = _tensors.begin(); tnIter != _tensors.end(); tnIter++) {
-      if((*tnIter)->childNum() == 0)
-        _outNodes.push_back(*tnIter);
-    }
-  }
-
-  template<typename T>
-  void updateTopology(T node) {
-    int currentTopoId = node->topologyId();
-    /*std::cout << "Current Node: " << node->name() 
-              << " TopologyID: " << node->topologyId()
-              << std::endl;*/
-    for (int i = 0; i < node->childNum(); i++) {
-      if (node->getChildNode(i)->topologyId() < currentTopoId + 1) {
-        node->getChildNode(i)->setTopologyId(currentTopoId + 1);
-        /*std::cout << "Update " << node->getChildNode(i)->name() 
-                  << " TopologyID " << node->getChildNode(i)->topologyId()
-                  << " To " << currentTopoId + 1
-                  << std::endl;*/
-        updateTopology(node->getChildNode(i));
-      }
-    }
-  }
-
-  void updateTopology() {
-    typename std::vector<TensorNode<Dtype>* >::iterator tnIter;
-    typename std::vector<OpNode<Dtype>* >::iterator opIter; 
-    
-    for (tnIter = _tensors.begin(); tnIter != _tensors.end(); tnIter++)
-      (*tnIter)->setTopologyId(0);
-    for (opIter = _ops.begin(); opIter != _ops.end(); opIter++)
-      (*opIter)->setTopologyId(0);
-    
-    for (tnIter = _inNodes.begin(); tnIter != _inNodes.end(); tnIter++)
-      updateTopology(*tnIter);
-  }
-
-  void updateTopoNodeList() {
-    typename std::vector<TensorNode<Dtype>* >::iterator tnIter; 
-    typename std::vector<OpNode<Dtype>* >::iterator opIter; 
-    std::vector<std::vector<IRNode*> >::iterator ndIter; 
-    int topoId;
-    std::vector<IRNode*> vtemp;
-    
-    for (ndIter = _nodesByTopology.begin();
-        ndIter != _nodesByTopology.end(); 
-        ndIter++) {
-      ndIter->clear();
-    }
-    _nodesByTopology.clear();
-    
-    for (tnIter = _tensors.begin(); tnIter != _tensors.end(); tnIter++) {
-      topoId = (*tnIter)->topologyId();
-      while (topoId >= (int)_nodesByTopology.size()) {
-        _nodesByTopology.push_back(vtemp);
-      }
-      _nodesByTopology[topoId].push_back(*tnIter);
-    }
-    for (opIter = _ops.begin(); opIter != _ops.end(); opIter++) {
-      topoId = (*opIter)->topologyId();
-      while (topoId >= (int)_nodesByTopology.size()) {
-        _nodesByTopology.push_back(vtemp);
-      }
-      _nodesByTopology[topoId].push_back(*opIter);
-    }
-  }
+  void findInOut();
+  
+  template<typename T> 
+  void updateTopology(T node);
+  
+  void updateTopology();
+  void updateTopoNodeList();
 
  private:
   std::vector<TensorNode<Dtype>* > _tensors;
