@@ -8,15 +8,29 @@
 #ifndef _OP_H
 #define _OP_H
 
+#include <string>
 #include "../common.h"
 #include "../tensor/tensor.h"
+#include "SWLOG.h"
 
 namespace swc {
+
+template <typename Dtype>
+class IRGraph;
+
+class IRNode;
+
+template <typename Dtype>
+class TensorNode;
+
+template <typename Dtype>
+class OpNode;
 
 template <typename Dtype>
 class Op {
 
 protected: 
+
 
     /* The following variables are constant values in a specific Op Class
        indicating what kind of input/output tensors it should keep.            */
@@ -26,6 +40,8 @@ protected:
     const int         _nOutput;         // nums of output tensor
     std::vector<int>  _inputNDims;      // input  tensors
     std::vector<int>  _outputNDims;     // output tensors
+
+    const std::string _opClassName;
 
     /* The following variables indicating the real input/output tensors 
        that the Op really have, its useful in analyses or ref-code-generation. */
@@ -37,8 +53,8 @@ protected:
 
 public:
 
-    Op(OpType opType = BASIC_OP, int nInput = 0, int nOutput = 0) :
-       _opType(opType), _nInput(nInput), _nOutput(nOutput) { 
+    Op(OpType opType = BASIC_OP, int nInput = 0, int nOutput = 0, std::string opClassName = NULL) :
+       _opType(opType), _nInput(nInput), _nOutput(nOutput), _opClassName(opClassName) { 
 
         _nInputTensor  = 0;
         _nOutputTensor = 0;
@@ -59,8 +75,15 @@ public:
 
     OpType getOpType() { return _opType; }
 
+    const std::string getOpName(){ return _opClassName; }
+
     inline const int getnInput()  { return _nInput;  }
     inline const int getnOutput() { return _nOutput; }
+
+    //for lowering
+    virtual void lowering(IRGraph<Dtype>* graph, IRNode* node){
+        SWLOG_INFO<< "Unimplemented in base Op class" << std::endl;
+    }
 };
 
 }

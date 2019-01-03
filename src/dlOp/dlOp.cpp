@@ -6,8 +6,48 @@
  ************************************************************************/
 
 #include "dlOp.h"
+#include "SWDSL.h"
 
 namespace swc {
+
+template <typename Dtype>
+void MatrixMatrixFCOp<Dtype>::lowering(IRGraph<Dtype>* graph, IRNode* node){
+    SWLOG_INFO<< "Lowering MatrixMatrixFCOp ..." << std::endl;
+
+    //define lowered subgraph
+    //substitute MatrixMatrixFCOp with MatrixMatrixMulOp
+
+    //define MatrixMatrixMulOp 
+
+    OP(O1, MatrixMatrixMulOp);
+
+        //link parent nodes
+    LINKUPPER(O1, node->getParentNode(0), node->getParentNode(1));
+
+    //link children nodes
+    LINKUPPER(node->getChildNode(0), O1);
+
+    graph->pushOpNode(O1);
+
+    //break parent links
+    node->destroyUpperNode(node->getParentNode(0), node->getParentNode(1));
+
+    //break child links
+    node->getChildNode(0)->destroyUpperNode(node);
+
+    //remove node from graph
+    graph->delOpNode(node);
+
+    //delete node
+    //TODO 
+
+    //Update graph info
+    graph->findInOut();
+    graph->updateTopology();
+    graph->updateTopoNodeList();
+
+    SWLOG_INFO<< "Finish lowering MatrixMatrixFCOp." << std::endl;
+}
 
 
 

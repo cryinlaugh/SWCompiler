@@ -2,6 +2,7 @@
 
 #include "SWDSL.h"
 #include "SWLOG.h"
+#include "dotGen.h"
 
 #define Dtype float
 
@@ -49,10 +50,12 @@ int main()
   CHECKT(Data_2)
   CHECKG(MLPLayer)
 
-  dotGen(*MLPLayer);
 
   Optimizer* opt = new Optimizer();
   opt->runOptimize(MLPLayer);
+
+
+  dotGen(*MLPLayer);
 
   SWLOG_INFO << "this is LOG"<<endl;
   return 0;

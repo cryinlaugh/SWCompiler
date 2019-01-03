@@ -9,18 +9,19 @@
 #define SWDSL_H
 
 #include "SWC.h"
+#include "SWLOG.h"
 
 using namespace swc;
 using namespace std;
 
 //check TensorNode
 #define CHECKT(tname) \
-  cout << "======================================================" << endl;\
-  cout << "Topology ID: " << tname->topologyId() << endl; \
-  cout << "Name: " << tname->name().c_str() << endl; \
-  cout << "NDim: " << tname->getTensor()->getNDim() << endl; \
-  for (int i = 0; i < tname->getTensor()->getNDim(); i++) \
-    cout << "Dim[" << i << "]: " << tname->getTensor()->getDim(i) << endl;
+  SWLOG_INFO << "======================================================" << endl;\
+  SWLOG_INFO << "Topology ID: " << tname->topologyId() << endl; \
+  SWLOG_INFO << "Name: " << tname->name().c_str() << endl; \
+  SWLOG_INFO << "NDim: " << tname->getTensor()->getNDim() << endl; \
+  for (int i = 0; i < tname->getTensor()->getNDim(); i++) {\
+    SWLOG_INFO << "Dim[" << i << "]: " << tname->getTensor()->getDim(i) << endl;}
 
 
 //TensorNode
@@ -33,9 +34,9 @@ using namespace std;
 
 //check OpNode
 #define CHECKO(oname) \
-  cout << "======================================================" << endl;\
-  cout << "Topology ID: " << oname->topologyId() << endl; \
-  cout << "Name: " << oname->name().c_str() << endl; \
+  SWLOG_INFO << "======================================================" << endl;\
+  SWLOG_INFO << "Topology ID: " << oname->topologyId() << endl; \
+  SWLOG_INFO << "Name: " << oname->name().c_str() << endl; \
 
 //OpNode
 #define OP(name, method) \

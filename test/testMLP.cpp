@@ -7,6 +7,7 @@
 
 #include<iostream>
 #include "SWC.h"
+#include "dotGen.h"
 
 using namespace swc;
 using namespace std;
