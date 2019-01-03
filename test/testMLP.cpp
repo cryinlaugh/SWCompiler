@@ -7,7 +7,6 @@
 
 #include<iostream>
 #include "SWC.h"
-#include "dotGen.h"
 
 using namespace swc;
 using namespace std;
@@ -97,7 +96,7 @@ int main(){
 
     printf ("Generate MLP layer done!\n");
 
-    dotGen(*MLPLayer);
+    dotGen(MLPLayer);
 
     for (int i = 0; i < MLPLayer->tensorNodeNum(); i++) {
         printf("ID:%d, ", i);

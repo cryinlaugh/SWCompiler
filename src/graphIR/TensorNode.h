@@ -9,7 +9,7 @@
 #define TENSORNODE_H_
 
 #include "IRNode.h"
-#include "../tensor/tensor.h"
+#include "tensor/tensor.h"
 
 namespace swc {
 
@@ -22,6 +22,10 @@ class TensorNode : public IRNode
     explicit TensorNode(const char name[]) : IRNode(TENSOR_NODE, name) {};
     ~TensorNode(){};
 
+    void destroy(){
+        printf("free TensorNode:%s\n", name().c_str());
+    };
+
     void setTensor(Tensor<Dtype>* tensor) {
       _tensor = tensor; 
     }
@@ -30,33 +34,9 @@ class TensorNode : public IRNode
       return _tensor;
     }
 
-    std::string dotGen();
-
   private:
     Tensor<Dtype>* _tensor; 
 };
-
-template <typename Dtype>
-std::string TensorNode<Dtype>::dotGen() {
-
-  std::string tensorInfo = " [shape = record, ";
-
-  std::string tensorName = name();
-  int NDim = getTensor()->getNDim();  // get NDim through "getTensor()->getNDim()"
-
-  // generate the tensorInfo
-  tensorInfo = tensorInfo + "label = \"{Name: " + tensorName + " |" ;
-  tensorInfo = tensorInfo + "NDim: " + std::to_string(NDim) + " |"; 
-  
-  for (int i = 0; i < NDim; ++i) {
-    if (i < NDim-1) 
-      tensorInfo = tensorInfo + "Dim[" + std::to_string(i) + "]:" + std::to_string(getTensor()->getDim(i)) + " |";
-    else         
-      tensorInfo = tensorInfo + "Dim[" + std::to_string(i) + "]:" + std::to_string(getTensor()->getDim(i)) + " }\"];\n";
-  }
-
-  return IRNode::dotGen(tensorInfo, ";\n");
-}
 
 } //namespace swc
 

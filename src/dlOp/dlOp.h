@@ -8,7 +8,7 @@
 #ifndef _DLOP_H
 #define _DLOP_H
 
-#include "../basicOp/basicOps.h"
+#include "basicOp/basicOps.h"
 
 namespace swc{
 
@@ -33,6 +33,7 @@ public:
         this->_outputNDims.push_back(2);
     }
     ~MatrixMatrixFCOp(){}
+    void destroy(){};
 
     //for lowering
     void lowering(IRGraph<Dtype>* graph, IRNode* node);
@@ -47,6 +48,7 @@ public:
         this->_outputNDims.push_back(2);
     };
     ~MatrixTanhOp();
+    void destroy(){};
 };
 
 template <typename Dtype>
@@ -57,6 +59,7 @@ public:
         this->_outputNDims.push_back(2);
     };
     ~MatrixSoftmaxOp();
+    void destroy(){};
 
 };
 
@@ -68,6 +71,7 @@ public:
         this->_outputNDims.push_back(0);
     };
     ~MatrixLogNegLossOp();
+    void destroy(){};
 };
 
 
@@ -89,6 +93,7 @@ public:
         this->_outputNDims.push_back(1);
     };
     ~VectorTanhOp();
+    void destroy(){};
 };
 
 template <typename Dtype>
@@ -99,6 +104,7 @@ public:
         this->_outputNDims.push_back(1);
     };
     ~VectorSoftmaxOp();
+    void destroy(){};
 };
 
 
@@ -110,6 +116,7 @@ public:
         this->_outputNDims.push_back(0);
     };
     ~VectorLogNegLossOp();
+    void destroy(){};
 };
 
 //=====================================================
@@ -127,6 +134,7 @@ public:
         this->_outputNDims.push_back(0);
     };
     ~ScalarTanhOp();
+    void destroy(){};
 };
 }
 

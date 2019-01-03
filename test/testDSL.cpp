@@ -1,10 +1,11 @@
 #include <iostream>
 
-#include "SWDSL.h"
-#include "SWLOG.h"
-#include "dotGen.h"
+#include "SWC.h"
 
 #define Dtype float
+
+using namespace swc;
+using namespace std;
 
 int main()
 {
@@ -22,40 +23,40 @@ int main()
     //      T:data_2
     //=============================
 
-  TENSOR(Data_0, 1000 , 1000, 1000)
-  TENSOR(Weight_0, 1000, 1000, 1000)
+  TENSOR(Data_0, 1000 , 1000, 1000);
+  TENSOR(Weight_0, 1000, 1000, 1000);
 
-  OP(FC_0, MatrixMatrixFCOp)
-  LINKUPPER(FC_0, Data_0, Weight_0)
+  OP(FC_0, MatrixMatrixFCOp);
+  LINKUPPER(FC_0, Data_0, Weight_0);
 
-  TENSOR(Data_1, 1000 , 1000)
-  LINKUPPER(Data_1, FC_0)
+  TENSOR(Data_1, 1000 , 1000);
+  LINKUPPER(Data_1, FC_0);
   
-  OP(Tanh_0, MatrixTanhOp)
-  LINKUPPER(Tanh_0, Data_1)
+  OP(Tanh_0, MatrixTanhOp);
+  LINKUPPER(Tanh_0, Data_1);
   
-  TENSOR(Data_2, 1000 , 1000)
-  LINKUPPER(Data_2, Tanh_0)
+  TENSOR(Data_2, 1000 , 1000);
+  LINKUPPER(Data_2, Tanh_0);
 
   //define IR graph
-  G(MLPLayer)
-  GpT(MLPLayer, Data_0, Data_1, Data_2, Weight_0)
-  GpO(MLPLayer, FC_0, Tanh_0)
+  G(MLPLayer);
+  GpT(MLPLayer, Data_0, Data_1, Data_2, Weight_0);
+  GpO(MLPLayer, FC_0, Tanh_0);
 
-  CHECKT(Data_0)
-  CHECKT(Weight_0)
-  CHECKO(FC_0)
-  CHECKT(Data_1)
-  CHECKO(Tanh_0)
-  CHECKT(Data_2)
-  CHECKG(MLPLayer)
-
-
-  Optimizer* opt = new Optimizer();
-  opt->runOptimize(MLPLayer);
+  CHECKT(Data_0);
+  CHECKT(Weight_0);
+  CHECKO(FC_0);
+  CHECKT(Data_1);
+  CHECKO(Tanh_0);
+  CHECKT(Data_2);
+  CHECKG(MLPLayer);
 
 
-  dotGen(*MLPLayer);
+  Optimizer<Dtype>* opt = new Optimizer<Dtype>(MLPLayer);
+  opt->runOptimizer();
+
+
+  dotGen(MLPLayer);
 
   SWLOG_INFO << "this is LOG"<<endl;
   return 0;

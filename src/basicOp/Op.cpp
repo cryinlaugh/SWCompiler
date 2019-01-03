@@ -7,6 +7,8 @@
 
 #include "Op.h"
 
+#include "tensor/tensor.h"
+
 namespace swc{
 
 template<typename Dtype>  

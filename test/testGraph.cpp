@@ -9,7 +9,6 @@
 
 
 #include "SWC.h"
-#include "dotGen.h"
 
 #define Dtype float
 

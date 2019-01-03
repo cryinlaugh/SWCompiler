@@ -23,7 +23,11 @@ private:
 public:
     Label() : _toLower(0){};
     ~Label(){};
-    
+
+    void destroy(){
+        this->~Label();
+    };
+
     void setNodeNameLabel(std::string s) { _nodeNameLabel = s; };
     void setTypeNameLabel(std::string s) { _typeNameLabel = s; };
 

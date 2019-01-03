@@ -8,12 +8,6 @@
 #ifndef SWDSL_H
 #define SWDSL_H
 
-#include "SWC.h"
-#include "SWLOG.h"
-
-using namespace swc;
-using namespace std;
-
 //check TensorNode
 #define CHECKT(tname) \
   SWLOG_INFO << "======================================================" << endl;\
@@ -30,40 +24,44 @@ using namespace std;
   TensorShape* name##_TensorShape = new TensorShape(\
       new vector<unsigned long>({ args })); \
   Tensor<Dtype>* name##_Tensor = new Tensor<Dtype>(name##_TensorShape);\
-  name->setTensor(name##_Tensor);
+  name->setTensor(name##_Tensor)
 
 //check OpNode
 #define CHECKO(oname) \
   SWLOG_INFO << "======================================================" << endl;\
   SWLOG_INFO << "Topology ID: " << oname->topologyId() << endl; \
-  SWLOG_INFO << "Name: " << oname->name().c_str() << endl; \
+  SWLOG_INFO << "Name: " << oname->name().c_str() << endl
 
 //OpNode
 #define OP(name, method) \
   OpNode<Dtype>* name = new OpNode<Dtype>(#name);\
   method<Dtype>* name##_Op = new method<Dtype>();\
-  name->setOp(name##_Op);
+  name->setOp(name##_Op)
 
 
 //link FATHER
 #define LINKPARENT(self, parent...) \
-  self->pushParentNode(parent);
+  self->pushParentNode(parent)
   
 //link CHILD
 #define LINKCHILD(self, child...) \
-  self->pushChildNode(child);
+  self->pushChildNode(child)
 
-//link CHILD
+//exlink FATHER
 #define LINKUPPER(self, upperNode...) \
-  self->exlinkUpperNode(upperNode);
+  self->exlinkUpperNode(upperNode)
 
-#define G(name) IRGraph<Dtype>* name = new IRGraph<Dtype>();
+//ex destroy FATHER
+#define DESTROYUPPER(self, upperNode...) \
+  self->destroyUpperNode(upperNode)
+
+#define G(name) IRGraph<Dtype>* name = new IRGraph<Dtype>()
 
 #define GpT(name, tensorNodes...) \
-  name->pushTensorNode(tensorNodes);
+  name->pushTensorNode(tensorNodes)
 
 #define GpO(name, OpNodes...) \
-  name->pushOpNode(OpNodes);
+  name->pushOpNode(OpNodes)
 
 
 #define CHECKG(g) \

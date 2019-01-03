@@ -6,7 +6,11 @@
  ************************************************************************/
 
 #include "dlOp.h"
+
 #include "SWDSL.h"
+#include "graphIR/IRNode.h"
+#include "graphIR/OpNode.h"
+#include "graphIR/IRGraph.h"
 
 namespace swc {
 
@@ -18,10 +22,9 @@ void MatrixMatrixFCOp<Dtype>::lowering(IRGraph<Dtype>* graph, IRNode* node){
     //substitute MatrixMatrixFCOp with MatrixMatrixMulOp
 
     //define MatrixMatrixMulOp 
-
     OP(O1, MatrixMatrixMulOp);
 
-        //link parent nodes
+    //link parent nodes
     LINKUPPER(O1, node->getParentNode(0), node->getParentNode(1));
 
     //link children nodes
@@ -30,16 +33,17 @@ void MatrixMatrixFCOp<Dtype>::lowering(IRGraph<Dtype>* graph, IRNode* node){
     graph->pushOpNode(O1);
 
     //break parent links
-    node->destroyUpperNode(node->getParentNode(0), node->getParentNode(1));
+    DESTROYUPPER(node, node->getParentNode(0), node->getParentNode(1));
 
     //break child links
-    node->getChildNode(0)->destroyUpperNode(node);
+    DESTROYUPPER(node->getChildNode(0), node);
 
     //remove node from graph
     graph->delOpNode(node);
 
     //delete node
-    //TODO 
+    //TODO
+    node->destroy();
 
     //Update graph info
     graph->findInOut();

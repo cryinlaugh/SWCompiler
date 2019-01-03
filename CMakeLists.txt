@@ -22,7 +22,6 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
 
 # Headers
-include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/src)
 
 # Generic compilation options 
@@ -32,22 +31,17 @@ set (CMAKE_C_FLAGS "${COMMON_FLAGS} -fno-strict-aliasing")
 set (CMAKE_CXX_FLAGS "${COMMON_FLAGS} -std=c++0x")
 # Definitions
 
-
 # Source 
 file(GLOB_RECURSE SOURCES 
     ${PROJECT_SOURCE_DIR}/src/*.cpp)
 add_library(graphcore STATIC ${SOURCES})
 
-# Libraries are compiled. Now compile the programs
+# Libraries are compiled
 link_libraries(graphcore)
 
-include_directories(${PROJECT_SOURCE_DIR}/src
-                    ${PROJECT_SOURCE_DIR}/src/basicOp
-                    ${PROJECT_SOURCE_DIR}/src/dlOp
-                    ${PROJECT_SOURCE_DIR}/src/graphIR
-                    ${PROJECT_SOURCE_DIR}/src/tensor
-                    ${PROJECT_SOURCE_DIR}/src/pass
-                    )
+
+# now build binaries
+include_directories(${PROJECT_SOURCE_DIR}/include)
 
 file(GLOB TEST_SOURCES ${PROJECT_SOURCE_DIR}/test/*.cpp)
 foreach(TESTSRC ${TEST_SOURCES})

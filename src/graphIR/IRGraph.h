@@ -10,11 +10,14 @@
 
 #include <vector>
 #include <iostream>
-#include "TensorNode.h"
-#include "OpNode.h"
-
 
 namespace swc {
+
+//Forward declarations
+template<typename Dtype> class TensorNode;
+template<typename Dtype> class OpNode;
+class IRNode;
+
 
 /**
  * @brief IR Node Graph class 

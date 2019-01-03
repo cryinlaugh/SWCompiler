@@ -11,7 +11,8 @@
 #include <iostream>
 #include <string>
 #include "common.h"
-#include "../pass/Label.h"
+
+#include "pass/Label.h"
 
 namespace swc {
 
@@ -24,6 +25,7 @@ class IRNode {
       _label(new Label()) { _topologyId = 0; };
   ~IRNode() { printf("free:%s\n", _name.c_str()); }
 
+  virtual void destroy(){};
 
   void pushParentNode() {};
   template<typename T, typename... Types> 
@@ -92,13 +94,12 @@ class IRNode {
   inline const int topologyId() const { return _topologyId; }
   inline void setTopologyId(int topologyId) { _topologyId = topologyId; }
 
+  inline const NodeType nodeType() const { return _nodeType; }
+  inline void setNodeType(NodeType nodeType) { _nodeType = nodeType; }
+  
   Label* getLabel() const{
       return _label;
   }
-
-  // dot generation
-  std::string dotGen(std::string tensorInfo, std::string opInfo);
-  std::string dotGen();
 
  private:
   std::vector<IRNode*> _parentNodes;

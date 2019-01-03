@@ -8,7 +8,7 @@
 #ifndef _BASICOPS_H
 #define _BASICOPS_H
 
-#include "Op.h"
+#include "basicOp/Op.h"
 namespace swc{
 
 
@@ -33,6 +33,7 @@ public:
         this->_outputNDims.push_back(2);
     }
     ~MatrixMatrixMulOp(){}
+    void destroy(){};
 };
 
 template <typename Dtype>
@@ -44,6 +45,7 @@ public:
         this->_outputNDims.push_back(1);
     }
     ~VectorMatrixMulOp(){}
+    void destroy(){};
 };
 
 template <typename Dtype>
@@ -55,6 +57,7 @@ public:
         this->_outputNDims.push_back(1);
     }
     ~MatrixVectorMulOp(){}
+    void destroy(){};
 };
 
 //=====================================================
@@ -75,6 +78,7 @@ public:
         this->_outputNDims.push_back(0);
     }
     ~VectorVectorInnerProductOp(){}
+    void destroy(){};
 };
 
 //=====================================================
@@ -101,6 +105,7 @@ public:
         this->_outputNDims.push_back(0);
     }
     ~ScalarMulOp(){}
+    void destroy(){};
 };
 
 template <typename Dtype>
@@ -112,6 +117,7 @@ public:
         this->_outputNDims.push_back(0);
     }
     ~ScalarAddOp(){}
+    void destroy(){};
 };
 
 template <typename Dtype>
@@ -123,6 +129,7 @@ public:
         this->_outputNDims.push_back(0);
     }
     ~ScalarMaxOp(){}
+    void destroy(){};
 };
 
 template <typename Dtype>
@@ -133,6 +140,7 @@ public:
         this->_outputNDims.push_back(0);
     }
     ~ScalarExpOp(){}
+    void destroy(){};
 };
 
 template <typename Dtype>
@@ -143,6 +151,7 @@ public:
         this->_outputNDims.push_back(0);
     }
     ~ScalarNegOp(){}
+    void destroy(){};
 };
 
 template <typename Dtype>
@@ -153,6 +162,7 @@ public:
         this->_outputNDims.push_back(0);
     }
     ~ScalarDivOp(){}
+    void destroy(){};
 };
 
 template <typename Dtype>
@@ -163,6 +173,7 @@ public:
         this->_outputNDims.push_back(0);
     }
     ~ScalarLogOp(){}
+    void destroy(){};
 };
 }
 
