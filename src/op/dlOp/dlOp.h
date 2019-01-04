@@ -8,7 +8,7 @@
 #ifndef _DLOP_H
 #define _DLOP_H
 
-#include "basicOp/basicOps.h"
+#include "op/basicOp/basicOps.h"
 
 namespace swc{
 

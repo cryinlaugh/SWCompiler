@@ -13,7 +13,7 @@
 #include "../src/SWLOG.h"
 
 #include "../src/tensor/tensor.h"
-#include "../src/dlOp/dlOp.h"
+#include "../src/op/dlOp/dlOp.h"
 
 #include "../src/graphIR/IRGraph.h"
 #include "../src/graphIR/TensorNode.h"
