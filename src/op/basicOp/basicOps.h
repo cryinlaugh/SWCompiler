@@ -16,8 +16,6 @@ namespace swc{
 //=====================================================
 //Definition of 2-D basic operations.
 //Version v0.1: basic ops for simple-MLP-nobias-fw listed below
-//--Tensor operations:
-//----Not implemented.
 //--Math Operations:
 //----MatrixMatrixMul 
 //----VectorMatrixMul
