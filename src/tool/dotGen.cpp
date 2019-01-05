@@ -1,11 +1,3 @@
-/*
- * dotGen.cpp
- * Copyright © 2019 Hongkun Yu <staryhk@gmail.com>
- *
- * @AUTHOR:      Hongkun Yu
- * @MAIL:        staryhk@gmail.com
- * @VERSION:     2019-01-03
- */
 #include "dotGen.h"
 
 #include <fstream>
@@ -16,11 +8,13 @@
 #include "graphIR/OpNode.h"
 #include "graphIR/IRGraph.h"
 
+// using namespace std;
+
 namespace swc {
 
 std::string dotGenIRNode(IRNode* irnode,
-                        std::string tensorInfo, 
-                        std::string opInfo) {
+                         std::string tensorInfo, 
+                         std::string opInfo) {
 
     std::string              thisNode;
     std::vector<std::string> parentNodes;
@@ -76,52 +70,51 @@ std::string dotGenIRNode(IRNode* irnode) {
 template <typename Dtype>
 std::string dotGenTensorNode(TensorNode<Dtype>* tnode) {
 
-  std::string tensorInfo = " [shape = record, ";
-  std::string tensorName = tnode->name();
-  
-  // get NDim through "getTensor()->getNDim()"
-  int NDim = tnode->getTensor()->getNDim();    
-  // generate the tensorInfo
-  tensorInfo = tensorInfo + "label = \"{Name: " + tensorName + " |" ;
-  tensorInfo = tensorInfo + "NDim: " + std::to_string(NDim) + " |"; 
-  
-  for (int i = 0; i < NDim; ++i) {
-    if (i < NDim-1) { 
-      tensorInfo = tensorInfo + "Dim[" + std::to_string(i) + "]:" 
-          + std::to_string(tnode->getTensor()->getDim(i)) + " |";
-    } else {         
-      tensorInfo = tensorInfo + "Dim[" + std::to_string(i) + "]:" 
-          + std::to_string(tnode->getTensor()->getDim(i)) + " }\"];\n";
+    std::string tensorInfo = " [shape = record, ";
+    std::string tensorName = tnode->name();
+    
+    // get NDim through "getTensor()->getNDim()"
+    int NDim = tnode->getTensor()->getNDim();    
+    
+    // generate the tensorInfo
+    tensorInfo = tensorInfo + "label = \"{Name: " + tensorName           + " |";
+    tensorInfo = tensorInfo + "NDim: "            + std::to_string(NDim) + " |"; 
+    
+    for (int i = 0; i < NDim; ++i) {
+        if (i < NDim-1) { 
+            tensorInfo = tensorInfo + "Dim[" + std::to_string(i) + "]:" + std::to_string(tnode->getTensor()->getDim(i)) + " |";
+        } else {         
+            tensorInfo = tensorInfo + "Dim[" + std::to_string(i) + "]:" + std::to_string(tnode->getTensor()->getDim(i)) + " }\"];\n";
+        }
     }
-  }
-  return dotGenIRNode(tnode, tensorInfo, ";\n");
+
+    return dotGenIRNode(tnode, tensorInfo, ";\n");
 }
 
 template <typename Dtype>
-std::string dotGenOpNode(OpNode<Dtype>* onode) {
+std::string dotGenOpNode(OpNode<Dtype>* opnode) {
 
-  std::string opInfo  = " [";
-  std::string opName  = onode->name();
-  std::string opType = "BASIC_OP";
+    std::string opInfo = " [";
+    std::string opName = opnode->name();
+    std::string opType = "BASIC_OP";
 
-  if (onode->getOp()->getOpType() == BASIC_OP) 
-    opType = "BASIC_OP";
-  else if (onode->getOp()->getOpType() == DL_OP) 
-    opType = "DL_OP";
-  else if (onode->getOp()->getOpType() == TENSOR_OP) 
-    opType = "TENSOR_OP";
+    if (opnode->getOp()->getOpType() == BASIC_OP) 
+        opType = "BASIC_OP";
+    else if (opnode->getOp()->getOpType() == DL_OP) 
+        opType = "DL_OP";
+    else if (opnode->getOp()->getOpType() == TENSOR_OP) 
+        opType = "TENSOR_OP";
 
-  int nInput    = onode->getOp()->getnInput();
-  int nOutput   = onode->getOp()->getnOutput();
+    int nInput  = opnode->getOp()->getnInput();
+    int nOutput = opnode->getOp()->getnOutput();
 
-  // generate the opInfo
-  opInfo = opInfo + "label = \"Name: " + opName + "\\nOpType: " + opType + "\\n" ;
-  opInfo = opInfo + "_nInput: "  + std::to_string(nInput)  + "\\n";
-  opInfo = opInfo + "_nOutput: " + std::to_string(nOutput) + "\"];\n";
+    // generate the opInfo
+    opInfo = opInfo + "label = \"Name: " + opName                  + "\\nOpType: " + opType + "\\n" ;
+    opInfo = opInfo + "_nInput: "        + std::to_string(nInput)  + "\\n";
+    opInfo = opInfo + "_nOutput: "       + std::to_string(nOutput) + "\"];\n";
 
-  // return opInfo;
-
-  return dotGenIRNode(onode, " [shape = box];\n", opInfo);
+    // return opInfo;
+    return dotGenIRNode(opnode, " [shape = box];\n", opInfo);
 }
 
 template<typename Dtype>
@@ -131,41 +124,47 @@ void dotGen(IRGraph<Dtype>* graph, std::string dotFileName) {
 
     std::string dot_Total;
 
-	for (int i = 0; i < graph->tensorNodeNum(); i++) {
-		dot_Total = dot_Total + dotGenTensorNode(graph->getTensorNode(i));
-	}
-
-	for (int i = 0; i < graph->opNodeNum(); i++) {
-		dot_Total = dot_Total + dotGenOpNode(graph->getOpNode(i));
-	}
+    // Traversing the entire calculation graph through the topology.
+    for (int i = 0; i < graph->topologyNum(); i++) {        
+        for (int j = 0; j < graph->getNumInTopoLevel(i); j++) {
+            /*  graph.getNodeInTopo(i, j) will return the current node.
+                The node is an IRNode instead of a specific TensorNode or OpNode. */
+            if (graph->getNodeInTopo(i, j)->nodeType() == TENSOR_NODE) 
+                // tnode  = (TensorNode<Dtype>*)graph->getNodeInTopo(i, j);
+                dot_Total = dot_Total + dotGenTensorNode((TensorNode<Dtype>*)graph->getNodeInTopo(i, j));
+            else if (graph->getNodeInTopo(i, j)->nodeType() == OP_NODE) 
+                // opnode = (OpNode<Dtype>*)graph->getNodeInTopo(i, j);
+                dot_Total = dot_Total + dotGenOpNode((OpNode<Dtype>*)graph->getNodeInTopo(i, j));            
+        }
+    }
 
     std::string dot_title = "digraph CG { \n";
     std::string dot_end   = "\n}";
 
-	// dotFile Genrate
+    // dotFile Genrate
     std::ofstream dotfile(dotFileName, std::fstream::out);
 
-	dotfile << dot_title << std::endl;
-	dotfile << dot_Total;
-	dotfile << dot_end << std::endl;
+    dotfile << dot_title << std::endl;
+    dotfile << dot_Total;
+    dotfile << dot_end << std::endl;
 
-	// make PNG
+    // make svg
     std::string svgFileName = "IRGraph.svg";
     std::string dotGenCMD   = "dot -T svg " + dotFileName + " -o " + svgFileName;
 
-	char *cmd = (char*)dotGenCMD.data();
+    char *cmd = (char*)dotGenCMD.data();
 
-	if (system(cmd) == 0);
+    if (system(cmd) == 0);
 }
 
 template<>
 void dotGen(IRGraph<double>* graph) {
-	dotGen(graph, "IRGraph.dot");
+    dotGen(graph, "IRGraph.dot");
 }
 
 template<>
 void dotGen(IRGraph<float>* graph) {
-	dotGen(graph, "IRGraph.dot");
+    dotGen(graph, "IRGraph.dot");
 }
 
 
