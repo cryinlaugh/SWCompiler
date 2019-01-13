@@ -94,9 +94,10 @@ std::string dotGenTensorNode(TensorNode<Dtype>* tnode) {
 template <typename Dtype>
 std::string dotGenOpNode(OpNode<Dtype>* opnode) {
 
-    std::string opInfo = " [";
-    std::string opName = opnode->name();
-    std::string opType = "BASIC_OP";
+    std::string opInfo     = " [";
+    std::string opNodeName = opnode->name();
+    std::string opType     = "BASIC_OP";
+    std::string opName     = opnode->getOp()->getOpName();
 
     if (opnode->getOp()->getOpType() == BASIC_OP) 
         opType = "BASIC_OP";
@@ -109,9 +110,9 @@ std::string dotGenOpNode(OpNode<Dtype>* opnode) {
     int nOutput = opnode->getOp()->getnOutput();
 
     // generate the opInfo
-    opInfo = opInfo + "label = \"Name: " + opName                  + "\\nOpType: " + opType + "\\n" ;
-    opInfo = opInfo + "_nInput: "        + std::to_string(nInput)  + "\\n";
-    opInfo = opInfo + "_nOutput: "       + std::to_string(nOutput) + "\"];\n";
+    opInfo = opInfo + "label = \"Node's name: " + opNodeName              + "\\nOperation: " + opName + "\\n" ;
+    opInfo = opInfo + "_nInput: "               + std::to_string(nInput)  + "\\n";
+    opInfo = opInfo + "_nOutput: "              + std::to_string(nOutput) + "\"];\n";
 
     // return opInfo;
     return dotGenIRNode(opnode, " [shape = box];\n", opInfo);
@@ -130,10 +131,8 @@ void dotGen(IRGraph<Dtype>* graph, std::string dotFileName) {
             /*  graph.getNodeInTopo(i, j) will return the current node.
                 The node is an IRNode instead of a specific TensorNode or OpNode. */
             if (graph->getNodeInTopo(i, j)->nodeType() == TENSOR_NODE) 
-                // tnode  = (TensorNode<Dtype>*)graph->getNodeInTopo(i, j);
                 dot_Total = dot_Total + dotGenTensorNode((TensorNode<Dtype>*)graph->getNodeInTopo(i, j));
             else if (graph->getNodeInTopo(i, j)->nodeType() == OP_NODE) 
-                // opnode = (OpNode<Dtype>*)graph->getNodeInTopo(i, j);
                 dot_Total = dot_Total + dotGenOpNode((OpNode<Dtype>*)graph->getNodeInTopo(i, j));            
         }
     }
