@@ -30,15 +30,15 @@ int main(){
     //=============================
 
 
-    //define tensor nodes
+    // define tensor nodes
     TensorNode<Dtype>* dataTensorNode_0 = new TensorNode<Dtype>("Data_0");
-    //Init tensor nodes as following:
-    //--init TensorShape:
+    // Init tensor nodes as following:
+    // --init TensorShape:
     TensorShape* dataTensorShape_0 = new TensorShape(
             new vector<unsigned long>({1000,1000}));
-    //--init Tensor
+    // --init Tensor
     Tensor<Dtype>* dataTensor_0 = new Tensor<Dtype>(dataTensorShape_0);
-    //--set tensor in tensor node
+    // --set tensor in tensor node
     dataTensorNode_0->setTensor(dataTensor_0);
     
     TensorNode<Dtype>* weightTensorNode_0= new TensorNode<Dtype>("Weight_0");
@@ -47,16 +47,16 @@ int main(){
     Tensor<Dtype>* weightTensor_0 = new Tensor<Dtype>(weightTensorShape_0);
     weightTensorNode_0->setTensor(weightTensor_0); 
     
-    //define op nodes 
+    // define op nodes 
     OpNode<Dtype>* fcOpNode_0 = new OpNode<Dtype>("FC_0");
-    //Init op nodes as following:
-    //--init Op:
+    // Init op nodes as following:
+    // --init Op:
     MatrixMatrixFCOp<Dtype>* fcOp_0 = new MatrixMatrixFCOp<Dtype>();
-    //--set Op in Op node 
+    // --set Op in Op node 
     fcOpNode_0->setOp(fcOp_0);
 
-    //link upperNode from current node(Parent)
-    //Relink upperNode to current node(Child)
+    // link upperNode from current node(Parent)
+    // Relink upperNode to current node(Child)
     fcOpNode_0->pushParentNode(dataTensorNode_0, weightTensorNode_0);
     dataTensorNode_0->pushChildNode(fcOpNode_0);
     
@@ -85,7 +85,7 @@ int main(){
     dataTensorNode_2->pushParentNode(tanhOpNode_1);
     tanhOpNode_1->pushChildNode(dataTensorNode_2);
 
-    //define IR graph
+    // define IR graph
     IRGraph<Dtype>* MLPLayer = new IRGraph<Dtype>();
     MLPLayer->pushTensorNode(dataTensorNode_0,
                             weightTensorNode_0,
@@ -96,6 +96,9 @@ int main(){
 
     printf ("Generate MLP layer done!\n");
 
+    MLPLayer->updateTopoNodeList();
+    MLPLayer->updateTopology();
+    
     dotGen(MLPLayer);
 
     for (int i = 0; i < MLPLayer->tensorNodeNum(); i++) {

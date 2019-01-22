@@ -149,11 +149,14 @@ void dotGen(IRGraph<Dtype>* graph, std::string dotFileName) {
 
     // make svg
     std::string svgFileName = "IRGraph.svg";
-    std::string dotGenCMD   = "dot -T svg " + dotFileName + " -o " + svgFileName;
+    std::string FigGenCMD   = "dot -T svg " + dotFileName + " -o " + svgFileName;
 
-    char *cmd = (char*)dotGenCMD.data();
-
-    if (system(cmd) == 0);
+    // show svg
+    std::string showFigCMD = "open " + svgFileName;
+    
+    /* gen the fig and show it */
+    if (system((char*)FigGenCMD.data())  == 0);
+    if (system((char*)showFigCMD.data()) == 0);
 }
 
 template<>

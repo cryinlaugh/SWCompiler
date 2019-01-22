@@ -23,19 +23,19 @@ int main()
     //      T:data_2
     //=============================
 
-  TENSOR(Data_0, 1000 , 1000, 1000);
+  TENSOR(Data_0,   1000, 1000, 1000);
   TENSOR(Weight_0, 1000, 1000, 1000);
 
   OP(FC_0, MatrixMatrixFCOp);
   LINKUPPER(FC_0, Data_0, Weight_0);
 
-  TENSOR(Data_1, 1000 , 1000);
+  TENSOR(Data_1, 1000, 1000);
   LINKUPPER(Data_1, FC_0);
   
   OP(Tanh_0, MatrixTanhOp);
   LINKUPPER(Tanh_0, Data_1);
   
-  TENSOR(Data_2, 1000 , 1000);
+  TENSOR(Data_2, 1000, 1000);
   LINKUPPER(Data_2, Tanh_0);
 
   //define IR graph
@@ -51,10 +51,8 @@ int main()
   CHECKT(Data_2);
   CHECKG(MLPLayer);
 
-
   Optimizer<Dtype>* opt = new Optimizer<Dtype>(MLPLayer);
   opt->runOptimizer();
-
 
   dotGen(MLPLayer);
 
