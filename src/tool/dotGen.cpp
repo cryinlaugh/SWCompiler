@@ -148,8 +148,8 @@ void dotGen(IRGraph<Dtype>* graph, std::string dotFileName) {
     dotfile << dot_end << std::endl;
 
     // make svg
-    std::string svgFileName = "IRGraph.svg";
-    std::string dotGenCMD   = "dot -T svg " + dotFileName + " -o " + svgFileName;
+    std::string svgFileName = "IRGraph.png";
+    std::string dotGenCMD   = "dot -T png " + dotFileName + " -o " + svgFileName;
 
     char *cmd = (char*)dotGenCMD.data();
 
