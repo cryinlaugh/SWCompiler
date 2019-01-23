@@ -111,8 +111,11 @@ void Codegen<Dtype>::genFuncCalls(){
 
     for (int i = 0; i < graph_->topologyNum(); i++)  
         for (int j = 0; j < graph_->getNumInTopoLevel(i); j++) {
-            if (graph_->getNodeInTopo(i, j)->nodeType() == OP_NODE){
-                genFuncCall((OpNode<Dtype>*)graph_->getNodeInTopo(i, j));                 
+            auto node = graph_->getNodeInTopo(i, j);
+            if (node->nodeType() == OP_NODE){
+                genFuncCall((OpNode<Dtype>*)node);                 
+            }else if (node->nodeType() == TENSOR_NODE){
+
             }
         }
 }
@@ -175,7 +178,43 @@ void Codegen<Dtype>::genMemAllocs(){
 
         Label *tlabel  = tnode->getLabel();
 
+        int dims = tnode->getTensor()->getNDim();        
+        size_t size = 1;
+        for(int dim=0; dim<dims; dim++)
+            size *= tnode->getTensor()->getDim(dim);
+
         //TODO init tensor if needed
+        switch(tlabel->getTensorInitTypeLabel()){
+            case TensorInitType::XAVIER: {
+                //TODO 
+                if (dims == 2){
+                    // suppose weight of matmul
+                    stream << "initTensorXavier(" << bufferName << ", "
+                        << size << ", " << tnode->getTensor()->getDim(1) <<");\n"; 
+                }else if(dims == 3){
+                    // suppose filter of conv (indepth, h, w, outdepth)
+                    stream << "initTensorXavier(" << bufferName << ", "
+                        << size << ", " << size_t(size / tnode->getTensor()->getDim(0)) <<");\n"; 
+                }
+                
+                break;
+            }
+            case TensorInitType::CONSTANT: {
+                stream << "initTensorConstant(" << bufferName << ", "
+                        << size << ", " << "1.0f);\n"; 
+                break;
+            }
+            case TensorInitType::ZERO: {
+                stream << "initTensorZero(" << bufferName << ", "
+                        << size << ");\n"; 
+                break;
+            }
+            default:{
+                SWLOG_INFO << bufferName << " TensorInitType= NONE\n"; 
+                break;
+            }
+
+        } // switch
     }
 }
 

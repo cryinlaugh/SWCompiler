@@ -25,8 +25,8 @@ void initTensorConstant(T* data, size_t size, T value){
 }
 
 template<typename T>
-void initTensorZero(T* data, size_t size, T value){
-    std::fill(&data[0], &data[0] + size, value);
+void initTensorZero(T* data, size_t size){
+    std::fill(&data[0], &data[0] + size, 0);
 }
 
 //----------------------------------------------------------------------
@@ -41,6 +41,11 @@ void initTensorZero(T* data, size_t size, T value){
 void matrixMatrixMul_f(int m, int n, int k, const float *a, int lda,
                        const float *b, int ldb, float *c, int ldc) {
   // The order of these loops is tuned for column-major matrices.
+  for (int j = 0; j < n; j++) {
+    for (int i = 0; i < m; i++) {
+      C(i, j) = 0.f;
+    }
+  }
   for (int p = 0; p < k; p++) {
     for (int j = 0; j < n; j++) {
       for (int i = 0; i < m; i++) {
@@ -52,6 +57,11 @@ void matrixMatrixMul_f(int m, int n, int k, const float *a, int lda,
 void matrixMatrixMul_d(int m, int n, int k, const double *a, int lda,
                        const double *b, int ldb, double *c, int ldc) {
   // The order of these loops is tuned for column-major matrices.
+  for (int j = 0; j < n; j++) {
+    for (int i = 0; i < m; i++) {
+      C(i, j) = 0.f;
+    }
+  }
   for (int p = 0; p < k; p++) {
     for (int j = 0; j < n; j++) {
       for (int i = 0; i < m; i++) {

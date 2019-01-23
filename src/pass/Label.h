@@ -10,6 +10,8 @@
 
 #include <string>
 
+#include "common.h"
+
 namespace swc{
 
 class Label{
@@ -19,9 +21,11 @@ private:
     std::string _typeNameLabel;
 
     int _toLower;
+
+    TensorInitType _initTypeLabel;
     
 public:
-    Label() : _toLower(0){};
+    Label() : _toLower(0), _initTypeLabel(TensorInitType::NONE){};
     ~Label(){};
 
     void destroy(){
@@ -30,11 +34,13 @@ public:
 
     void setNodeNameLabel(std::string s) { _nodeNameLabel = s; };
     void setTypeNameLabel(std::string s) { _typeNameLabel = s; };
+    void setTensorInitTypeLabel(TensorInitType type) { _initTypeLabel = type; };
 
     void setLowerMark() { _toLower = 1;};
 
     std::string getNodeNameLabel() const { return _nodeNameLabel; };
     std::string getTypeNameLabel() const { return _typeNameLabel; };
+    TensorInitType getTensorInitTypeLabel() const { return _initTypeLabel; };
 
     int getLowerMark() const { return _toLower;};
 

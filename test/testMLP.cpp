@@ -46,6 +46,9 @@ int main(){
             new vector<unsigned long>({1000,1000}));
     Tensor<Dtype>* weightTensor_0 = new Tensor<Dtype>(weightTensorShape_0);
     weightTensorNode_0->setTensor(weightTensor_0); 
+
+    //tmp
+    weightTensorNode_0->getLabel()->setTensorInitTypeLabel(TensorInitType::CONSTANT);
     
     //define op nodes 
     OpNode<Dtype>* fcOpNode_0 = new OpNode<Dtype>("FC_0");

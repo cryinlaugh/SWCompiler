@@ -38,6 +38,13 @@ enum TensorType {
     UNKNOWN=-1
 };
 
+enum class TensorInitType {
+    XAVIER,
+    CONSTANT,
+    ZERO,
+    NONE
+};
+
 template <typename Dtype>
 class SWMem {
     
