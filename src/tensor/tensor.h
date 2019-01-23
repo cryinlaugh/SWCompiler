@@ -49,6 +49,11 @@ public:
     const unsigned long getDim(int dim) const{
         return _shape->getDim(dim);
     };
+
+    TensorShape* getTensorShape() const{
+        return _shape;
+
+    }
 };
 
 }
