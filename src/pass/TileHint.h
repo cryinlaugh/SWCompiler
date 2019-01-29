@@ -20,49 +20,53 @@ namespace swc{
 class TileHint{
 private:
 
-	TensorShape* _shape;
-    std::vector<unsigned long> _steps;
-    int _numshards;
+	//TensorShape* _shape;
+     
+
+    //std::vector<unsigned long> _steps;
+    //int _numshards;
 
 public:
-    TileHint(TensorShape *shape, int numshards):_shape(shape),_numshards(numshards){
+    // TileHint(TensorShape *shape):_shape(shape){
 
-    	for(int i=0;i<shape->getNDim();++i){
-    		_steps.push_back(shape->getDim(i));
-    	}
+    // 	for(int i=0;i<shape->getNDim();++i){
+    // 		_steps.push_back(shape->getDim(i));
+    // 	}
 
-    }
-    ~TileHint(){};
+    // }
+    // ~TileHint(){};
 
-    void setSimpleTilingByDim(int dim){
 
-    	//simple spilt case
-    	unsigned long step = _shape->getDim(dim)/_numshards;
-    	_steps[dim]=step;
+    // void setSimpleTilingByDim(int dim){
 
-    	// for(int i=0;i<shape->getNDim();++i){
-        //unsigned long idim=shape->getDim(i);
+    // 	//simple spilt case
+    // 	unsigned long step = _shape->getDim(dim)/_numshards;
+    // 	_steps[dim]=step;
 
-     //       unsigned long step = tilehintStep[i];
-     //       std::vector<unsigned long > dimSpilts;
-     //       for(unsigned long j=0;j<idim;j+=step){
-     //           dimSpilts.push_back(std::min(idim, j+step));
-     //       }
-     //       shapeSpilts.push_back(dimSpilts);            
-     //   }
+    // };
 
-    };
 
-    std::vector<unsigned long> getTilingStep(){
 
-    	return _steps;
 
-    }
-    TensorShape* getTensorShape(){
 
-    	return _shape;
 
-    }
+
+
+    // std::vector<unsigned long> getTilingStep(){
+
+    // 	return _steps;
+
+    // }
+
+
+
+
+    // TensorShape* getTensorShape(){
+
+    // 	return _shape;
+
+    // }
+
 
  // std::vector<std::vector <unsigned long>> computeSpilts (TensorShape* shape, std::vector<unsigned long > tilehintStep ){
        

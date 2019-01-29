@@ -20,158 +20,95 @@
 namespace swc{
 
 
-
-//struct TileHint{
-
-    //int Ndim;
-    //unsigned long  step;
-    // std::vector<unsigned long>* step;
-
-//}
-
-
-
-
-
-// class TensorShape{
-// private:
-//     int _ndim;
-//     std::vector<unsigned long>* _shape;
-// public:
-//     TensorShape(std::vector<unsigned long>* shape);
-//     ~TensorShape(){};
-//     const int getNDim() const;
-//     const unsigned long getDim(int idx) const;
-// };
-
-// template <typename Dtype>
-// class Tensor{
-// private:
-//     TensorType _type;
-//     TensorShape* _shape;
-//     std::shared_ptr<SWMem<Dtype> > _data;
-
-// public:
-//     Tensor(){ 
-//         _type = UNKNOWN;
-//         _shape = NULL;
-//         _data = NULL;
-//     }
-//     Tensor(TensorShape* shape){
-//         _type = TensorType(shape->getNDim());
-//         _shape = shape;
-//     }
-//     ~Tensor(){}; 
-
-//     const int getNDim() const{
-//         return _shape->getNDim();
-//     };
-//     const unsigned long getDim(int dim) const{
-//         return _shape->getDim(dim);
-//     };
-
-//     TensorShape* getTensorShape() const{
-//         return _shape;
-
-//     }
-// };
-
-
-
-class TilingLabel:public Label{
+class TensorTilingLabel:public Label{
 private:
-    Label* _label;
-    std::vector<TensorShape*> _slices;
+    //Label* _label;
+    int _tilenum;//
+    std::vector<int> _tiles; 
+    //get tilenum;
+    //std::vector<TensorShape*> _slices;
+    //std::vector<TileHint> _tilehints;
     
 public:
-    TilingLabel(Label *label) : _label(label){};
-    ~TilingLabel(){};
+    TensorTilingLabel(int ndim):_tilenum(ndim){
 
-    // void destroy(){
-    //     this->~TilingLabel();
-    // }
-
-   std::vector<std::vector <unsigned long>> computeSpilts (TensorShape* shape, std::vector<unsigned long > tilehintStep ){
-       
-       //std::vector<TensorShape>* result;
-       std::vector<std::vector<unsigned long >> shapeSpilts; 
-       //std::vector<unsigned long>::iterator inter;
-       for(int i=0;i<shape->getNDim();++i){
-           unsigned long idim=shape->getDim(i);
-           unsigned long step = tilehintStep[i];
-           std::vector<unsigned long > dimSpilts;
-           for(unsigned long j=0;j<idim;j+=step){
-               dimSpilts.push_back(std::min(idim, j+step));
-           }
-           shapeSpilts.push_back(dimSpilts);            
-       }
-       //result.push_back();
-       //return result;
-       return shapeSpilts;
-   }
-
-   std::vector<TensorShape>* computeSlices(TensorShape * shape, std::vector<unsigned long > tilehintStep){
+        _tiles.reserve(ndim);
+        _tilenum=1;
 
 
-       std::vector<TensorShape> * slices;
-       std::vector<std::vector<unsigned long >> shapeSpilts = computeSpilts(shape, tilehintStep);
-       //compute catesian product
-       auto n = shapeSpilts.size();
-       auto next = [&](std::vector<unsigned long > &x){
-           for (int i=0;i< n; ++i)
-               if( ++x[i] == shapeSpilts[i].size()) x[i]=0;
-               else return true;
-           return false;
-       };
-       // auto assemble = [&](std::vector<int> const& x){
-       //      std::vector<unsigned long> item;
-       //      for( int i=0;i <n ;++i)
+    };
+    ~TensorTilingLabel(){};
 
-       //          //slices->push_back(shapeSpilts[i][x[i]]);
-       // };
-       auto print = [&](std::vector<unsigned long> const& x) {
-            for ( int i = 0; i < n; ++ i ) 
-                std::cout << shapeSpilts[i][x[i]] << ",";
-                std::cout << "\b \n";
-        };
-       std::vector<unsigned long > x(n);
-       do print(x); while(next(x));
+    void addTileBydim(int dim, int spiltnum){
+        //simple implement
+        // don't allow tile by same dim
+        
+        if(_tiles[dim]==0)   
+            _tiles[dim]=spiltnum;
+        else
 
-       return slices;
+            _tiles[dim]*=spiltnum;
+        //recalculate tilenum
+        _tilenum=_tilenum*spiltnum;
 
 
-
-   }
-   std::vector<TensorShape*> getSlices(){
-       return _slices;
-   }
-
-
-
-    void setTilingLabel(TileHint tilehint){
-
-        TensorShape* shape=tilehint.getTensorShape();
-        std::vector<unsigned long> steps=tilehint.getTilingStep();
-
-        //std::cout<<"set tiling label"<<std::endl;
-       
-       //tilehint
-
-        computeSlices(shape,steps);
     }
 
-    //void setNodeNameLabel(std::string s) { _nodeNameLabel = s; };
-    //void setTypeNameLabel(std::string s) { _typeNameLabel = s; };
+    void replicate(int num){
+        _tilenum=_tilenum*num;
+    }
 
-    //void setLowerMark() { _toLower = 1;};
+    int getTotalTileNum(){
+        return _tilenum;
+    }
 
-    //std::string getNodeNameLabel() const { return _nodeNameLabel; };
-    //std::string getTypeNameLabel() const { return _typeNameLabel; };
-
-    //int getLowerMark() const { return _toLower;};
+    int getTileNumByDim(int dim){
+        return _tiles[dim];
+    }
 
 
 };
 
+class OpTilingLabel:public Label{
+
+private:
+    //Label* _label;
+    std::string _pattern;
+    int _replicatenum;
+    // int num;
+    // string pattern : simple num, map-n-reduce , map-n-without reduce ,filter -n ,scan-n 
+
+public:
+    OpTilingLabel(){};
+
+    ~OpTilingLabel(){};
+
+    void setReplicateNum(int num){
+        _replicatenum=num;
+    }
+
+
+    int getReplicateNum(){
+        return _replicatenum;
+    }
+
+
+
+
+    void setPattern(std::string pattern){
+        _pattern=pattern;
+
+    }
+
+
+    std::string getPattern(){
+        return _pattern;
+    }
+
+    //map-n-without-reduce
+
+};
+
 }
+
 #endif

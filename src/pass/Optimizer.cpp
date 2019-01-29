@@ -18,11 +18,14 @@ namespace swc {
 
 template<typename Dtype>
 void Optimizer<Dtype>::runOptimizer() {
-    //SWLOG_INFO << "Start doing optimization." << std::endl;
+    SWLOG_INFO << "Start doing optimization." << std::endl;
     PassManager<Dtype> passManager;
     LabelingPass<Dtype> labelingpass(_graph);
     passManager.add((OptimizePass<Dtype>*)&labelingpass);
+    LoweringPass<Dtype> loweringpass(_graph);
+    passManager.add((OptimizePass<Dtype>*)&loweringpass);
     passManager.run();
+    SWLOG_INFO << "Optimization done." << std::endl;
 
 }
 

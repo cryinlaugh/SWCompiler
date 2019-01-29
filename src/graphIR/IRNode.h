@@ -78,7 +78,7 @@ class IRNode {
   const std::vector<IRNode*>* getParentNodes() const {
     return &_parentNodes;
   }
-  const std::vector<IRNode*>* getChildNode() const {
+  const std::vector<IRNode*>* getChildNodes() const {
     return &_childNodes;
   }
 
@@ -99,6 +99,9 @@ class IRNode {
   
   Label* getLabel() const{
       return _label;
+  }
+  void setLabel(Label* label){
+      _label = label;
   }
 
  private:

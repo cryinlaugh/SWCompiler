@@ -22,7 +22,7 @@ private:
     
 public:
     Label() : _toLower(0){};
-    ~Label(){};
+    virtual ~Label(){};
 
     void destroy(){
         this->~Label();
