@@ -130,10 +130,10 @@ void dotGen(IRGraph<Dtype>* graph, std::string dotFileName) {
         for (int j = 0; j < graph->getNumInTopoLevel(i); j++) {
             /*  graph.getNodeInTopo(i, j) will return the current node.
                 The node is an IRNode instead of a specific TensorNode or OpNode. */
-            if (graph->getNodeInTopo(i, j)->nodeType() == TENSOR_NODE) 
+            if (graph->getNodeInTopo(i, j)->nodeType() == TENSOR_NODE)
                 dot_Total = dot_Total + dotGenTensorNode((TensorNode<Dtype>*)graph->getNodeInTopo(i, j));
-            else if (graph->getNodeInTopo(i, j)->nodeType() == OP_NODE) 
-                dot_Total = dot_Total + dotGenOpNode((OpNode<Dtype>*)graph->getNodeInTopo(i, j));            
+            else if (graph->getNodeInTopo(i, j)->nodeType() == OP_NODE)
+                dot_Total = dot_Total + dotGenOpNode((OpNode<Dtype>*)graph->getNodeInTopo(i, j));  // 此处会出现内存错误          
         }
     }
 
@@ -169,5 +169,65 @@ void dotGen(IRGraph<float>* graph) {
     dotGen(graph, "IRGraph.dot");
 }
 
+// template<typename Dtype>
+// TensorNode<Dtype>* create_TensorNode( std::vector<std::string>&   result, 
+//                                       std::vector<unsigned long>* t_dim   ){
+
+//     TensorNode<Dtype>* t_node      = new TensorNode<Dtype>(result[1].c_str());
+//     TensorShape*       tensorshape = new TensorShape(t_dim);
+//     Tensor<Dtype>*     tensor      = new Tensor<Dtype>(tensorshape);
+//     t_node->setTensor(tensor);
+    
+//     return t_node;
+// }
+
+std::vector<std::string> str_split(std::string str, std::string pattern) {
+    
+    std::string::size_type    pos;
+    std::vector<std::string>  result;
+    
+    str += pattern;
+
+    for (int i = 0; i < (int)str.size(); i++) {
+
+        // get the info before " ( "
+        if (i == 0) {
+            pos = str.find("(", i);
+            std::string s = str.substr(i, pos);
+            result.push_back(s);
+            i = pos; // i = pos + "(".size() - 1 = pos + 1 - 1 = pos
+            continue;
+        }
+
+        pos = str.find(pattern, i);
+
+        if (pos < str.size()) {
+
+            std::string s = str.substr(i, pos-i);
+            result.push_back(s);
+            i = pos + pattern.size() - 1;
+        }
+    }
+
+    // drop ")"
+    result.back().pop_back();
+
+    return result;
+}
+
+void drop_mark(std::string &str, const std::string &mark) {
+    
+    size_t nSize = mark.size();
+    
+    while(1) {
+        
+        size_t pos = str.find(mark);
+        
+        if (pos == std::string::npos)
+            return;
+ 
+        str.erase(pos, nSize);
+    }
+}
 
 } // namespace swc
