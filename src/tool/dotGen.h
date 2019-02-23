@@ -144,7 +144,7 @@ void Link_Upper(std::vector<std::string>& linkInfo, std::vector<IRNode*>& IRNode
     // get the info of "upper[]"
     for (int i = 2; i < (int)linkInfo.size(); ++i) {
         for (int j = 0; j < (int)IRNodeBuff.size(); ++j) {
-            if (linkInfo[i] == IRNodeBuff[j]->name())
+            if (linkInfo[i] == IRNodeBuff[j]->name()) 
                 upper.push_back(j);
         }
     }
@@ -155,8 +155,47 @@ void Link_Upper(std::vector<std::string>& linkInfo, std::vector<IRNode*>& IRNode
 }
 
 template<typename Dtype>
-// void AddIRnodeToBuff(std::vector<IRNode*>& IRNodeBuff, std::string Input_str) {
-void HCI(std::vector<IRNode*>& IRNodeBuff, std::string Input_str) {
+void Link_Upper_G(std::vector<std::string>& linkInfo, IRGraph<Dtype>* graph) {
+
+    int self_i, self_j;
+    std::vector<int> upper_i;
+    std::vector<int> upper_j;
+
+    // get the info of "self"
+        // Get the node by traversing the calculation graph.
+        for (int i = 0; i < graph->topologyNum(); i++) {        
+            for (int j = 0; j < graph->getNumInTopoLevel(i); j++) {
+                if (linkInfo[1] == graph->getNodeInTopo(i, j)->name()) {
+                    std::cout << "Find selfNode: " << graph->getNodeInTopo(i, j)->name() << std::endl;
+                    self_i = i;
+                    self_j = j;
+                }
+            }
+        }
+
+    // get the info of "upper[]"
+    for (int up_num = 2; up_num < (int)linkInfo.size(); ++up_num) {
+
+        for (int i = 0; i < graph->topologyNum(); i++) {        
+            for (int j = 0; j < graph->getNumInTopoLevel(i); j++) {
+                if (linkInfo[up_num] == graph->getNodeInTopo(i, j)->name()) {
+                    std::cout << "Find upperNode: " << graph->getNodeInTopo(i, j)->name() << std::endl;
+                    upper_i.push_back(i);
+                    upper_j.push_back(j);
+                }
+            }
+        }
+    }
+
+    for (int up_num = 0; up_num < (int)upper_i.size(); ++up_num) {
+        graph->getNodeInTopo(self_i, self_j)->exlinkUpperNode(graph->getNodeInTopo(upper_i[up_num], upper_j[up_num]));
+        std::cout << "Linking " << graph->getNodeInTopo(self_i, self_j)->name() << " to " 
+                  << graph->getNodeInTopo(upper_i[up_num], upper_j[up_num])->name() << "." << std::endl;
+    }
+}
+
+template<typename Dtype>
+void Str2Graph_IRbuff(std::vector<IRNode*>& IRNodeBuff, std::string Input_str) {
 
     drop_mark(Input_str, " ");     // drop " "
 
@@ -167,8 +206,7 @@ void HCI(std::vector<IRNode*>& IRNodeBuff, std::string Input_str) {
         // convert InputInfo<string>[1, ...] to t_dim<int>[]
         std::vector<unsigned long> *t_dim = new std::vector<unsigned long>();
         for (int i = 2; i < (int)InputInfo.size(); ++i) {
-            unsigned long tmp = atoi(InputInfo[i].c_str()); // 666 + i;// stoi(result[i]);
-            // convertFromString(tmp, result);
+            unsigned long tmp = atoi(InputInfo[i].c_str()); 
             t_dim->push_back(tmp);
         }
 
@@ -187,6 +225,67 @@ void HCI(std::vector<IRNode*>& IRNodeBuff, std::string Input_str) {
         std::cout << "Input format error!" << std::endl;
     }
 }
+
+template<typename Dtype>
+void Str2Graph(IRGraph<Dtype>* graph, std::string Input_str) {
+
+    drop_mark(Input_str, " ");     // drop " "
+
+    std::vector<std::string> InputInfo = str_split(Input_str, ",");
+
+    if (InputInfo[0] == "TENSOR") {
+
+        // convert InputInfo<string>[1, ...] to t_dim<int>[]
+        std::vector<unsigned long> *t_dim = new std::vector<unsigned long>();
+        for (int i = 2; i < (int)InputInfo.size(); ++i) {
+            unsigned long tmp = atoi(InputInfo[i].c_str()); 
+            t_dim->push_back(tmp);
+        }
+
+        graph->pushTensorNode(create_TensorNode<Dtype>(InputInfo, t_dim));
+
+    } else if (InputInfo[0] == "OP") {
+
+        graph->pushOpNode(create_OpNode<Dtype>(InputInfo));
+
+    } else if (InputInfo[0] == "LINKUPPER") {
+
+        Link_Upper_G<Dtype>(InputInfo, graph);
+        
+    } else {
+
+        std::cout << "Input format error!" << std::endl;
+    }
+}
+
+template<typename Dtype>
+IRNode* getIRNodeByName_Topo(IRGraph<Dtype>* graph, std::string nodeName) {
+
+    for (int i = 0; i < graph->topologyNum(); i++) {
+        
+        for (int j = 0; j < graph->getNumInTopoLevel(i); j++) {
+            
+            if (nodeName == graph->getNodeInTopo(i, j)->name()) {
+                std::cout << "Find IRNode: " << graph->getNodeInTopo(i, j)->name() << std::endl;
+                return graph->getNodeInTopo(i, j);
+            } 
+        }
+    }
+
+    std::cout << "Can not Find IRNode: " << nodeName << std::endl;
+    return NULL;
+}
+
+    // // find upperNodes
+    // for (int up_num = 2; up_num < (int)inputInfo_test.size(); ++up_num) {
+
+    //     for (int i = 0; i < MLPLayer->topologyNum(); i++) {        
+    //         for (int j = 0; j < MLPLayer->getNumInTopoLevel(i); j++) {
+    //             if (inputInfo_test[up_num] == MLPLayer->getNodeInTopo(i, j)->name()) 
+    //                 cout << "Find upperNode: " << MLPLayer->getNodeInTopo(i, j)->name() << endl;
+    //         }
+    //     }
+    // }
 
 
 } // namespace swc

@@ -55,9 +55,9 @@ int main() {
         // IRNodeBuff.push_back(Weight_1);
         // IRNodeBuff.push_back(create_OpNode<Dtype>(op_1));
         // IRNodeBuff.push_back(create_TensorNode<Dtype>(w_1, t_dim));
-        HCI<Dtype>(IRNodeBuff, "TENSOR(Weight_1, 2333, 2333,  666)");
-        HCI<Dtype>(IRNodeBuff, "OP(FC_1, MatrixMatrixFCOp)"        );
-        HCI<Dtype>(IRNodeBuff, "TENSOR(Weight_2, 666, 2333,  666)" );
+        Str2Graph<Dtype>(IRNodeBuff, "TENSOR(Weight_1, 2333, 2333,  666)");
+        Str2Graph<Dtype>(IRNodeBuff, "OP(FC_1, MatrixMatrixFCOp)"        );
+        Str2Graph<Dtype>(IRNodeBuff, "TENSOR(Weight_2, 666, 2333,  666)" );
 
         // // check the info of IRNodeBuff[]
         // cout << "Check for IRNodeBuff." << endl;
@@ -66,7 +66,7 @@ int main() {
 
         // test link_upper 
         string link_Info = "LINKUPPER(FC_1,  Weight_0,   Weight_1, Weight_2)";
-        HCI<Dtype>(IRNodeBuff, link_Info);
+        Str2Graph<Dtype>(IRNodeBuff, link_Info);
 
         // get Op/TensorNode* from IRNodeBuff<IRNode*>[]
         TensorNode<Dtype>* t_w1   = (TensorNode<Dtype>*)IRNodeBuff[0];
@@ -130,7 +130,7 @@ int main() {
 
         // // test link_upper 
         // string link_Info_1 = "LINKUPPER(Softmax, Data_2, Data_1)";
-        // HCI<Dtype>(IRNodeBuff, link_Info_1);
+        // Str2Graph<Dtype>(IRNodeBuff, link_Info_1);
 
     LINKUPPER(Result, Softmax);
 
