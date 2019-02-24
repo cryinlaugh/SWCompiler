@@ -55,7 +55,7 @@ OpNode<Dtype>* create_OpNode(std::vector<std::string>& opNodeInfo) {
         op_node->setOp(op);
     }
     if (opNodeInfo[2] == "MatrixVectorMulOp") {
-        std::cout << "Create_Op: MatrixVectorMulOp!\n";
+        // std::cout << "Create_Op: MatrixVectorMulOp!\n";
         MatrixVectorMulOp<Dtype>* op = new MatrixVectorMulOp<Dtype>();
         op_node->setOp(op);
     }
@@ -79,8 +79,10 @@ OpNode<Dtype>* create_OpNode(std::vector<std::string>& opNodeInfo) {
     // // DL Ops
     // if (result[2] == "MatrixMatrixFCOp")
     //     MatrixMatrixFCOp<Dtype>*   op = new MatrixMatrixFCOp<Dtype>();
-    // if (result[2] == "MatrixTanhOp")
-    //     MatrixTanhOp<Dtype>*       op = new MatrixTanhOp<Dtype>();
+    if (opNodeInfo[2] == "MatrixTanhOp") {
+        MatrixTanhOp<Dtype>* op = new MatrixTanhOp<Dtype>();
+        op_node->setOp(op);
+    }
     // if (result[2] == "MatrixSoftmaxOp")
     //     MatrixSoftmaxOp<Dtype>*    op = new MatrixSoftmaxOp<Dtype>();
     // if (result[2] == "MatrixLogNegLossOp")
@@ -244,13 +246,28 @@ void Str2Graph(IRGraph<Dtype>* graph, std::string Input_str) {
 
         graph->pushTensorNode(create_TensorNode<Dtype>(InputInfo, t_dim));
 
+        // Update graph topo info
+        graph->findInOut();
+        graph->updateTopoNodeList();
+        graph->updateTopology();
+
     } else if (InputInfo[0] == "OP") {
 
         graph->pushOpNode(create_OpNode<Dtype>(InputInfo));
 
+        // Update graph topo info
+        graph->findInOut();
+        graph->updateTopoNodeList();
+        graph->updateTopology();
+
     } else if (InputInfo[0] == "LINKUPPER") {
 
         Link_Upper_G<Dtype>(InputInfo, graph);
+
+        // Update graph topo info
+        graph->findInOut();
+        graph->updateTopoNodeList();
+        graph->updateTopology();
         
     } else {
 
@@ -275,17 +292,6 @@ IRNode* getIRNodeByName_Topo(IRGraph<Dtype>* graph, std::string nodeName) {
     std::cout << "Can not Find IRNode: " << nodeName << std::endl;
     return NULL;
 }
-
-    // // find upperNodes
-    // for (int up_num = 2; up_num < (int)inputInfo_test.size(); ++up_num) {
-
-    //     for (int i = 0; i < MLPLayer->topologyNum(); i++) {        
-    //         for (int j = 0; j < MLPLayer->getNumInTopoLevel(i); j++) {
-    //             if (inputInfo_test[up_num] == MLPLayer->getNodeInTopo(i, j)->name()) 
-    //                 cout << "Find upperNode: " << MLPLayer->getNodeInTopo(i, j)->name() << endl;
-    //         }
-    //     }
-    // }
 
 
 } // namespace swc
