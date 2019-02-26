@@ -42,6 +42,7 @@ int main()
   GpT(MLPLayer, Data_0, Data_1, Data_2, Weight_0);
   GpO(MLPLayer, FC_0, Tanh_0);
 
+
   // CHECKT(Data_0);
   // CHECKT(Weight_0);
   // CHECKO(FC_0);
