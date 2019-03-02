@@ -168,7 +168,7 @@ void Link_Upper_G(std::vector<std::string>& linkInfo, IRGraph<Dtype>* graph) {
         for (int i = 0; i < graph->topologyNum(); i++) {        
             for (int j = 0; j < graph->getNumInTopoLevel(i); j++) {
                 if (linkInfo[1] == graph->getNodeInTopo(i, j)->name()) {
-                    std::cout << "Find selfNode: " << graph->getNodeInTopo(i, j)->name() << std::endl;
+                    // std::cout << "Find selfNode: " << graph->getNodeInTopo(i, j)->name() << std::endl;
                     self_i = i;
                     self_j = j;
                 }
@@ -181,7 +181,7 @@ void Link_Upper_G(std::vector<std::string>& linkInfo, IRGraph<Dtype>* graph) {
         for (int i = 0; i < graph->topologyNum(); i++) {        
             for (int j = 0; j < graph->getNumInTopoLevel(i); j++) {
                 if (linkInfo[up_num] == graph->getNodeInTopo(i, j)->name()) {
-                    std::cout << "Find upperNode: " << graph->getNodeInTopo(i, j)->name() << std::endl;
+                    // std::cout << "Find upperNode: " << graph->getNodeInTopo(i, j)->name() << std::endl;
                     upper_i.push_back(i);
                     upper_j.push_back(j);
                 }
@@ -251,6 +251,8 @@ void Str2Graph(IRGraph<Dtype>* graph, std::string Input_str) {
         graph->updateTopoNodeList();
         graph->updateTopology();
 
+        std::cout << "Add TensorNode!" << std::endl;
+
     } else if (InputInfo[0] == "OP") {
 
         graph->pushOpNode(create_OpNode<Dtype>(InputInfo));
@@ -260,6 +262,8 @@ void Str2Graph(IRGraph<Dtype>* graph, std::string Input_str) {
         graph->updateTopoNodeList();
         graph->updateTopology();
 
+        std::cout << "Add OpNode!" << std::endl;
+
     } else if (InputInfo[0] == "LINKUPPER") {
 
         Link_Upper_G<Dtype>(InputInfo, graph);
@@ -268,6 +272,8 @@ void Str2Graph(IRGraph<Dtype>* graph, std::string Input_str) {
         graph->findInOut();
         graph->updateTopoNodeList();
         graph->updateTopology();
+
+        // std::cout << "The node link is successful!" << std::endl;
         
     } else {
 
