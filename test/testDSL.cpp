@@ -51,6 +51,9 @@ int main()
   CHECKT(Data_2);
   CHECKG(MLPLayer);
 
+  MLPLayer->findInOut();
+  MLPLayer->updateTopology();
+  MLPLayer->updateTopoNodeList();
 
   Optimizer<Dtype>* opt = new Optimizer<Dtype>(MLPLayer);
   opt->runOptimizer();
