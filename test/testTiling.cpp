@@ -50,13 +50,16 @@ int main()
   // CHECKO(Tanh_0);
   // CHECKT(Data_2);
   // CHECKG(MLPLayer);
-
+  
 
   Optimizer<Dtype>* opt = new Optimizer<Dtype>(MLPLayer);
   opt->runOptimizer();
 
+  MLPLayer->findInOut();
+  MLPLayer->updateTopology();
+  MLPLayer->updateTopoNodeList();
 
-  //dotGen(MLPLayer);
+  dotGen(MLPLayer);
 
   //SWLOG_INFO << "this is LOG"<<endl;
 

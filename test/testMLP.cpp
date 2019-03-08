@@ -59,6 +59,7 @@ int main(){
     //Relink upperNode to current node(Child)
     fcOpNode_0->pushParentNode(dataTensorNode_0, weightTensorNode_0);
     dataTensorNode_0->pushChildNode(fcOpNode_0);
+    weightTensorNode_0->pushChildNode(fcOpNode_0);
     
     TensorNode<Dtype>* dataTensorNode_1= new TensorNode<Dtype>("Data_1");
     TensorShape* dataTensorShape_1 = new TensorShape(
@@ -93,6 +94,10 @@ int main(){
                             dataTensorNode_2);
     MLPLayer->pushOpNode(fcOpNode_0,
                         tanhOpNode_1);
+
+    MLPLayer->findInOut();
+    MLPLayer->updateTopology();
+    MLPLayer->updateTopoNodeList();
 
     printf ("Generate MLP layer done!\n");
 
