@@ -39,10 +39,16 @@ enum TensorType {
 };
 
 enum class TensorInitType {
-    XAVIER,
+    NONE,
     CONSTANT,
     ZERO,
-    NONE
+    XAVIER,
+    FILE
+};
+
+enum class PrintStreamType {
+    COUT,
+    FILE
 };
 
 template <typename Dtype>

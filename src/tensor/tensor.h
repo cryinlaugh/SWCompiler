@@ -9,6 +9,7 @@
 #define _TENSOR_H
 
 #include "../common.h"
+#include <string>
 
 namespace swc{
 
@@ -23,6 +24,22 @@ public:
     const unsigned long getDim(int idx) const;
 };
 
+template<typename Dtype>
+class TensorInitInfo{
+    std::string file_; // FILE initialization
+    Dtype constant_; //constant initialization
+    Dtype filterSize_; // xavier initialization
+public:
+    TensorInitInfo() : file_(""), constant_(0), filterSize_(3){}
+
+    std::string getFilePath() const  { return file_; }
+    Dtype getConstant() const  { return constant_; }
+    Dtype getFilterSize() const  { return filterSize_; }
+
+    void setFilePath(std::string f){ file_ = f; }
+    void setConstant(Dtype c) { constant_ = c; }
+    void setFilterSize(Dtype fsize) { filterSize_ = fsize; }
+};
 
 template <typename Dtype>
 class Tensor{
@@ -31,15 +48,22 @@ private:
     TensorShape* _shape;
     std::shared_ptr<SWMem<Dtype> > _data;
 
+    TensorInitType initType_;
+    TensorInitInfo<Dtype>  initInfo_;
+
 public:
     Tensor(){ 
         _type = UNKNOWN;
         _shape = NULL;
         _data = NULL;
+
+        initType_ = TensorInitType::NONE;
     }
     Tensor(TensorShape* shape){
         _type = TensorType(shape->getNDim());
         _shape = shape;
+
+        initType_ = TensorInitType::NONE;
     }
     ~Tensor(){}; 
 
@@ -49,6 +73,12 @@ public:
     const unsigned long getDim(int dim) const{
         return _shape->getDim(dim);
     };
+
+    TensorInitType getTensorInitType() { return initType_; }
+    TensorInitInfo<Dtype> getTensorInitInfo() const { return initInfo_; }
+
+    void setTensorInit(TensorInitType type, Dtype value);
+    void setTensorInit(TensorInitType type, std::string file);
 };
 
 }

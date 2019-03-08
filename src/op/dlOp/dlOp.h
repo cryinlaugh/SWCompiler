@@ -74,6 +74,67 @@ public:
     void destroy(){};
 };
 
+template <typename Dtype>
+class MatrixTanhGradOp : public Op<Dtype>{
+public:
+    MatrixTanhGradOp():Op<Dtype>(DL_OP, 2,1, std::string("MatrixTanhGrad")) {
+        this->_inputNDims.push_back(2);
+        this->_outputNDims.push_back(2);
+    };
+    ~MatrixTanhGradOp();
+    void destroy(){};
+};
+
+template <typename Dtype>
+class MatrixSoftmaxGradOp : public Op<Dtype>{
+public:
+    MatrixSoftmaxGradOp(): Op<Dtype>(DL_OP, 2,1, std::string("MatrixSoftmaxGrad")) {
+        this->_inputNDims.push_back(2);
+        this->_outputNDims.push_back(2);
+    };
+    ~MatrixSoftmaxGradOp();
+    void destroy(){};
+};
+
+template <typename Dtype>
+class MatrixTransOp : public Op<Dtype>{
+public:
+    MatrixTransOp(): Op<Dtype>(DL_OP, 1,1, std::string("MatrixTrans")) {
+        this->_inputNDims.push_back(2);
+        this->_outputNDims.push_back(2);
+    };
+    ~MatrixTransOp();
+    void destroy(){};
+};
+
+template <typename Dtype>
+class MatrixAddOp : public Op<Dtype>{
+public:
+    MatrixAddOp(): Op<Dtype>(DL_OP, 2,1, std::string("MatrixAdd")) {
+        this->_inputNDims.push_back(2);
+        this->_outputNDims.push_back(2);
+    };
+    ~MatrixAddOp();
+    void destroy(){};
+};
+
+template <typename Dtype>
+class PrintMatrixOp : public Op<Dtype>{
+    PrintStreamType type_;
+    std::string outfile_;
+public:
+    PrintMatrixOp(): Op<Dtype>(DL_OP, 1,0, std::string("PrintMatrix")) {
+        this->_inputNDims.push_back(2);
+    };
+    ~PrintMatrixOp();
+    void destroy(){};
+    void setPrintStream(PrintStreamType type, std::string file=""){
+        type_ = type;
+        outfile_ = file;
+    }
+    PrintStreamType getPrintStreamType() { return type_; }
+    std::string getOutFile() { return outfile_; }
+};
 
 //=====================================================
 //Definition of 1-D deep learning specific operations.

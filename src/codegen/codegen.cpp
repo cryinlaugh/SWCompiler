@@ -71,7 +71,8 @@ std::string Codegen<Dtype>::generate(){
     stream << "#include <iostream>\n"
             << "#include <random>\n"
             << "#include <stdlib.h>\n"
-            << "#include <math.h>\n";
+            << "#include <math.h>\n"
+            << "#include \"image.h\"";
 
 #include "kernels.h"
     stream << KERNELS_CODE;
@@ -113,9 +114,10 @@ void Codegen<Dtype>::genFuncCalls(){
         for (int j = 0; j < graph_->getNumInTopoLevel(i); j++) {
             auto node = graph_->getNodeInTopo(i, j);
             if (node->nodeType() == OP_NODE){
+                stream << "// topology(" << i << ", " << j << "): " << node->name() << "\n";
                 genFuncCall((OpNode<Dtype>*)node);                 
             }else if (node->nodeType() == TENSOR_NODE){
-
+                // stream << "// topology(" << i << ", " << j << "): " << node->name() << "\n";
             }
         }
 }
@@ -136,7 +138,7 @@ void Codegen<Dtype>::genFuncCall(OpNode<Dtype>* op){
     SWLOG_INFO << "genKernelCall for " << oplabel->getTypeNameLabel() << std::endl;
 
     // TODO assert legal dimensions
-    if ((oplabel->getTypeNameLabel()).compare("MatrixMatrixMul") == 0) {
+    if ((oplabel->getTypeNameLabel()).compare("MatrixMatrixFC") == 0) {
         //TODO assert
         TensorNode<Dtype>* A = (TensorNode<Dtype>*)op->getParentNode(0);  
         TensorNode<Dtype>* B = (TensorNode<Dtype>*)op->getParentNode(1);  
@@ -147,9 +149,9 @@ void Codegen<Dtype>::genFuncCall(OpNode<Dtype>* op){
 
         stream << "matrixMatrixMul_"<< dtype_flag 
                 << "(" << m << ", " << n << ", " << k << ", "
-                << tensors_malloc_map_[A] << ", " << m << ", "
-                << tensors_malloc_map_[B] << ", " << k << ", "
-                << tensors_malloc_map_[C] << ", " << m << ");\n";    
+                << tensors_malloc_map_[A] << ", " << k << ", "
+                << tensors_malloc_map_[B] << ", " << n << ", "
+                << tensors_malloc_map_[C] << ", " << n << ");\n";    
         
     }
     if ((oplabel->getTypeNameLabel()).compare("MatrixTanh") == 0) {
@@ -161,10 +163,97 @@ void Codegen<Dtype>::genFuncCall(OpNode<Dtype>* op){
         
         stream << "matrixTanh_"<< dtype_flag 
                 << "(" << m << ", " << n << ", "
-                << tensors_malloc_map_[A] << ", " << m << ", "
-                << tensors_malloc_map_[B] << ", " << m << ");\n";    
+                << tensors_malloc_map_[A] << ", " << n << ", "
+                << tensors_malloc_map_[B] << ", " << n << ");\n";    
+        
+    } 
+    if ((oplabel->getTypeNameLabel()).compare("MatrixSoftmax") == 0) {
+        //TODO assert
+        TensorNode<Dtype>* A = (TensorNode<Dtype>*)op->getParentNode(0);  
+        TensorNode<Dtype>* B = (TensorNode<Dtype>*)op->getChildNode(0);  
+        int m = A->getTensor()->getDim(0);
+        int n = A->getTensor()->getDim(1);
+        
+        stream << "matrixSoftmax_"<< dtype_flag 
+                << "(" << m << ", " << n << ", "
+                << tensors_malloc_map_[A] << ", " << n << ", "
+                << tensors_malloc_map_[B] << ", " << n << ");\n";    
+        
+    }
+    if ((oplabel->getTypeNameLabel()).compare("MatrixSoftmaxGrad") == 0) {
+        //TODO assert
+        TensorNode<Dtype>* A = (TensorNode<Dtype>*)op->getParentNode(0);
+        TensorNode<Dtype>* B = (TensorNode<Dtype>*)op->getParentNode(1);  
+        TensorNode<Dtype>* C = (TensorNode<Dtype>*)op->getChildNode(0);  
+        int m = A->getTensor()->getDim(0);
+        int n = A->getTensor()->getDim(1);
+        
+        stream << "matrixSoftmaxGrad_"<< dtype_flag 
+                << "(" << m << ", " << n << ", "
+                << tensors_malloc_map_[C] << ", " << n << ", "
+                << tensors_malloc_map_[A] << ", " << n << ", " 
+                << tensors_malloc_map_[B] << ");\n";    
         
     }      
+    if ((oplabel->getTypeNameLabel()).compare("MatrixTanhGrad") == 0) {
+        //TODO assert
+        TensorNode<Dtype>* A = (TensorNode<Dtype>*)op->getParentNode(0);
+        TensorNode<Dtype>* B = (TensorNode<Dtype>*)op->getParentNode(1);  
+        TensorNode<Dtype>* C = (TensorNode<Dtype>*)op->getChildNode(0);  
+        int m = A->getTensor()->getDim(0);
+        int n = A->getTensor()->getDim(1);
+        
+        stream << "matrixTanhGrad_"<< dtype_flag 
+                << "(" << m << ", " << n << ", "
+                << tensors_malloc_map_[C] << ", " << n << ", "
+                << tensors_malloc_map_[A] << ", " << n << ", " 
+                << tensors_malloc_map_[B] << ", " << n << ");\n";    
+        
+    }
+
+    if ((oplabel->getTypeNameLabel()).compare("MatrixTrans") == 0) {
+        //TODO assert
+        TensorNode<Dtype>* A = (TensorNode<Dtype>*)op->getParentNode(0);
+        TensorNode<Dtype>* B = (TensorNode<Dtype>*)op->getChildNode(0);  
+        int m = A->getTensor()->getDim(0);
+        int n = A->getTensor()->getDim(1);
+        
+        stream << "matrixTrans_"<< dtype_flag 
+                << "(" << m << ", " << n << ", "
+                << tensors_malloc_map_[A] << ", " << n << ", "
+                << tensors_malloc_map_[B] << ", " << m << ");\n";    
+        
+    }
+
+    if ((oplabel->getTypeNameLabel()).compare("PrintMatrix") == 0) {
+        //TODO assert
+        TensorNode<Dtype>* tensor = (TensorNode<Dtype>*)op->getParentNode(0);
+        int m = tensor->getTensor()->getDim(0);
+        int n = tensor->getTensor()->getDim(1);
+        
+        stream << "printMatrix_" << dtype_flag 
+                << "(" << m << ", " << n << ", "
+                << tensors_malloc_map_[tensor] << ", " << n << ");\n";    
+        
+    }
+
+    // ring will cause segmentaion fault if add weight gradient to weight
+    // if ((oplabel->getTypeNameLabel()).compare("MatrixAdd") == 0) {
+    //     //TODO assert
+    //     TensorNode<Dtype>* A = (TensorNode<Dtype>*)op->getParentNode(0);
+    //     TensorNode<Dtype>* B = (TensorNode<Dtype>*)op->getParentNode(1);  
+    //     TensorNode<Dtype>* C = (TensorNode<Dtype>*)op->getChildNode(0);  
+    //     int m = A->getTensor()->getDim(0);
+    //     int n = A->getTensor()->getDim(1);
+    //     int size = m * n;
+        
+    //     stream << "matrixAdd"<< dtype_flag 
+    //             << "(" << size << ", "
+    //             << tensors_malloc_map_[A] << ", "
+    //             << tensors_malloc_map_[B] << ", " 
+    //             << tensors_malloc_map_[C] << ");\n";    
+        
+    // }           
 }
 
 // TODO depreciate this function 
@@ -176,7 +265,7 @@ void Codegen<Dtype>::genMemAllocs(){
         // generate malloc statment
         std::string bufferName = genTensorMemAlloc(tnode);
 
-        Label *tlabel  = tnode->getLabel();
+        // Label *tlabel  = tnode->getLabel();
 
         int dims = tnode->getTensor()->getNDim();        
         size_t size = 1;
@@ -184,18 +273,25 @@ void Codegen<Dtype>::genMemAllocs(){
             size *= tnode->getTensor()->getDim(dim);
 
         //TODO init tensor if needed
-        switch(tlabel->getTensorInitTypeLabel()){
+        // switch(tlabel->getTensorInitTypeLabel()){
+        TensorInitInfo<Dtype> info = tnode->getTensor()->getTensorInitInfo();
+        SWLOG_INFO << "node " << bufferName << " initType= " << static_cast<int>(tnode->getTensor()->getTensorInitType()) << "\n";
+        switch(tnode->getTensor()->getTensorInitType()) {
+            case TensorInitType::NONE:
+                break;
             case TensorInitType::XAVIER: {
                 //TODO 
-                if (dims == 2){
-                    // suppose weight of matmul
-                    stream << "initTensorXavier(" << bufferName << ", "
-                        << size << ", " << tnode->getTensor()->getDim(1) <<");\n"; 
-                }else if(dims == 3){
-                    // suppose filter of conv (indepth, h, w, outdepth)
-                    stream << "initTensorXavier(" << bufferName << ", "
-                        << size << ", " << size_t(size / tnode->getTensor()->getDim(0)) <<");\n"; 
-                }
+                stream << "initTensorXavier(" << bufferName << ", "
+                        << size << ", " << info.getFilterSize() <<");\n";
+                // if (dims == 2){
+                //     // suppose weight of matmul
+                //     stream << "initTensorXavier(" << bufferName << ", "
+                //         << size << ", " << tnode->getTensor()->getDim(1) <<");\n"; 
+                // }else if(dims == 3){
+                //     // suppose filter of conv (indepth, h, w, outdepth)
+                //     stream << "initTensorXavier(" << bufferName << ", "
+                //         << size << ", " << size_t(size / tnode->getTensor()->getDim(0)) <<");\n"; 
+                // }
                 
                 break;
             }
@@ -207,6 +303,11 @@ void Codegen<Dtype>::genMemAllocs(){
             case TensorInitType::ZERO: {
                 stream << "initTensorZero(" << bufferName << ", "
                         << size << ");\n"; 
+                break;
+            }
+            case TensorInitType::FILE: {
+                stream << "load(" << bufferName << ", "
+                        << size << ", 0, \"" << info.getFilePath() << "\");\n";
                 break;
             }
             default:{
@@ -252,7 +353,6 @@ void Codegen<Dtype>::genMemFree(){
         iter++;     
     }
 }
-
 
 INSTANTIATE_CLASS(Codegen);
 
