@@ -26,7 +26,7 @@ class OpNode : public IRNode {
 
         getOp()->destroy();
         getLabel()->destroy();
-        this->~OpNode();
+        // this->~OpNode();
     };
 
     void setOp(Op<Dtype>* op) {
