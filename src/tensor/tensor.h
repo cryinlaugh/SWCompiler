@@ -74,11 +74,18 @@ public:
         return _shape->getDim(dim);
     };
 
+<<<<<<< HEAD
     TensorInitType getTensorInitType() { return initType_; }
     TensorInitInfo<Dtype> getTensorInitInfo() const { return initInfo_; }
 
     void setTensorInit(TensorInitType type, Dtype value);
     void setTensorInit(TensorInitType type, std::string file);
+=======
+    TensorShape* getTensorShape() const{
+        return _shape;
+
+    }
+>>>>>>> IRDesign
 };
 
 }

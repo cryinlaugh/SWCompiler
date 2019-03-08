@@ -1,7 +1,6 @@
 #include <iostream>
-
 #include "SWC.h"
-
+#include "../src/pass/LabelingPass.h"
 #define Dtype float
 
 using namespace swc;
@@ -43,24 +42,26 @@ int main()
   GpT(MLPLayer, Data_0, Data_1, Data_2, Weight_0);
   GpO(MLPLayer, FC_0, Tanh_0);
 
-  CHECKT(Data_0);
-  CHECKT(Weight_0);
-  CHECKO(FC_0);
-  CHECKT(Data_1);
-  CHECKO(Tanh_0);
-  CHECKT(Data_2);
-  CHECKG(MLPLayer);
+
+  // CHECKT(Data_0);
+  // CHECKT(Weight_0);
+  // CHECKO(FC_0);
+  // CHECKT(Data_1);
+  // CHECKO(Tanh_0);
+  // CHECKT(Data_2);
+  // CHECKG(MLPLayer);
+  
+
+  Optimizer<Dtype>* opt = new Optimizer<Dtype>(MLPLayer);
+  opt->runOptimizer();
 
   MLPLayer->findInOut();
   MLPLayer->updateTopology();
   MLPLayer->updateTopoNodeList();
 
-  Optimizer<Dtype>* opt = new Optimizer<Dtype>(MLPLayer);
-  opt->runOptimizer();
-
-
   dotGen(MLPLayer);
 
-  SWLOG_INFO << "this is LOG"<<endl;
+  //SWLOG_INFO << "this is LOG"<<endl;
+
   return 0;
 }

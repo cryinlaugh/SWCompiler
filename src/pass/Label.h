@@ -25,8 +25,13 @@ private:
     TensorInitType _initTypeLabel;
     
 public:
+<<<<<<< HEAD
     Label() : _toLower(0), _initTypeLabel(TensorInitType::NONE){};
     ~Label(){};
+=======
+    Label() : _toLower(0){};
+    virtual ~Label(){};
+>>>>>>> IRDesign
 
     void destroy(){
         this->~Label();
