@@ -109,9 +109,9 @@ void Optimizer<Dtype>::runLoweringPass() {
   for (int i = 0; i < nOpNodes; i++) {
     OpNode<Dtype>* tnode = _graph->getOpNode(i);
     Label* tlabel = tnode->getLabel();
-    if(tlabel->getLowerMark()) {
-      tnode->getOp()->lowering(_graph, tnode);
-    }
+    // if(tlabel->getLowerMark()) {
+    //   tnode->getOp()->lowering(_graph, tnode);
+    // }
   }
 
   SWLOG_INFO << "Finish lowering pass. " << std::endl;
