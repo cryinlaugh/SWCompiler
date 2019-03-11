@@ -52,7 +52,7 @@ private:
     TensorInitInfo<Dtype>  initInfo_;
 
 public:
-    Tensor(){ 
+    Tensor(){
         _type = UNKNOWN;
         _shape = NULL;
         _data = NULL;
@@ -65,7 +65,7 @@ public:
 
         initType_ = TensorInitType::NONE;
     }
-    ~Tensor(){}; 
+    ~Tensor(){};
 
     const int getNDim() const{
         return _shape->getNDim();
@@ -74,18 +74,12 @@ public:
         return _shape->getDim(dim);
     };
 
-<<<<<<< HEAD
     TensorInitType getTensorInitType() { return initType_; }
     TensorInitInfo<Dtype> getTensorInitInfo() const { return initInfo_; }
+    TensorShape* getTensorShape() const{ return _shape; }
 
     void setTensorInit(TensorInitType type, Dtype value);
     void setTensorInit(TensorInitType type, std::string file);
-=======
-    TensorShape* getTensorShape() const{
-        return _shape;
-
-    }
->>>>>>> IRDesign
 };
 
 }

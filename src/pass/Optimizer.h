@@ -38,6 +38,16 @@ class Optimizer{
     Optimizer(IRGraph<Dtype>* graph):_graph(graph){};
     ~Optimizer(){};
     void runOptimizer();
+
+    void initLabelingPass();
+
+    void testLoweringLabelingPass(); 
+
+    //LabelingPass
+    void runLabelingPass(int type);
+    
+    //LoweringPass
+    void runLoweringPass();
   
   private:
     IRGraph<Dtype>* _graph;

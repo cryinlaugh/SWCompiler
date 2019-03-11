@@ -30,7 +30,7 @@ private:
     //std::vector<TileHint> _tilehints;
 
 public:
-    TensorTilingLabel(int ndim): _tilenum(ndim) {
+    TensorTilingLabel(int ndim) : Label(), _tilenum(ndim) {
 
         _tiles.reserve(ndim);
         _tilenum = 1;
@@ -79,7 +79,7 @@ private:
     // string pattern : simple num, map-n-reduce , map-n-without reduce ,filter -n ,scan-n
 
 public:
-    OpTilingLabel() {};
+    OpTilingLabel() : Label() {};
 
     ~OpTilingLabel() {};
 
