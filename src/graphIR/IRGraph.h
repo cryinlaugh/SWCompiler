@@ -107,6 +107,8 @@ class IRGraph {
   void updateTopology();
   void updateTopoNodeList();
 
+  IRGraph* clone() const;
+
  private:
   std::vector<TensorNode<Dtype>* > _tensors;
   std::vector<OpNode<Dtype>* > _ops;

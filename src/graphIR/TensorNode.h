@@ -10,6 +10,7 @@
 
 #include "IRNode.h"
 #include "tensor/tensor.h"
+#include <sstream>
 
 namespace swc {
 
@@ -34,10 +35,31 @@ class TensorNode : public IRNode
       return _tensor;
     }
 
+    TensorNode *clone() const;
+    std::string toString() const;
+
   private:
     Tensor<Dtype>* _tensor; 
 };
 
+/// share tensor, that _tensor point to
+template <typename Dtype>
+TensorNode<Dtype>* TensorNode<Dtype>::clone() const {
+    TensorNode<Dtype> *tn = new TensorNode<Dtype>((name()+"_cp").c_str());
+    tn->setTensor(_tensor);
+    return tn;
+}
+
+template <typename Dtype>
+std::string TensorNode<Dtype>::toString() const{
+    std::stringstream os;
+    os << "TensorNode: " << name() << "\n"
+        << "  tensorDim: " << _tensor->getNDim() << "\n  ";
+   for(int i=0; i<_tensor->getNDim(); i++)
+        os <<  _tensor->getDim(i) << " ";
+
+    return os.str();
+}
 } //namespace swc
 
 

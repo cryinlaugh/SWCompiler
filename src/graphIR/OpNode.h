@@ -11,6 +11,8 @@
 #include "IRNode.h"
 
 #include "op/Op.h"
+#include <sstream>
+
 
 namespace swc {
 
@@ -37,9 +39,30 @@ class OpNode : public IRNode {
         return _op;
     }
 
+    OpNode<Dtype>* clone() const;
+    std::string toString() const;
+
   private:
     Op<Dtype>* _op; 
 };
+
+/// must clone _op because destructed in ctor
+template <typename Dtype>
+OpNode<Dtype>* OpNode<Dtype>::clone() const{
+    OpNode<Dtype>* opNode = new OpNode((name()+"_cp").c_str());
+    opNode->setOp(_op->clone());
+    return opNode;
+}
+template <typename Dtype>
+std::string OpNode<Dtype>::toString() const {
+    std::stringstream os;
+    os << "OpNode " << name() << "\n"
+        << "  op: " << _op->getOpName() << "\n"
+        << "    nInput : " << _op->getnInput() << "\n"
+        << "    nOutput: " << _op->getnOutput();
+    return os.str();
+}
+
 
 } //namespace swc
 

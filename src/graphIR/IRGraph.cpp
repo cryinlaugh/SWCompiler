@@ -8,9 +8,11 @@
  */
 #include "IRGraph.h"
 
-
 #include "graphIR/TensorNode.h"
 #include "graphIR/OpNode.h"
+
+#include "common.h"
+#include <unordered_map>
 
 namespace swc {
 
@@ -92,6 +94,67 @@ void IRGraph<Dtype>::updateTopoNodeList() {
         }
         _nodesByTopology[topoId].push_back(*opIter);
     }
+}
+
+template<typename Dtype>
+IRGraph<Dtype>* IRGraph<Dtype>::clone() const{
+    //TODO: add topo check before clone
+    IRGraph<Dtype> *graph = new IRGraph<Dtype>();
+    /*
+    for(int i=0; i<this->topologyNum(); i++){
+        for(int j=0; j<this->getNumInTopoLevel(i); i++){
+            auto node = this->getNodeInTopo(i, j); 
+            if(node->nodeType() == NodeType::OP_NODE){
+                graph->pushOpNode(static_cast<OpNode<Dtype>*>(node)->clone()); 
+            }else if(node->nodeType() == NodeType::TENSOR_NODE){
+                graph->pushTensorNode(static_cast<TensorNode<Dtype>*>(node)->clone());
+            }
+        }
+    }
+    */
+    std::unordered_map<TensorNode<Dtype>*, TensorNode<Dtype>*> tensors_map;
+    std::unordered_map<OpNode<Dtype>*, OpNode<Dtype>*> ops_map;   
+    for(auto &N : _tensors){
+        TensorNode<Dtype> *tn =  N->clone(); 
+        tensors_map[N] =  tn; 
+        graph->pushTensorNode(tn);
+    }
+    for(auto &N : _ops){
+        OpNode<Dtype> *opn =  N->clone(); 
+        ops_map[N] =  opn; 
+        graph->pushOpNode(opn);
+    }
+    
+    // create links
+    /*
+    for(auto &N : _tensors){
+        auto tn = tensors_map[N];
+        for(int i=0; i<N->parentNum(); i++){
+            auto it = ops_map.find((OpNode<Dtype>*)N->getParentNode(i)); 
+            if(it != ops_map.end())
+                tn->exlinkUpperNode(it->second);
+        }
+    }
+    */
+
+    // it worked, but remind that
+    // static_cast may cause offset 
+    for(auto &N : _tensors){
+        auto tn = tensors_map[N];
+        for(int i=0; i<N->parentNum(); i++){
+            auto parent = ops_map[(OpNode<Dtype>*)N->getParentNode(i)];
+            tn->exlinkUpperNode(parent);
+        }
+    }
+    for(auto &N : _ops){
+        auto opn = ops_map[N];
+        for(int i=0; i<N->parentNum(); i++){
+            auto parent = tensors_map[(TensorNode<Dtype>*)N->getParentNode(i)];
+            opn->exlinkUpperNode(parent);
+        }
+    }
+    
+    return graph;
 }
 
 INSTANTIATE_CLASS(IRGraph);

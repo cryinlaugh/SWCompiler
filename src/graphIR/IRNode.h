@@ -104,6 +104,8 @@ class IRNode {
       _label = label;
   }
 
+  virtual IRNode* clone() const = 0;
+
  private:
   std::vector<IRNode*> _parentNodes;
   std::vector<IRNode*> _childNodes;

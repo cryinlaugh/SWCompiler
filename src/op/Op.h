@@ -63,6 +63,10 @@ class Op {
     virtual void lowering(IRGraph<Dtype>* graph, IRNode* node){
         SWLOG_INFO<< "Unimplemented in base Op class" << std::endl;
     }
+
+    Op *clone() const{
+      return new Op(_opType, _nInput, _nOutput, _opClassName);
+    }
   
   protected: 
 
