@@ -41,9 +41,18 @@ class OpNode : public IRNode {
 
     OpNode<Dtype>* clone() const;
     std::string toString() const;
+    void setRunOnce() {run_once_=true;}
+    bool runable() {
+        bool run = run_;
+        if(run_once_)
+            run_ = false;
+         return run;
+    }
 
   private:
     Op<Dtype>* _op; 
+    bool run_{true};
+    bool run_once_{false};
 };
 
 /// must clone _op because destructed in ctor
