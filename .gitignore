@@ -1,4 +1,5 @@
 build
+*.swp
 .DS_Store
 doc/html
 doc/latex
