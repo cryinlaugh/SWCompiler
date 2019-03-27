@@ -74,7 +74,7 @@ public:
 
             }
             for(int i = 0; i < tilingTensorNodes.size(); i++) {
-                Label* tlabel = tilingTensorNodes[i]->getLabel();
+                // Label* tlabel = tilingTensorNodes[i]->getLabel();
                 TensorTilingLabel* tensortilinglabel = new TensorTilingLabel(2);
                 tilingTensorNodes[i]->setLabel(tensortilinglabel);
                 //add tilehint to tensorTiling label

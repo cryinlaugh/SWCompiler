@@ -136,6 +136,40 @@ public:
     std::string getOutFile() { return outfile_; }
 };
 
+template <typename Dtype>
+class ScatterOp: public Op<Dtype>{
+    size_t offset_;
+public:
+    ScatterOp() : Op<Dtype>(DL_OP, 0, 0, "Scatter"), offset_(0){}
+    ScatterOp(size_t offset) : Op<Dtype>(DL_OP, 0, 0, "Scatter"), offset_(offset){}
+    ~ScatterOp();
+
+    void setOffset(size_t offset) { offset_ = offset; }
+    size_t getOffset() {return offset_; }
+};
+
+template <typename Dtype>
+class GatherOp: public Op<Dtype>{
+    size_t offset_;
+public:
+    GatherOp() : Op<Dtype>(DL_OP, 0, 0, "Gather"), offset_(0){}
+    GatherOp(size_t offset) : Op<Dtype>(DL_OP, 0, 0, "Gather"), offset_(offset){}
+    ~GatherOp();
+    void setOffset(size_t offset) { offset_ = offset; }
+    size_t getOffset() {return offset_; }
+};
+
+template <typename Dtype>
+class SubGraphOp: public Op<Dtype>{
+    IRGraph<Dtype>* graph_;
+public:
+    SubGraphOp() : Op<Dtype>(DL_OP, 0, 0, "SubGraph"){}
+    ~SubGraphOp();
+    void setGraph(IRGraph<Dtype>* graph) { graph_ = graph; }
+    IRGraph<Dtype>* getGraph() {return graph_; }
+
+};
+
 //=====================================================
 //Definition of 1-D deep learning specific operations.
 //Version v0.1: ops for simple-MLP-nobias-fw listed below

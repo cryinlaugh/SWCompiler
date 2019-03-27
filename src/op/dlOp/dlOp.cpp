@@ -22,7 +22,11 @@ void MatrixMatrixFCOp<Dtype>::lowering(IRGraph<Dtype>* graph, IRNode* node){
     //substitute MatrixMatrixFCOp with MatrixMatrixMulOp
 
     //define MatrixMatrixMulOp 
-    OP(O1, MatrixMatrixMulOp);
+    // OP(O1, MatrixMatrixMulOp);
+    OpNode<Dtype>* O1 = new OpNode<Dtype>(node->name().c_str());
+    MatrixMatrixMulOp<Dtype>* op = new MatrixMatrixMulOp<Dtype>();
+    O1->setOp(op);
+
 
     //link parent nodes
     LINKUPPER(O1, node->getParentNode(0), node->getParentNode(1));
