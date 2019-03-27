@@ -48,6 +48,8 @@ class Optimizer{
     
     //LoweringPass
     void runLoweringPass();
+
+    void setGraph(IRGraph<Dtype>* graph) { _graph = graph; }
   
   private:
     IRGraph<Dtype>* _graph;
