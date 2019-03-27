@@ -22,6 +22,7 @@ public:
     ~TensorShape(){};
     const int getNDim() const;
     const unsigned long getDim(int idx) const;
+    const unsigned long size() const;
 };
 
 template<typename Dtype>
@@ -77,6 +78,8 @@ public:
     TensorInitType getTensorInitType() { return initType_; }
     TensorInitInfo<Dtype> getTensorInitInfo() const { return initInfo_; }
     TensorShape* getTensorShape() const{ return _shape; }
+    size_t size() { return _shape->size(); }
+    size_t getSizeInBytes() const ;
 
     void setTensorInit(TensorInitType type, Dtype value);
     void setTensorInit(TensorInitType type, std::string file);

@@ -22,6 +22,13 @@ const int unsigned long TensorShape::getDim(int idx) const{
     return (*_shape)[idx];
 }
 
+const unsigned long TensorShape::size() const {
+    unsigned long size = 1;
+    for(auto dim : *_shape)
+        size *= dim;
+    return size;
+}
+
 template<typename Dtype>
 void Tensor<Dtype>::setTensorInit(TensorInitType type, Dtype value) { 
     initType_ = type;
@@ -44,6 +51,23 @@ void Tensor<Dtype>::setTensorInit(TensorInitType type, std::string file) {
 	initType_  = type; 
 	initInfo_.setFilePath(file); 
 }
+
+template<>
+size_t Tensor<float>::getSizeInBytes() const {
+    return _shape->size() * sizeof(float);
+}
+
+template<>
+size_t Tensor<double>::getSizeInBytes() const {
+    return _shape->size() * sizeof(double);
+}
+
+template<>
+size_t Tensor<int>::getSizeInBytes() const {
+    return _shape->size() * sizeof(int);
+}
+
+ 
 
 INSTANTIATE_CLASS(Tensor);
 
