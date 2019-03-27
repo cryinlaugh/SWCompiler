@@ -12,6 +12,9 @@ if(NOT CMAKE_BUILD_TYPE)
     set (CMAKE_BUILD_TYPE Release)
 endif()
 
+set(SW_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
+# set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${SW_BINARY_DIR}/bin)
+
 # Cmake Modules
 include(cmake/Util.cmake)
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
@@ -30,6 +33,15 @@ set (COMMON_FLAGS "-Wall -Wno-uninitialized -Wno-deprecated-declarations -Wno-un
 set (CMAKE_C_FLAGS "${COMMON_FLAGS} -fno-strict-aliasing")
 set (CMAKE_CXX_FLAGS "${COMMON_FLAGS} -std=c++0x")
 # Definitions
+
+set(CODEGEN_HDR ${CMAKE_CURRENT_SOURCE_DIR}/src/codegen/image.h)
+message(STATUS "Copy File ${CODEGEN_HDR} to ${SW_BINARY_DIR}")
+add_custom_command(
+  OUTPUT ${SW_BINARY_DIR}/image.h
+  COMMAND ${CMAKE_COMMAND} 
+  -E copy_if_different ${CODEGEN_HDR} ${SW_BINARY_DIR}/image.h
+  DEPENDS ${CODEGEN_HDR})
+set_property(SOURCE ${PROJECT_SOURCE_DIR}/src/codegen/Codegen.cpp APPEND PROPERTY OBJECT_DEPENDS ${SW_BINARY_DIR}/image.h)
 
 # Source 
 file(GLOB_RECURSE SOURCES 
