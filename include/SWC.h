@@ -24,6 +24,6 @@
 
 #include "../src/tool/dotGen.h"
 
-#include "../src/codegen/codegen.h"
+#include "../src/codegen/Codegen.h"
 
 #endif
