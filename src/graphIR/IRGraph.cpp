@@ -157,6 +157,18 @@ IRGraph<Dtype>* IRGraph<Dtype>::clone() const{
     return graph;
 }
 
+template<typename Dtype>
+void IRGraph<Dtype>::setDeviceLabel(Device dev){
+    _dev = dev;
+    for(auto tnode : _tensors){
+        tnode->getLabel()->setDeviceLabel(dev.type, dev.id);
+    } 
+    for(auto opnode : _ops){
+        opnode->getLabel()->setDeviceLabel(dev.type, dev.id);
+    } 
+}
+
+
 INSTANTIATE_CLASS(IRGraph);
 
 } //namespace swc

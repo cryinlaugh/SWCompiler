@@ -11,6 +11,8 @@
 #include <vector>
 #include <iostream>
 
+#include "common.h"
+
 namespace swc {
 
 //Forward declarations
@@ -108,6 +110,8 @@ class IRGraph {
   void updateTopoNodeList();
 
   IRGraph* clone() const;
+  void setDeviceLabel(Device dev);
+  Device getDeviceLabel() {return _dev; }
 
  private:
   std::vector<TensorNode<Dtype>* > _tensors;
@@ -117,6 +121,8 @@ class IRGraph {
   std::vector<TensorNode<Dtype>* > _outNodes;
 
   std::vector<std::vector<IRNode*> > _nodesByTopology;
+
+  Device _dev;
 
 };
 
