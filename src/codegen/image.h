@@ -1,7 +1,7 @@
 /*************************************************************************
 	> File Name: image.h
 	> Author: wayne
-	> Mail: singleon11@gmail.com 
+	> Mail:
 	> Created Time: 四  1/24 15:15:53 2019
  ************************************************************************/
 
@@ -24,16 +24,16 @@ unsigned load(float *data, size_t size, size_t offset, std::string inputFile) {
     float *dataAsFloatPtr = reinterpret_cast<float *>(&binData[0]);
 
     dataAsFloatPtr += offset;
-    for(int i=0; i<size; i++){
+    for(size_t i=0; i<size; i++){
         data[i] = dataAsFloatPtr[i];
     }
   
+    input.close();
     return size;
 }
 
 template<typename T>
 void store(T *data, size_t size,  std::string outFile) {
-  
     std::ofstream output(outFile, std::ios::binary);
   
     if (!output.is_open()) {
@@ -44,6 +44,7 @@ void store(T *data, size_t size,  std::string outFile) {
     char *dataAsCharPtr  = reinterpret_cast<char *>(data);
     std::vector<char> tmpVector(dataAsCharPtr, dataAsCharPtr + sizeof(T)*size);
     std::copy(tmpVector.begin(), tmpVector.end(), std::ostreambuf_iterator<char>(output));
+    output.close();
 }
 
 template<typename T>
@@ -62,7 +63,7 @@ unsigned loadLabel(T *data, size_t size, size_t offset, std::string inputFile) {
 
     dataAsCharPtr += offset;
 
-    for(int i=0; i<size; i++){
+    for(size_t i=0; i<size; i++){
         data [i] = dataAsCharPtr[i];
     }
   
