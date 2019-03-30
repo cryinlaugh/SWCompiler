@@ -1,5 +1,5 @@
 #include <iostream>
-#include "SWC.h"
+#include "../include/SWC.h"
 #include "../src/pass/LabelingPass.h"
 #define Dtype float
 
@@ -53,7 +53,7 @@ int main()
   
 
   Optimizer<Dtype>* opt = new Optimizer<Dtype>(MLPLayer);
-  opt->runOptimizer();
+  opt->run();
 
   MLPLayer->findInOut();
   MLPLayer->updateTopology();

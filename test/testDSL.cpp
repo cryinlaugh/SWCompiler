@@ -56,7 +56,7 @@ int main()
   MLPLayer->updateTopoNodeList();
 
   Optimizer<Dtype>* opt = new Optimizer<Dtype>(MLPLayer);
-  opt->runOptimizer();
+  opt->run();
 
 
   dotGen(MLPLayer);

@@ -1,9 +1,13 @@
-/*************************************************************************
-    > File Name: optimizer.h
-    > Author: cryinlaugh
-    > Mail: cryinlaugh@gmail.com
-    > Created Time: Tue 11 Dec 2018 07:31:15 AM UTC
- ************************************************************************/
+/***********************************************
+#
+#      Filename: OptimizePass.h
+#
+#        Author: whl - lethewang@yeah.net
+#   Description: ---
+#        Create: 2019-01-23 10:57:27
+# Last Modified: 2019-03-27 10:57:27
+***********************************************/
+
 
 #ifndef _OPTIMIZEPASS_H
 #define _OPTIMIZEPASS_H
@@ -21,11 +25,7 @@ protected:
 public:
     OptimizePass(IRGraph<Dtype> * graph):_graph(graph){};
     ~OptimizePass(){};
-    virtual void run(){
-
-        std::cout<<"father run "<<std::endl;
-    };
-
+    virtual void run();
 
 };
 

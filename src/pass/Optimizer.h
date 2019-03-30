@@ -1,46 +1,32 @@
-/*************************************************************************
-	> File Name: optimizer.h
-	> Author: cryinlaugh
-	> Mail: cryinlaugh@gmail.com
-	> Created Time: Tue 11 Dec 2018 07:31:15 AM UTC
- ************************************************************************/
+/***********************************************
+#
+#      Filename: Optimizer.h
+#
+#        Author: whl - lethewang@yeah.net
+#   Description: ---
+#        Create: 2019-01-23 10:57:27
+# Last Modified: 2019-03-27 10:57:27
+***********************************************/
+
 
 #ifndef _OPTIMIZER_H
 #define _OPTIMIZER_H
 
-#include "LabelingPass.h"
-#include "LoweringPass.h"
-#include "../src/graphIR/IRGraph.h"
 #include <queue>
-namespace swc{
+#include "../src/graphIR/IRGraph.h"
+#include "OptimizePassManager.h"
 
-template<typename Dtype>
-class PassManager{
-private:
-    std::queue<OptimizePass<Dtype>*> passQueue;
-public :
-    PassManager(){};
-    ~PassManager(){};
-    void add(OptimizePass<Dtype>* pass){
-        passQueue.push(pass);
-    }
-    void run(){
-        while(!passQueue.empty()){
-            OptimizePass<Dtype>*  pass=passQueue.front();
-            pass->run();
-            passQueue.pop();
-        }
-    }
-};
+namespace swc{
 template<typename Dtype>
 class Optimizer{
   public:
     Optimizer(IRGraph<Dtype>* graph):_graph(graph){};
     ~Optimizer(){};
-    void runOptimizer();
-  
+    void addPass(OptimizePass<Dtype>* pass);
+    void run();
   private:
     IRGraph<Dtype>* _graph;
+    OptimizePassManager<Dtype> passManager;
 };
 
 }
