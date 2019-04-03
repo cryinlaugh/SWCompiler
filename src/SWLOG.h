@@ -11,9 +11,11 @@
 #include <ctime>
 #include <cstdio>
 #include <iostream>
+#include <sstream>
 
 static time_t t = time(0) ;
 static struct tm ctm; 
+static std::ostringstream __os;
 
 #define SWLOG_INFO SWLOG(cout, INFO)
 
@@ -21,7 +23,7 @@ static struct tm ctm;
 
 #define SWLOG_DEBUG SWLOG(cout, DEBUG)
 
-
+#ifdef DEBUG
 #define SWLOG(stream, type) \
     localtime_r(&t, &ctm); \
     std::stream<<"["#type"] ["\
@@ -35,4 +37,11 @@ static struct tm ctm;
              << __FUNCTION__ << ":" \
              << __LINE__ << "] "
 
+#else
+#define SWLOG(stream, type) \
+    __os.clear(); \
+    __os
 #endif
+    
+#endif
+
