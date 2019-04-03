@@ -43,10 +43,30 @@ add_custom_command(
   DEPENDS ${CODEGEN_HDR})
 set_property(SOURCE ${PROJECT_SOURCE_DIR}/src/codegen/Codegen.cpp APPEND PROPERTY OBJECT_DEPENDS ${SW_BINARY_DIR}/image.h)
 
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+add_definitions(-DGOOGLE_PROTOBUF_NO_RTTI)
+
+# protobuf
+find_package(Protobuf REQUIRED)
+include_directories(${PROTOBUF_INCLUDE_DIRS})
+
+PROTOBUF_GENERATE_CPP(CAFFE2_SRCS CAFFE2_HDRS src/importer/caffe2.proto)
+
+
 # Source 
 file(GLOB_RECURSE SOURCES 
     ${PROJECT_SOURCE_DIR}/src/*.cpp)
-add_library(graphcore STATIC ${SOURCES})
+# add_library(graphcore STATIC ${SOURCES})
+add_library(graphcore 
+			STATIC 
+			${SOURCES}
+			${CAFFE2_SRCS}
+           	${CMAKE_CURRENT_BINARY_DIR}/caffe2.pb.h)
+target_compile_definitions(graphcore
+                           INTERFACE
+                             -DGOOGLE_PROTOBUF_NO_RTTI)
+target_link_libraries(graphcore PUBLIC ${PROTOBUF_LIBRARY})
+
 
 # Libraries are compiled
 link_libraries(graphcore)
