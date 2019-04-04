@@ -16,7 +16,6 @@ namespace swc{
 template<typename Dtype>  
 class OptimizePass{
 protected:
-    
     IRGraph<Dtype>* _graph;
 public:
     OptimizePass(IRGraph<Dtype> * graph):_graph(graph){};
@@ -24,11 +23,10 @@ public:
     virtual void run(){
 
         std::cout<<"father run "<<std::endl;
-    };
+    }
 
 
 };
-
 
 }
 #endif

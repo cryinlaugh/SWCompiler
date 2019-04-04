@@ -39,16 +39,6 @@ class Optimizer{
     ~Optimizer(){};
     void runOptimizer();
 
-    void initLabelingPass();
-
-    void testLoweringLabelingPass(); 
-
-    //LabelingPass
-    void runLabelingPass(int type);
-    
-    //LoweringPass
-    void runLoweringPass();
-
     void setGraph(IRGraph<Dtype>* graph) { _graph = graph; }
   
   private:

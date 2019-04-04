@@ -18,6 +18,7 @@
 namespace swc {
 template<typename Dtype>
 class LoweringPass: public OptimizePass<Dtype> {
+    using OptimizePass<Dtype>::_graph;
 public:
     LoweringPass(IRGraph<Dtype> * graph): OptimizePass<Dtype>(graph) {};
     ~LoweringPass() {};
@@ -179,12 +180,41 @@ public:
             }
 
     }
-    void run() {
-        //std::cout<<"test"<<std::endl;
-        SWLOG_INFO << "Start Lowering Pass." << std::endl;
-        runTileLowering();
-        SWLOG_INFO << "Finish Lowering Pass." << std::endl;
 
+    void runLowering() {
+      // SWLOG_INFO << "Start lowering pass: " << std::endl;
+
+      int nTensorNodes = _graph->tensorNodeNum();
+      int nOpNodes = _graph->opNodeNum();
+
+      for (int i = 0; i < nTensorNodes; i++) {
+        TensorNode<Dtype>* tnode = _graph->getTensorNode(i);
+        Label* tlabel = tnode->getLabel();
+        (void)tlabel;
+        //do nothing for tensor nodes
+        // SWLOG_INFO << "Do nothing for " << tlabel->getTypeNameLabel()
+                    // << " ." << std::endl;
+      }
+
+      for (int i = 0; i < nOpNodes; i++) {
+        OpNode<Dtype>* tnode = _graph->getOpNode(i);
+        Label* tlabel = tnode->getLabel();
+        if(tlabel->getLowerMark()) {
+          tnode->getOp()->lowering(_graph, tnode);
+        }
+      }
+
+      // SWLOG_INFO << "Finish lowering pass. " << std::endl;
+
+    }
+
+    void run() {
+        runLowering();
+
+        // //std::cout<<"test"<<std::endl;
+        SWLOG_INFO << "Start Lowering Pass." << std::endl;
+        // runTileLowering();
+        // SWLOG_INFO << "Finish Lowering Pass." << std::endl;
     }
 
 };

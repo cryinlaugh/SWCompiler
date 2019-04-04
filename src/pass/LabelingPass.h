@@ -22,37 +22,30 @@ template<typename Dtype>
 class LabelingPass: public OptimizePass<Dtype> {
 //private:
     //IRGraph<Dtype>* _graph;
+    using OptimizePass<Dtype>::_graph;
 public:
     LabelingPass(IRGraph<Dtype> * graph): OptimizePass<Dtype>(graph) {};
     ~LabelingPass() {};
 
-//    void initLabelingPass(){
+   void initLabelingPass(){
+        //check and init Label in each node
+        int nTensorNodes = _graph->tensorNodeNum();
+        int nOpNodes = _graph->opNodeNum();
 
-//        // //check and init Label in each node
-//    	int nTensorNodes =this-> _graph->tensorNodeNum();
-//    	int nOpNodes = this->_graph->opNodeNum();
+        for (int i = 0; i < nTensorNodes; i++) {
+            TensorNode<Dtype>* tnode = _graph->getTensorNode(i);
+            Label* tlabel = tnode->getLabel();
+            tlabel->setNodeNameLabel(std::string("TensorNode"));
+            tlabel->setTypeNameLabel(std::string("Tensor"));
+        }
 
-    //     for (int i = 0; i < nTensorNodes; i++) {
-    //         TensorNode<Dtype>* tnode = this->_graph->getTensorNode(i);
-    //         Label* tlabel = tnode->getLabel();
-    //         tlabel->setNodeNameLabel(std::string("TensorNode"));
-    //         tlabel->setTypeNameLabel(std::string("Tensor"));
-
-    //         //SWLOG_INFO << tlabel->getNodeNameLabel() << std::endl;
-    //         //SWLOG_INFO << tlabel->getTypeNameLabel() << std::endl;
-
-    //     }
-
-    //     for (int i = 0; i < nOpNodes; i++) {
-    //         OpNode<Dtype>* tnode = this->_graph->getOpNode(i);
-    //         Label* tlabel = tnode->getLabel();
-    //         tlabel->setNodeNameLabel(std::string("OpNode"));
-    //         tlabel->setTypeNameLabel((tnode->getOp())->getOpName());
-
-    //         //SWLOG_INFO << tlabel->getNodeNameLabel() << std::endl;
-    //         //SWLOG_INFO << tlabel->getTypeNameLabel() << std::endl;
-    //     }
-    // }
+        for (int i = 0; i < nOpNodes; i++) {
+            OpNode<Dtype>* tnode = _graph->getOpNode(i);
+            Label* tlabel = tnode->getLabel();
+            tlabel->setNodeNameLabel(std::string("OpNode"));
+            tlabel->setTypeNameLabel((tnode->getOp())->getOpName());
+        }
+    }
 
     void runTiling() {
         //get all tilehints from opnode and send it to related nodes
@@ -97,10 +90,40 @@ public:
         }
 
     }
+
+    void setLoweringMark() {
+        int nTensorNodes = _graph->tensorNodeNum();
+        int nOpNodes = _graph->opNodeNum();
+
+        for (int i = 0; i < nTensorNodes; i++) {
+            TensorNode<Dtype>* tnode = _graph->getTensorNode(i);
+            Label* tlabel = tnode->getLabel();
+            //do nothing for tensor nodes
+            SWLOG_INFO << "Do nothing for " << tlabel->getTypeNameLabel()
+                        << " ." << std::endl;
+        }
+
+        for (int i = 0; i < nOpNodes; i++) {
+            OpNode<Dtype>* tnode = _graph->getOpNode(i);
+            Label* tlabel = tnode->getLabel();
+            if ((tlabel->getTypeNameLabel()).compare("MatrixMatrixFC") == 0) {
+                SWLOG_INFO << tlabel->getTypeNameLabel()
+                            << " operator is marked to be lowered." << std::endl;
+                tlabel->setLowerMark();
+            } else {
+                SWLOG_INFO << "Do nothing for " << tlabel->getTypeNameLabel()
+                            << " operator." << std::endl;
+            }
+        }
+    }
+
     void run() {
-        SWLOG_INFO << "Start Tile Labeling Pass." << std::endl;
-        runTiling();
-        SWLOG_INFO << "Finish Tile Labeling Pass." << std::endl;
+        SWLOG_INFO << "Start Labeling Pass." << std::endl;
+        initLabelingPass();
+        setLoweringMark();
+        // SWLOG_INFO << "Start Tile Labeling Pass." << std::endl;
+        // runTiling();
+        // SWLOG_INFO << "Finish Tile Labeling Pass." << std::endl;
     }
 
 };
