@@ -18,7 +18,7 @@ const int TensorShape::getNDim() const{
     return _ndim; 
 }
 
-const int unsigned long TensorShape::getDim(int idx) const{
+const unsigned long TensorShape::getDim(int idx) const{
     return (*_shape)[idx];
 }
 

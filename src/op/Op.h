@@ -54,7 +54,7 @@ class Op {
 
     OpType getOpType() { return _opType; }
 
-    const std::string getOpName() { return _opClassName; }
+    inline const std::string getOpName() { return _opClassName; }
 
     inline const int getnInput()  { return _nInput;  }
     inline const int getnOutput() { return _nOutput; }

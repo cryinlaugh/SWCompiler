@@ -21,10 +21,11 @@ class OpNode : public IRNode {
  public:
     OpNode() :  _op(NULL) {};
     explicit OpNode(const char name[]) : IRNode(OP_NODE, name) {};
+    explicit OpNode(const char name[], Op<Dtype>* op) : IRNode(OP_NODE, name), _op(op) {};
     ~OpNode(){};
 
     void destroy(){
-        printf("free OpNode:%s\n", name().c_str());
+        // printf("free OpNode:%s\n", name().c_str());
 
         getOp()->destroy();
         getLabel()->destroy();
@@ -38,6 +39,9 @@ class OpNode : public IRNode {
     Op<Dtype>* getOp() {
         return _op;
     }
+
+    const std::string getOpName() { return _op->getOpName(); }
+
 
     OpNode<Dtype>* clone() const;
     std::string toString() const;

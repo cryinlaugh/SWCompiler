@@ -10,6 +10,7 @@
 
 #include "IRNode.h"
 #include "tensor/tensor.h"
+#include "SWDSL.h"
 #include <sstream>
 
 namespace swc {
@@ -20,7 +21,11 @@ class TensorNode : public IRNode
   
   public:
     TensorNode() : _tensor(NULL) {};
-    explicit TensorNode(const char name[]) : IRNode(TENSOR_NODE, name) {};
+    explicit TensorNode(const char name[], IRNode *parent = nullptr) : IRNode(TENSOR_NODE, name, parent) {};
+    explicit TensorNode(const char name[], Tensor<Dtype> *tensor, IRNode *parent = nullptr) : IRNode(TENSOR_NODE, name, parent), _tensor(tensor) {};
+    explicit TensorNode(const char name[], const std::initializer_list<int> &shape, IRNode *parent = nullptr) : IRNode(TENSOR_NODE, name, parent){    
+        _tensor = new Tensor<Dtype>(shape);
+    }
     ~TensorNode(){};
 
     void destroy(){
@@ -35,6 +40,7 @@ class TensorNode : public IRNode
       return _tensor;
     }
 
+    std::vector<unsigned long> getDims() { return _tensor->getDims(); }
     TensorNode *clone() const;
     std::string toString() const;
 

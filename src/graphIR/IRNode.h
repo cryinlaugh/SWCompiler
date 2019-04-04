@@ -19,10 +19,14 @@ namespace swc {
 class IRNode {
  public:
   IRNode();
-  IRNode(const NodeType nodeType, const char name[])
+  IRNode(const NodeType nodeType, const char name[], IRNode* parent = nullptr)
     : _name(std::string(name)), 
       _nodeType(nodeType), 
-      _label(new Label()) { _topologyId = 0; };
+      _label(new Label()) { 
+        _topologyId = 0; 
+        if(parent)
+          exlinkUpperNode(parent);
+  }
   ~IRNode() { printf("free:%s\n", _name.c_str()); }
 
   virtual void destroy(){};

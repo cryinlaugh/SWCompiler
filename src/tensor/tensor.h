@@ -66,6 +66,15 @@ public:
 
         initType_ = TensorInitType::NONE;
     }
+    Tensor(const std::initializer_list<int> &shape){
+        std::vector<unsigned long> *vec = new std::vector<unsigned long>();
+        for(auto i : shape){
+            int v = i;
+            vec->push_back(v);
+        }
+        _shape = new TensorShape(vec);
+        initType_ = TensorInitType::NONE;
+    }
     ~Tensor(){};
 
     const int getNDim() const{
@@ -74,9 +83,16 @@ public:
     const unsigned long getDim(int dim) const{
         return _shape->getDim(dim);
     };
+    const std::vector<unsigned long> getDims() const{
+        std::vector<unsigned long> dims;
+        for(int i=0; i<getNDim(); i++)
+            dims.push_back(getDim(i));
+        return dims;
+    }
 
     TensorInitType getTensorInitType() { return initType_; }
     TensorInitInfo<Dtype> getTensorInitInfo() const { return initInfo_; }
+    void reset(TensorShape* shape){ _shape = shape; }
     TensorShape* getTensorShape() const{ return _shape; }
     size_t size() { return _shape->size(); }
     size_t getSizeInBytes() const ;

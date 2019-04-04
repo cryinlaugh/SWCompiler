@@ -77,6 +77,9 @@ namespace std {
   };
 }
 
+#define NCHW2NHWC {0, 2, 3, 1}
+#define NHWC2NCHW {0, 3, 1, 2}
+
 template <typename Dtype>
 class SWMem {
     

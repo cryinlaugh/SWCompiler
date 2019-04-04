@@ -170,6 +170,101 @@ public:
 
 };
 
+template <typename Dtype>
+class Conv2dOp : public Op<Dtype>{
+    std::vector<size_t> kernels_;
+    std::vector<size_t> strides_;
+    std::vector<size_t> pads_;
+    int group_{1};
+public:
+    Conv2dOp(): Op<Dtype>(DL_OP, 3,1, std::string("Conv2d")) {
+        this->_inputNDims.push_back(4);
+        this->_inputNDims.push_back(4);
+        this->_inputNDims.push_back(1);
+        this->_outputNDims.push_back(4);
+    };
+    Conv2dOp(std::vector<size_t> &kernels,
+            std::vector<size_t> &strides,
+            std::vector<size_t> &pads): Op<Dtype>(DL_OP, 3,1, std::string("Conv2d")) {
+        kernels_.assign(kernels.begin(), kernels.end());
+        strides_.assign(strides.begin(), strides.end());
+        pads_.assign(pads.begin(), pads.end());
+        this->_inputNDims.push_back(4);
+        this->_inputNDims.push_back(4);
+        this->_inputNDims.push_back(1);
+        this->_outputNDims.push_back(4);
+    }
+    std::vector<size_t> getPads() { return pads_; }
+    std::vector<size_t> getKernels() { return kernels_; }
+    std::vector<size_t> getStrides() { return strides_; }
+    size_t getGroup() { return group_; }
+    ~Conv2dOp();
+    void destroy(){}
+};
+
+template <typename Dtype>
+class ReluOp: public Op<Dtype>{
+public:
+    ReluOp(): Op<Dtype>(DL_OP, 1,1, std::string("Relu")) {
+        this->_inputNDims.push_back(4);
+        this->_outputNDims.push_back(4);
+    }
+    ~ReluOp();
+    void destroy(){}
+};
+
+template <typename Dtype>
+class MaxPoolOp: public Op<Dtype>{
+    std::vector<size_t> kernels_;
+    std::vector<size_t> strides_;
+    std::vector<size_t> pads_;
+public:
+    MaxPoolOp(): Op<Dtype>(DL_OP, 1,1, std::string("MaxPool")) {
+        this->_inputNDims.push_back(4);
+        this->_outputNDims.push_back(4);
+    }
+    MaxPoolOp(std::vector<size_t> &kernels,
+            std::vector<size_t> &strides,
+            std::vector<size_t> &pads): Op<Dtype>(DL_OP, 1,1, std::string("MaxPool")) {
+        kernels_.assign(kernels.begin(), kernels.end());
+        strides_.assign(strides.begin(), strides.end());
+        pads_.assign(pads.begin(), pads.end());
+        this->_inputNDims.push_back(4);
+        this->_outputNDims.push_back(4);
+    }
+    ~MaxPoolOp();
+    std::vector<size_t> getPads() { return pads_; }
+    std::vector<size_t> getKernels() { return kernels_; }
+    std::vector<size_t> getStrides() { return strides_; }
+    void destroy(){}
+};
+
+template <typename Dtype>
+class BatchedAddOp: public Op<Dtype>{
+public:
+    BatchedAddOp(): Op<Dtype>(DL_OP, 2,1, std::string("BatchedAdd")) {
+        this->_inputNDims.push_back(2);
+        this->_inputNDims.push_back(1);
+        this->_outputNDims.push_back(2);
+    }
+    ~BatchedAddOp();
+    void destroy(){}
+};
+
+template <typename Dtype>
+class TranposeOp: public Op<Dtype>{
+    std::vector<size_t> shuffle_;
+public:
+    TranposeOp(const std::initializer_list<size_t> &shuffle): Op<Dtype>(DL_OP, 1,1, std::string("Transpose")) {
+        this->_inputNDims.push_back(4);
+        this->_outputNDims.push_back(4);
+        for(auto i : shuffle)
+            shuffle_.push_back(i);
+    }
+    ~TranposeOp();
+    std::vector<size_t> getShuffle() { return shuffle_; }
+    void destroy(){}
+};
 //=====================================================
 //Definition of 1-D deep learning specific operations.
 //Version v0.1: ops for simple-MLP-nobias-fw listed below
