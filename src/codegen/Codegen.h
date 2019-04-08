@@ -94,10 +94,10 @@ private:
     int indent_;
     IRGraph<Dtype>* graph_;
     IRGraph<Dtype>* active_graph_;
-    bool flag_multiGPU {true};
+    bool flag_multiGPU {false};
     bool flag_multiStream {false};
     bool flag_MPI  {false};
-    bool flag_use_cublas{true};
+    bool flag_use_cublas{false};
     std::unordered_map<std::string, int> names_map_;
     std::vector<std::shared_ptr<MemoryAllocator>> mem_allocators_;
 

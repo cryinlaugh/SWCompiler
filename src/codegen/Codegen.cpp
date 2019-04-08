@@ -9,6 +9,7 @@
 #include "Codegen.h"
 #include <fstream>
 #include <string>
+#include <cassert>
 
 namespace swc{
 namespace codegen{
@@ -26,6 +27,24 @@ static std::string deviceToStr(const Device& d){
     }
     return os.str();
 }
+
+static std::pair<size_t, size_t> convertToDim2(const std::vector<size_t> &dims){
+    size_t second = 1;
+    for(size_t i=1; i<dims.size(); i++)
+        second *= dims[i];
+
+    return std::make_pair(dims[0], second);
+}
+
+static std::string emitArrayDefAndInit(std::string name, const std::vector<size_t> &dims){
+    std::ostringstream os;
+    os << "const size_t " << name << "[] = {";
+    for(auto dim : dims)
+        os << dim << ", ";
+    
+    std::string str = os.str();
+    return str.substr(0, str.length()-2)+"};\n"; 
+} 
 
 template <typename Dtype>
 void Codegen<Dtype>::destroy(){
@@ -45,8 +64,8 @@ void Codegen<Dtype>::initMemoryAllocators(){
     auto m_gpu1 = std::make_shared<MemoryAllocator>(gpu1, "gpu1", 0xFFFFFFFF); 
     
     mem_allocators_.push_back(m_cpu0);
-    mem_allocators_.push_back(m_gpu0);
-    mem_allocators_.push_back(m_gpu1);
+    // mem_allocators_.push_back(m_gpu0);
+    // mem_allocators_.push_back(m_gpu1);
     
     dev_allocator_map_[cpu0] = m_cpu0.get();
     dev_allocator_map_[gpu0] = m_gpu0.get();
@@ -177,8 +196,10 @@ void Codegen<Dtype>::genFuncCalls(){
         for (int j = 0; j < graph_->getNumInTopoLevel(i); j++) {
             auto node = graph_->getNodeInTopo(i, j);
             if (node->nodeType() == OP_NODE){
-                stream << "// topology(" << i << ", " << j << "): " << node->name() << "\n";
                 auto opnode = (OpNode<Dtype>*)node;
+                stream << "\n";
+                stream << "// topology(" << i << ", " << j << "): " << opnode->name() 
+                        << " : " << opnode->getOpName() <<"\n";
                 if(auto graphOp = dynamic_cast<SubGraphOp<Dtype>*>(opnode->getOp())){
                     if(auto ngraph = graphOp->getGraph()){
                         switchTo(ngraph);
@@ -317,7 +338,7 @@ void Codegen<Dtype>::genFuncCall(OpNode<Dtype>* op){
         auto* B = ((TensorNode<Dtype>*)op->getParentNode(1))->getTensor();  
         auto* C = ((TensorNode<Dtype>*)op->getChildNode(0))->getTensor();  
         int m = C->getDim(0);
-        int k = A->getDim(1);
+        int k = B->getDim(0);
         int n = C->getDim(1);
 
         stream << "matrixMatrixMul_"<< dtype_flag 
@@ -327,6 +348,147 @@ void Codegen<Dtype>::genFuncCall(OpNode<Dtype>* op){
                 << tensors_name_map_[C] << ", " << n << ");\n";    
         
     }
+    
+    if((oplabel->getTypeNameLabel()) == "BatchedAdd"){
+        auto* A = ((TensorNode<Dtype>*)op->getParentNode(0))->getTensor();  
+        auto* B = ((TensorNode<Dtype>*)op->getParentNode(1))->getTensor();  
+        auto* C = ((TensorNode<Dtype>*)op->getChildNode(0))->getTensor();  
+    
+        size_t sliceNum, sliceSize;
+        std::tie(sliceNum, sliceSize) = convertToDim2(A->getDims());
+        auto bdim = B->size();
+        (void)bdim;
+        assert((sliceSize==bdim) && "batch flattened dim.second != bias dim!"); 
+
+        stream << "batchedadd_" << dtype_flag
+                << "(" << tensors_name_map_[C] << ", " 
+                << tensors_name_map_[A] << ", " 
+                << tensors_name_map_[B] << ", " 
+                << sliceNum << ", " << sliceSize << ");\n";
+    }
+
+    if((oplabel->getTypeNameLabel()) == "Conv2d"){
+        auto* input = ((TensorNode<Dtype>*)op->getParentNode(0))->getTensor();  
+        auto* filter = ((TensorNode<Dtype>*)op->getParentNode(1))->getTensor();  
+        auto* bias = ((TensorNode<Dtype>*)op->getParentNode(2))->getTensor();  
+        auto* out = ((TensorNode<Dtype>*)op->getChildNode(0))->getTensor();  
+
+        auto *conv_op = (Conv2dOp<Dtype>*)op->getOp();
+        auto kernels = conv_op->getKernels();
+        auto strides = conv_op->getStrides();
+        auto pads = conv_op->getPads();
+        auto group = conv_op->getGroup();
+
+        auto iDims = op->name() + "_inDims";
+        auto oDims = op->name() + "_outDims";
+        auto fDims = op->name() + "_filterDims";
+        auto bDims = op->name() + "_biasDims";
+        auto kernelsVar = op->name() + "_filterSizes";
+        auto stridesVar = op->name() + "_strides";
+        auto padsVar = op->name() + "_pads";
+
+        stream << emitArrayDefAndInit(iDims, input->getDims()); 
+        stream << emitArrayDefAndInit(oDims, out->getDims()); 
+        stream << emitArrayDefAndInit(fDims, filter->getDims()); 
+        stream << emitArrayDefAndInit(bDims, bias->getDims()); 
+        stream << emitArrayDefAndInit(kernelsVar, kernels); 
+        stream << emitArrayDefAndInit(stridesVar, strides); 
+        stream << emitArrayDefAndInit(padsVar, pads); 
+
+        stream << "conv2d_"  << dtype_flag << "("        
+                << tensors_name_map_[out] << ", "
+                << tensors_name_map_[input] << ", "
+                << tensors_name_map_[filter] << ", "
+                << tensors_name_map_[bias] << ", "
+                << oDims << ", "
+                << iDims << ", "
+                << fDims << ", "
+                << bDims << ", "
+                << kernelsVar << ", "
+                << stridesVar << ", "
+                << padsVar << ", "
+                << group << ");\n";
+    }
+
+    if((oplabel->getTypeNameLabel()) == "MaxPool"){
+        auto* input = ((TensorNode<Dtype>*)op->getParentNode(0))->getTensor();  
+        auto* out = ((TensorNode<Dtype>*)op->getChildNode(0))->getTensor();  
+
+        auto *pool_op= (MaxPoolOp<Dtype>*)op->getOp();
+        auto kernels = pool_op->getKernels();
+        auto strides = pool_op->getStrides();
+        auto pads = pool_op->getPads();
+
+        auto iDims = op->name() + "_inDims";
+        auto oDims = op->name() + "_outDims";
+        auto kernelsVar = op->name() + "_filterSizes";
+        auto stridesVar = op->name() + "_strides";
+        auto padsVar = op->name() + "_pads";
+
+        stream << emitArrayDefAndInit(iDims, input->getDims()); 
+        stream << emitArrayDefAndInit(oDims, out->getDims()); 
+        stream << emitArrayDefAndInit(kernelsVar, kernels); 
+        stream << emitArrayDefAndInit(stridesVar, strides); 
+        stream << emitArrayDefAndInit(padsVar, pads); 
+
+        stream << "maxpool_"  << dtype_flag << "("        
+                << tensors_name_map_[input] << ", "
+                << tensors_name_map_[out] << ", "
+                << iDims << ", "
+                << oDims << ", "
+                << kernelsVar << ", "
+                << stridesVar << ", "
+                << padsVar << ");\n";
+    }
+
+    if((oplabel->getTypeNameLabel()) == "Relu"){
+        auto* input = ((TensorNode<Dtype>*)op->getParentNode(0))->getTensor();  
+        auto* out = ((TensorNode<Dtype>*)op->getChildNode(0))->getTensor();  
+        
+        size_t size = input->size();
+        stream << "relu_" << dtype_flag << "("
+                << tensors_name_map_[input] << ", "
+                << tensors_name_map_[out] << ", "
+                << size << ");\n";
+            
+    }
+
+    if((oplabel->getTypeNameLabel()) == "Transpose"){
+        auto* input = ((TensorNode<Dtype>*)op->getParentNode(0))->getTensor();  
+        auto* out = ((TensorNode<Dtype>*)op->getChildNode(0))->getTensor();  
+
+        auto *trans_op= (TranposeOp<Dtype>*)op->getOp();
+        auto shuffle = trans_op->getShuffle();
+
+        auto iDims = op->name() + "_inDims";
+        auto oDims = op->name() + "_outDims";
+        auto shuffleDims = op->name() + "_shuffle";
+
+        stream << emitArrayDefAndInit(iDims, input->getDims()); 
+        stream << emitArrayDefAndInit(oDims, out->getDims()); 
+        stream << emitArrayDefAndInit(shuffleDims, shuffle); 
+        
+        switch(input->getNDim()){
+        case 2:
+            stream << "transpose2d_" << dtype_flag << "("
+                << tensors_name_map_[input] << ", "
+                << tensors_name_map_[out] << ", "
+                << iDims << ", "
+                << oDims << ", "
+                << shuffleDims << ");\n";
+            break;
+        case 4:
+            stream << "transpose4d_" << dtype_flag << "("
+                << tensors_name_map_[input] << ", "
+                << tensors_name_map_[out] << ", "
+                << iDims << ", "
+                << oDims << ", "
+                << shuffleDims << ");\n";
+            
+        }
+            
+    }
+
     if ((oplabel->getTypeNameLabel()).compare("MatrixTanh") == 0) {
         //TODO assert
         auto* A = ((TensorNode<Dtype>*)op->getParentNode(0))->getTensor();  
