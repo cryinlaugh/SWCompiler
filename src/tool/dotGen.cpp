@@ -80,13 +80,20 @@ std::string dotGenTensorNode(TensorNode<Dtype>* tnode) {
     tensorInfo = tensorInfo + "label = \"{Name: " + tensorName           + " |";
     tensorInfo = tensorInfo + "NDim: "            + std::to_string(NDim) + " |"; 
     
+    // for (int i = 0; i < NDim; ++i) {
+    //     if (i < NDim-1) { 
+    //         tensorInfo = tensorInfo + "Dim[" + std::to_string(i) + "]:" + std::to_string(tnode->getTensor()->getDim(i)) + " |";
+    //     } else {         
+    //         tensorInfo = tensorInfo + "Dim[" + std::to_string(i) + "]:" + std::to_string(tnode->getTensor()->getDim(i)) + " }\"];\n";
+    //     }
+    // }
+    tensorInfo += "Dims: [";
     for (int i = 0; i < NDim; ++i) {
-        if (i < NDim-1) { 
-            tensorInfo = tensorInfo + "Dim[" + std::to_string(i) + "]:" + std::to_string(tnode->getTensor()->getDim(i)) + " |";
-        } else {         
-            tensorInfo = tensorInfo + "Dim[" + std::to_string(i) + "]:" + std::to_string(tnode->getTensor()->getDim(i)) + " }\"];\n";
-        }
+        tensorInfo += std::to_string(tnode->getTensor()->getDim(i));
+        if (i < NDim-1) 
+             tensorInfo += ", ";
     }
+    tensorInfo += "]}\"];\n";
 
     return dotGenIRNode(tnode, tensorInfo, ";\n");
 }
@@ -148,8 +155,8 @@ void dotGen(IRGraph<Dtype>* graph, std::string dotFileName) {
     dotfile << dot_end << std::endl;
 
     // make svg
-    std::string svgFileName = "IRGraph.png";
-    std::string dotGenCMD   = "dot -T png " + dotFileName + " -o " + svgFileName;
+    std::string svgFileName = "IRGraph.svg";
+    std::string dotGenCMD   = "dot -T svg " + dotFileName + " -o " + svgFileName;
 
     char *cmd = (char*)dotGenCMD.data();
 
