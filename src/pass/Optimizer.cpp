@@ -25,6 +25,8 @@ void Optimizer<Dtype>::runOptimizer() {
     
     SWLOG_DEBUG << "Start doing optimization." << std::endl;
     PassManager<Dtype> passManager;
+    RenamingNodePass<Dtype> renamingpass(_graph);
+    passManager.add((OptimizePass<Dtype>*)&renamingpass);
     LabelingPass<Dtype> labelingpass(_graph);
     passManager.add((OptimizePass<Dtype>*)&labelingpass);
     LoweringPass<Dtype> loweringpass(_graph);

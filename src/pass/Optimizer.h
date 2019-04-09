@@ -10,6 +10,7 @@
 
 #include "LabelingPass.h"
 #include "LoweringPass.h"
+#include "RenamingNodePass.h"
 #include "../src/graphIR/IRGraph.h"
 #include <queue>
 namespace swc{
