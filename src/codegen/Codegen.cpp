@@ -8,6 +8,7 @@
 #include "SWC.h"
 #include "Codegen.h"
 #include <fstream>
+#include <iomanip>
 #include <string>
 #include <cassert>
 
@@ -366,6 +367,19 @@ void Codegen<Dtype>::genFuncCall(OpNode<Dtype>* op){
                 << tensors_name_map_[B] << ", " 
                 << sliceNum << ", " << sliceSize << ");\n";
     }
+    if((oplabel->getTypeNameLabel()) == "ElementAdd"){
+        auto* A = ((TensorNode<Dtype>*)op->getParentNode(0))->getTensor();  
+        auto* B = ((TensorNode<Dtype>*)op->getParentNode(1))->getTensor();  
+        auto* C = ((TensorNode<Dtype>*)op->getChildNode(0))->getTensor();  
+    
+        auto num = A->size();
+
+        stream << "vecAdd_" << dtype_flag
+                << "(" << num << ", " 
+                << tensors_name_map_[A] << ", " 
+                << tensors_name_map_[B] << ", " 
+                << tensors_name_map_[C] << ");\n";
+    }
 
     if((oplabel->getTypeNameLabel()) == "Conv2d"){
         auto* input = ((TensorNode<Dtype>*)op->getParentNode(0))->getTensor();  
@@ -410,7 +424,34 @@ void Codegen<Dtype>::genFuncCall(OpNode<Dtype>* op){
                 << group << ");\n";
     }
 
-    if((oplabel->getTypeNameLabel()) == "MaxPool"){
+    if((oplabel->getTypeNameLabel()) == "BatchNormalization"){
+        auto* input = ((TensorNode<Dtype>*)op->getParentNode(0))->getTensor();  
+        auto* scale = ((TensorNode<Dtype>*)op->getParentNode(1))->getTensor();  
+        auto* bias= ((TensorNode<Dtype>*)op->getParentNode(2))->getTensor();  
+        auto* mean = ((TensorNode<Dtype>*)op->getParentNode(3))->getTensor();  
+        auto* var = ((TensorNode<Dtype>*)op->getParentNode(4))->getTensor();  
+        auto* out = ((TensorNode<Dtype>*)op->getChildNode(0))->getTensor();  
+
+        auto *bn_op = (BatchNormalizationOp<Dtype>*)op->getOp();
+        float epsilon = bn_op->getEpsilon();
+
+        auto iDims = op->name() + "_inDims";
+        stream << emitArrayDefAndInit(iDims, input->getDims()); 
+
+        stream << "batchnormalization_"  << dtype_flag << "("        
+                << tensors_name_map_[out] << ", "
+                << tensors_name_map_[input] << ", "
+                << tensors_name_map_[mean] << ", "
+                << tensors_name_map_[var] << ", "
+                << tensors_name_map_[scale] << ", "
+                << tensors_name_map_[bias] << ", "
+                << iDims << ", "
+                << std::setprecision(12) << epsilon << ");\n";
+    }
+
+    if((oplabel->getTypeNameLabel()) == "MaxPool"
+        || (oplabel->getTypeNameLabel()) == "AveragePool"
+        ){
         auto* input = ((TensorNode<Dtype>*)op->getParentNode(0))->getTensor();  
         auto* out = ((TensorNode<Dtype>*)op->getChildNode(0))->getTensor();  
 
@@ -431,7 +472,8 @@ void Codegen<Dtype>::genFuncCall(OpNode<Dtype>* op){
         stream << emitArrayDefAndInit(stridesVar, strides); 
         stream << emitArrayDefAndInit(padsVar, pads); 
 
-        stream << "maxpool_"  << dtype_flag << "("        
+        if((oplabel->getTypeNameLabel()) == "MaxPool") {
+            stream << "maxpool_"  << dtype_flag << "("        
                 << tensors_name_map_[input] << ", "
                 << tensors_name_map_[out] << ", "
                 << iDims << ", "
@@ -439,6 +481,16 @@ void Codegen<Dtype>::genFuncCall(OpNode<Dtype>* op){
                 << kernelsVar << ", "
                 << stridesVar << ", "
                 << padsVar << ");\n";
+        }else{
+            stream << "avgpool_"  << dtype_flag << "("        
+                << tensors_name_map_[input] << ", "
+                << tensors_name_map_[out] << ", "
+                << iDims << ", "
+                << oDims << ", "
+                << kernelsVar << ", "
+                << stridesVar << ", "
+                << padsVar << ");\n";
+        }
     }
 
     if((oplabel->getTypeNameLabel()) == "Relu"){

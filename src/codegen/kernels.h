@@ -258,6 +258,76 @@ void maxpool_f(const float *input, float *output, const size_t *idims,
   } // N
 }
 
+void avgpool_f(const float *input, float *output, const size_t *idims,
+              const size_t *odims, const size_t *kernels,
+              const size_t *strides, const size_t *pads) {
+  size_t kernel_h = kernels[0];
+  size_t kernel_w = kernels[1];
+  float kernel_cnt = kernel_h * kernel_w;
+  size_t stride_h = strides[0];
+  size_t stride_w = strides[1];
+  size_t pad_t = pads[0];
+  size_t pad_l = pads[1];
+
+  // for each img in batch
+  for(size_t n=0; n<idims[0]; n++){
+    ssize_t ix_b  = -(ssize_t)pad_t;
+    
+    // for each output (x, y) 
+    for(size_t ox=0; ox<odims[1]; ix_b+=stride_h, ox++){
+
+      ssize_t iy_b = -(ssize_t)pad_l;
+      for(size_t oy=0; oy<odims[2]; iy_b+=stride_w, oy++){
+
+        // for each channel
+        for(size_t c=0; c<idims[3]; c++){
+
+          size_t oIdx = getIdx4d(odims, n, ox, oy, c);
+          
+          float sum = 0;
+
+          // for each filter (x,y)
+          for(size_t kx=0; kx<kernel_h; kx++){
+            for(size_t ky=0; ky<kernel_w; ky++){
+              ssize_t ix = ix_b + kx;
+              ssize_t iy = iy_b + ky;
+
+              if(ix<0 || ix>=(ssize_t)idims[1] || iy<0 || iy>=(ssize_t)idims[2]){
+                  continue;
+              }
+
+              size_t iIdx = getIdx4d(idims, n, ix, iy, c);
+              sum += input[iIdx];
+            }
+
+            output[oIdx] = sum / kernel_cnt;
+          } // C
+        }
+      } // W
+    } // H
+  } // N
+}
+
+// NHWC
+void batchnormalization_f(float *output, const float *input, const float *mean, 
+            const float *var, const float *scale, const float *bias, 
+            const size_t *idims, const float epsilon) {
+  for(size_t n=0; n<idims[0]; n++){
+
+    for(size_t h=0; h<idims[1]; h++){
+
+      for(size_t w=0; w<idims[2]; w++){
+
+        for(size_t c=0; c<idims[3]; c++){
+
+          size_t idx = getIdx4d(idims, n, h, w, c);
+          output[idx] = (input[idx]-mean[c]) * std::pow((var[c]+epsilon), -0.5) * scale[c] + bias[c];
+        }
+      }
+    }
+  }
+}
+
 void transpose4d_f(const float *input, float *output, const size_t *idims,
                              const size_t *odims, const size_t *shuffle) {
   // For each layer in the batch:

@@ -119,6 +119,47 @@ public:
 };
 
 template <typename Dtype>
+class ElementAddOp: public Op<Dtype>{
+public:
+    ElementAddOp(): Op<Dtype>(DL_OP, 2,1, std::string("ElementAdd")) {
+        this->_inputNDims.push_back(2);
+        this->_outputNDims.push_back(2);
+    };
+    ~ElementAddOp();
+    void destroy(){};
+};
+template <typename Dtype>
+class ElementSubOp: public Op<Dtype>{
+public:
+    ElementSubOp(): Op<Dtype>(DL_OP, 2,1, std::string("ElementAdd")) {
+        this->_inputNDims.push_back(2);
+        this->_outputNDims.push_back(2);
+    };
+    ~ElementSubOp();
+    void destroy(){};
+};
+template <typename Dtype>
+class ElementMulOp: public Op<Dtype>{
+public:
+    ElementMulOp(): Op<Dtype>(DL_OP, 2,1, std::string("ElementAdd")) {
+        this->_inputNDims.push_back(2);
+        this->_outputNDims.push_back(2);
+    };
+    ~ElementMulOp();
+    void destroy(){};
+};
+template <typename Dtype>
+class ElementDivOp: public Op<Dtype>{
+public:
+    ElementDivOp(): Op<Dtype>(DL_OP, 2,1, std::string("ElementAdd")) {
+        this->_inputNDims.push_back(2);
+        this->_outputNDims.push_back(2);
+    };
+    ~ElementDivOp();
+    void destroy(){};
+};
+
+template <typename Dtype>
 class PrintMatrixOp : public Op<Dtype>{
     PrintStreamType type_;
     std::string outfile_;
@@ -203,6 +244,19 @@ public:
 };
 
 template <typename Dtype>
+class BatchNormalizationOp : public Op<Dtype>{
+    float epsilon_;
+public:
+    BatchNormalizationOp(float eps): Op<Dtype>(DL_OP, 5,1, std::string("BatchNormalization")) {
+    epsilon_ = eps;
+       //TODO : dims of input 
+    }
+    float getEpsilon() { return epsilon_; }
+    ~BatchNormalizationOp();
+    void destroy(){}
+};
+
+template <typename Dtype>
 class ReluOp: public Op<Dtype>{
 public:
     ReluOp(): Op<Dtype>(DL_OP, 1,1, std::string("Relu")) {
@@ -239,6 +293,31 @@ public:
     void destroy(){}
 };
 
+template <typename Dtype>
+class AvgPoolOp: public Op<Dtype>{
+    std::vector<size_t> kernels_;
+    std::vector<size_t> strides_;
+    std::vector<size_t> pads_;
+public:
+    AvgPoolOp(): Op<Dtype>(DL_OP, 1,1, std::string("AveragePool")) {
+        this->_inputNDims.push_back(4);
+        this->_outputNDims.push_back(4);
+    }
+    AvgPoolOp(std::vector<size_t> &kernels,
+            std::vector<size_t> &strides,
+            std::vector<size_t> &pads): Op<Dtype>(DL_OP, 1,1, std::string("AveragePool")) {
+        kernels_.assign(kernels.begin(), kernels.end());
+        strides_.assign(strides.begin(), strides.end());
+        pads_.assign(pads.begin(), pads.end());
+        this->_inputNDims.push_back(4);
+        this->_outputNDims.push_back(4);
+    }
+    ~AvgPoolOp();
+    std::vector<size_t> getPads() { return pads_; }
+    std::vector<size_t> getKernels() { return kernels_; }
+    std::vector<size_t> getStrides() { return strides_; }
+    void destroy(){}
+};
 template <typename Dtype>
 class BatchedAddOp: public Op<Dtype>{
 public:
