@@ -7,8 +7,14 @@
 #ifndef _RENAMINGNODEPASS_H_
 #define _RENAMINGNODEPASS_H_
 
+#include "SWLOG.h"
 #include "OptimizePass.h"
+
+#include "graphIR/OpNode.h"
+#include "graphIR/TensorNode.h"
+
 #include <unordered_map>
+#include <sstream>
 
 namespace swc {
 
@@ -16,7 +22,7 @@ class UniqueName{
     std::unordered_map<std::string, int> names_map_;
 public:
     std::string operator()(const std::string  &inputName) { 
-        std::cout << "add " << inputName << "\n";
+        SWLOG_INFO << "originalName " << inputName << "\n";
         assert(!inputName.empty() && "inputName empty");
         std::string name;
         for(const char c : inputName){
@@ -36,44 +42,38 @@ public:
             }
             name = uname;
         }
-        std::cout << "get " << name << "\n\n";
+        SWLOG_INFO << "uniqueName " << name << "\n\n";
         names_map_[name] = 0;
         return name; 
     }
 };
 
-template<typename Dtype>
-class RenamingNodePass: public OptimizePass<Dtype> {
-    using OptimizePass<Dtype>::_graph;
+
+class RenamingNodePass: public OptimizePass {
+    using OptimizePass::_graph;
     UniqueName uniqueName;
 public:
-    RenamingNodePass(IRGraph<Dtype> * graph): OptimizePass<Dtype>(graph) {};
+    RenamingNodePass(IRGraph * graph): OptimizePass(graph) {};
     ~RenamingNodePass(){} 
 
-    void run();        
+    void run(){
+        int nTensorNodes = _graph->tensorNodeNum();
+        int nOpNodes = _graph->opNodeNum();
+        for (int i = 0; i < nTensorNodes; i++) {
+            TensorNode* node = _graph->getTensorNode(i);
+            std::string uname = uniqueName(node->name());
+            node->setName(uname);
+        }
+
+        for (int i = 0; i < nOpNodes; i++) {
+            OpNode* node = _graph->getOpNode(i);
+            std::string uname = uniqueName(node->name());
+            node->setName(uname);
+        }
+}
 };
 
-template<typename Dtype>
-void RenamingNodePass<Dtype>::run(){
-    int nTensorNodes = _graph->tensorNodeNum();
-    int nOpNodes = _graph->opNodeNum();
-    for (int i = 0; i < nTensorNodes; i++) {
-        TensorNode<Dtype>* node = _graph->getTensorNode(i);
 
-        std::cout << "tensor ";
-        std::string uname = uniqueName(node->name());
-        node->setName(uname);
-
-    }
-
-    for (int i = 0; i < nOpNodes; i++) {
-        OpNode<Dtype>* node = _graph->getOpNode(i);
-        std::cout << "tensor ";
-        std::string uname = uniqueName(node->name());
-        node->setName(uname);
-    }
-
-}
 
 }
 #endif

@@ -7,25 +7,20 @@
 
 #ifndef _OPTIMIZEPASS_H
 #define _OPTIMIZEPASS_H
-#include "../src/graphIR/IRGraph.h"
+#include "graphIR/IRGraph.h"
 #include <queue>
 namespace swc{
 
-//Forward declarations
-//template<typename Dtype> class IRGraph;
-template<typename Dtype>  
 class OptimizePass{
 protected:
-    IRGraph<Dtype>* _graph;
+    IRGraph* _graph;
 public:
-    OptimizePass(IRGraph<Dtype> * graph):_graph(graph){};
+    OptimizePass(IRGraph * graph):_graph(graph){};
     ~OptimizePass(){};
     virtual void run(){
 
         std::cout<<"father run "<<std::endl;
     }
-
-
 };
 
 }

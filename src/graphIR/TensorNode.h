@@ -10,63 +10,43 @@
 
 #include "IRNode.h"
 #include "tensor/tensor.h"
-#include "SWDSL.h"
+//#include "SWDSL.h"
 #include <sstream>
 
 namespace swc {
 
-template <typename Dtype>
 class TensorNode : public IRNode
 {
-  
   public:
-    TensorNode() : _tensor(NULL) {};
+    TensorNode() : tensor_(NULL) {};
     explicit TensorNode(const char name[], IRNode *parent = nullptr) : IRNode(TENSOR_NODE, name, parent) {};
-    explicit TensorNode(const char name[], Tensor<Dtype> *tensor, IRNode *parent = nullptr) : IRNode(TENSOR_NODE, name, parent), _tensor(tensor) {};
+    explicit TensorNode(const char name[], Tensor *tensor, IRNode *parent = nullptr) : IRNode(TENSOR_NODE, name, parent), tensor_(tensor) {};
     explicit TensorNode(const char name[], const std::initializer_list<int> &shape, IRNode *parent = nullptr) : IRNode(TENSOR_NODE, name, parent){    
-        _tensor = new Tensor<Dtype>(shape);
+        tensor_ = new Tensor(shape);
     }
+
     ~TensorNode(){};
 
     void destroy(){
         printf("free TensorNode:%s\n", name().c_str());
     };
 
-    void setTensor(Tensor<Dtype>* tensor) {
-      _tensor = tensor; 
+    void setTensor(Tensor* tensor) {
+      tensor_ = tensor; 
     }
 
-    Tensor<Dtype>* getTensor() {
-      return _tensor;
+    Tensor* getTensor() {
+      return tensor_;
     }
 
-    std::vector<unsigned long> getDims() { return _tensor->getDims(); }
+    DataType getDataType() { return tensor_->getDataType(); }
+    std::vector<unsigned long> getDims() { return tensor_->getDims(); }
     TensorNode *clone() const;
     std::string toString() const;
 
   private:
-    Tensor<Dtype>* _tensor; 
+    Tensor* tensor_; 
 };
 
-/// share tensor, that _tensor point to
-template <typename Dtype>
-TensorNode<Dtype>* TensorNode<Dtype>::clone() const {
-    TensorNode<Dtype> *tn = new TensorNode<Dtype>((name()+"_cp").c_str());
-    tn->setTensor(_tensor);
-    return tn;
-}
-
-template <typename Dtype>
-std::string TensorNode<Dtype>::toString() const{
-    std::stringstream os;
-    os << "TensorNode: " << name() << "\n"
-        << "  tensorDim: " << _tensor->getNDim() << "\n  ";
-   for(int i=0; i<_tensor->getNDim(); i++)
-        os <<  _tensor->getDim(i) << " ";
-
-    return os.str();
-}
 } //namespace swc
-
-
 #endif /* !TENSORNODE_H_ */

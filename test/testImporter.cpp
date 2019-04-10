@@ -13,27 +13,27 @@ using namespace swc;
 using namespace std;
 
 int main() {
-    IRGraph<float>* graph = new IRGraph<float>();
-    std::vector<TensorNode<float>*> udef;
-    auto *data = new TensorNode<float>("data", {8, 28, 28, 1});
-    data->getTensor()->setTensorInit(TensorInitType::FILE, "mnist_images_8.bin");     
-    udef.push_back(data);
-    Caffe2Importer importer(graph, "./lenet_mnist/predict_net.pb", "./lenet_mnist/init_net.pb",
-                        udef);
+  IRGraph* graph = new IRGraph();
+  std::vector<TensorNode*> udef;
+  auto *data = new TensorNode("data", {8, 28, 28, 1});
+  data->getTensor()->setTensorInit(TensorInitType::FILE, "mnist_images_8.bin");     
+  udef.push_back(data);
+  Caffe2Importer importer(graph, "./lenet_mnist/predict_net.pb", "./lenet_mnist/init_net.pb",
+                      udef);
 
-    graph->findInOut();
-    graph->updateTopology();
-    graph->updateTopoNodeList();
+  graph->findInOut();
+  graph->updateTopology();
+  graph->updateTopoNodeList();
 
-    // Optimizer is a must because Codegen need label 
-    Optimizer<float>* opt = new Optimizer<float>(graph);
-    opt->runOptimizer();
+  // Optimizer is a must because Codegen need label 
+  Optimizer* opt = new Optimizer(graph);
+  opt->runOptimizer();
 
-    dotGen(graph);
+  dotGen(graph);
 
-    codegen::Codegen<float>* cg = new codegen::Codegen<float>(graph);
-    string code = cg->generate();
-    cout << code;
+  codegen::Codegen* cg = new codegen::Codegen(graph);
+  string code = cg->generate();
+  cout << code;
 
 	return 0;
 }

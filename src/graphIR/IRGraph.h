@@ -16,25 +16,23 @@
 namespace swc {
 
 //Forward declarations
-template<typename Dtype> class TensorNode;
-template<typename Dtype> class OpNode;
+class TensorNode;
+class  OpNode;
 class IRNode;
-
 
 /**
  * @brief IR Node Graph class 
  */
-template<typename Dtype>
 class IRGraph {
  public:
   IRGraph(){};
   ~IRGraph(){};
 
-  TensorNode<Dtype>* getTensorNode(int i) const { return _tensors[i]; }
-  OpNode<Dtype>* getOpNode(int i) const { return _ops[i]; }
+  TensorNode* getTensorNode(int i) const { return _tensors[i]; }
+  OpNode* getOpNode(int i) const { return _ops[i]; }
 
-  TensorNode<Dtype>* getInNode(int i) const { return _inNodes[i]; }
-  TensorNode<Dtype>* getOutNode(int i) const { return _outNodes[i]; }
+  TensorNode* getInNode(int i) const { return _inNodes[i]; }
+  TensorNode* getOutNode(int i) const { return _outNodes[i]; }
   
 
   int getNumInTopoLevel(int i) const { 
@@ -63,8 +61,7 @@ class IRGraph {
     }
     delTensorNode(args...);
   }
-
-  void pushOpNode() {};
+void pushOpNode() {};
   template<typename T, typename... Types>
   void pushOpNode(const T& firstArg, const Types&... args) {
     _ops.push_back(firstArg);
@@ -95,11 +92,11 @@ class IRGraph {
   }
 
 
-  inline const int tensorNodeNum() const { return _tensors.size(); }
-  inline const int opNodeNum() const { return _ops.size(); }
-  inline const int inNodeNum() const { return _inNodes.size(); }
-  inline const int outNodeNum() const { return _outNodes.size(); }
-  inline const int topologyNum() const { return _nodesByTopology.size(); }
+  inline int tensorNodeNum() const { return _tensors.size(); }
+  inline int opNodeNum() const { return _ops.size(); }
+  inline int inNodeNum() const { return _inNodes.size(); }
+  inline int outNodeNum() const { return _outNodes.size(); }
+  inline int topologyNum() const { return _nodesByTopology.size(); }
 
   void findInOut();
   
@@ -114,19 +111,17 @@ class IRGraph {
   Device getDeviceLabel() {return _dev; }
 
  private:
-  std::vector<TensorNode<Dtype>* > _tensors;
-  std::vector<OpNode<Dtype>* > _ops;
+  std::vector<TensorNode* > _tensors;
+  std::vector<OpNode* > _ops;
 
-  std::vector<TensorNode<Dtype>* > _inNodes;
-  std::vector<TensorNode<Dtype>* > _outNodes;
+  std::vector<TensorNode* > _inNodes;
+  std::vector<TensorNode* > _outNodes;
 
   std::vector<std::vector<IRNode*> > _nodesByTopology;
 
   Device _dev;
 
 };
-
-
 } //namespace swc
 
 #endif /* !IRGRAPH_H_ */

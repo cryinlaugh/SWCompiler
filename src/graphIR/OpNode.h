@@ -13,15 +13,13 @@
 #include "op/Op.h"
 #include <sstream>
 
-
 namespace swc {
 
-template <typename Dtype>
 class OpNode : public IRNode {
- public:
-    OpNode() :  _op(NULL) {};
+public:
+    OpNode() :  op_(NULL) {};
     explicit OpNode(const char name[]) : IRNode(OP_NODE, name) {};
-    explicit OpNode(const char name[], Op<Dtype>* op) : IRNode(OP_NODE, name), _op(op) {};
+    explicit OpNode(const char name[], Op* op) : IRNode(OP_NODE, name), op_(op) {};
     ~OpNode(){};
 
     void destroy(){
@@ -32,18 +30,17 @@ class OpNode : public IRNode {
         // this->~OpNode();
     };
 
-    void setOp(Op<Dtype>* op) {
-        _op = op;
+    void setOp(Op* op) {
+        op_ = op;
     }
 
-    Op<Dtype>* getOp() {
-        return _op;
+    Op* getOp() {
+        return op_;
     }
 
-    const std::string getOpName() { return _op->getOpName(); }
+    const std::string getOpName() { return op_->getOpName(); }
 
-
-    OpNode<Dtype>* clone() const;
+    OpNode* clone() const;
     std::string toString() const;
     void setRunOnce() {run_once_=true;}
     bool runable() {
@@ -53,30 +50,11 @@ class OpNode : public IRNode {
          return run;
     }
 
-  private:
-    Op<Dtype>* _op; 
+private:
+    Op* op_; 
     bool run_{true};
     bool run_once_{false};
 };
 
-/// must clone _op because destructed in ctor
-template <typename Dtype>
-OpNode<Dtype>* OpNode<Dtype>::clone() const{
-    OpNode<Dtype>* opNode = new OpNode((name()+"_cp").c_str());
-    opNode->setOp(_op->clone());
-    return opNode;
-}
-template <typename Dtype>
-std::string OpNode<Dtype>::toString() const {
-    std::stringstream os;
-    os << "OpNode " << name() << "\n"
-        << "  op: " << _op->getOpName() << "\n"
-        << "    nInput : " << _op->getnInput() << "\n"
-        << "    nOutput: " << _op->getnOutput();
-    return os.str();
-}
-
-
 } //namespace swc
-
 #endif /* !OPNODE_H_ */

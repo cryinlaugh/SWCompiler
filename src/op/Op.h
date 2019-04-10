@@ -16,11 +16,10 @@
 namespace swc {
 
 //Forward declarations
-template<typename Dtype> class Tensor;
-template<typename Dtype> class IRGraph;
+class Tensor;
+class IRGraph;
 class IRNode;
 
-template<typename Dtype>
 class Op {
   public:
 
@@ -41,12 +40,12 @@ class Op {
 
     virtual void destroy(){};
 
-    void addInputTensor(Tensor<Dtype>* inputTensor) {
+    void addInputTensor(Tensor* inputTensor) {
         _inputTensors.push_back(inputTensor);
         _nInputTensor++;
     }
 
-    void addOutputTensor(Tensor<Dtype>* outputTensor) { 
+    void addOutputTensor(Tensor* outputTensor) { 
         _outputTensors.push_back(outputTensor);
         _nOutputTensor++;
     }
@@ -56,11 +55,11 @@ class Op {
 
     inline const std::string getOpName() { return _opClassName; }
 
-    inline const int getnInput()  { return _nInput;  }
-    inline const int getnOutput() { return _nOutput; }
+    inline int getnInput()  { return _nInput;  }
+    inline int getnOutput() { return _nOutput; }
 
     //for lowering
-    virtual void lowering(IRGraph<Dtype>* graph, IRNode* node){
+    virtual void lowering(IRGraph* graph, IRNode* node){
         SWLOG_INFO<< "Unimplemented in base Op class" << std::endl;
     }
 
@@ -86,8 +85,8 @@ class Op {
 
     int                           _nInputTensor;
     int                           _nOutputTensor;
-    std::vector<Tensor<Dtype>* >  _inputTensors;
-    std::vector<Tensor<Dtype>* >  _outputTensors;
+    std::vector<Tensor* >  _inputTensors;
+    std::vector<Tensor* >  _outputTensors;
 
 };
 

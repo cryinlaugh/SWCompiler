@@ -20,10 +20,10 @@
 
 //TensorNode
 #define TENSOR(name, args...) \
-  TensorNode<Dtype>* name = new TensorNode<Dtype>(#name);\
+  TensorNode* name = new TensorNode(#name);\
   TensorShape* name##_TensorShape = new TensorShape(\
       new vector<unsigned long>({ args })); \
-  Tensor<Dtype>* name##_Tensor = new Tensor<Dtype>(name##_TensorShape);\
+  Tensor* name##_Tensor = new Tensor(name##_TensorShape);\
   name->setTensor(name##_Tensor)
 
 //check OpNode
@@ -34,8 +34,8 @@
 
 //OpNode
 #define OP(name, method) \
-  OpNode<Dtype>* name = new OpNode<Dtype>(#name);\
-  method<Dtype>* name##_Op = new method<Dtype>();\
+  OpNode* name = new OpNode(#name);\
+  method* name##_Op = new method();\
   name->setOp(name##_Op)
 
 
@@ -55,7 +55,7 @@
 #define DESTROYUPPER(self, upperNode...) \
   self->destroyUpperNode(upperNode)
 
-#define G(name) IRGraph<Dtype>* name = new IRGraph<Dtype>()
+#define G(name) IRGraph* name = new IRGraph()
 
 #define GpT(name, tensorNodes...) \
   name->pushTensorNode(tensorNodes)

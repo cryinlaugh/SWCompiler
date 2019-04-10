@@ -16,11 +16,10 @@
 
 namespace swc {
 
-template<typename Dtype>
-void IRGraph<Dtype>::findInOut() {
+void IRGraph::findInOut() {
     _inNodes.clear();
     _outNodes.clear();
-    typename std::vector<TensorNode<Dtype>* >::iterator tnIter; 
+    typename std::vector<TensorNode* >::iterator tnIter; 
 
     for (tnIter = _tensors.begin(); tnIter != _tensors.end(); tnIter++) {
         if ((*tnIter)->parentNum() == 0)
@@ -32,9 +31,8 @@ void IRGraph<Dtype>::findInOut() {
     }
 }
 
-template<typename Dtype>
 template<typename T>
-void IRGraph<Dtype>::updateTopology(T node) {
+void IRGraph::updateTopology(T node) {
     int currentTopoId = node->topologyId();
     /*std::cout << "Current Node: " << node->name() 
       << " TopologyID: " << node->topologyId()
@@ -51,10 +49,10 @@ void IRGraph<Dtype>::updateTopology(T node) {
     }
 }
 
-template<typename Dtype>
-void IRGraph<Dtype>::updateTopology() {
-    typename std::vector<TensorNode<Dtype>* >::iterator tnIter;
-    typename std::vector<OpNode<Dtype>* >::iterator opIter; 
+
+void IRGraph::updateTopology() {
+    typename std::vector<TensorNode* >::iterator tnIter;
+    typename std::vector<OpNode* >::iterator opIter; 
 
     for (tnIter = _tensors.begin(); tnIter != _tensors.end(); tnIter++)
         (*tnIter)->setTopologyId(0);
@@ -65,10 +63,10 @@ void IRGraph<Dtype>::updateTopology() {
         updateTopology(*tnIter);
 }
 
-template<typename Dtype>
-void IRGraph<Dtype>::updateTopoNodeList() {
-    typename std::vector<TensorNode<Dtype>* >::iterator tnIter; 
-    typename std::vector<OpNode<Dtype>* >::iterator opIter; 
+
+void IRGraph::updateTopoNodeList() {
+    typename std::vector<TensorNode* >::iterator tnIter; 
+    typename std::vector<OpNode* >::iterator opIter; 
     std::vector<std::vector<IRNode*> >::iterator ndIter; 
     int topoId;
     std::vector<IRNode*> vtemp;
@@ -96,31 +94,31 @@ void IRGraph<Dtype>::updateTopoNodeList() {
     }
 }
 
-template<typename Dtype>
-IRGraph<Dtype>* IRGraph<Dtype>::clone() const{
+
+IRGraph* IRGraph::clone() const{
     //TODO: add topo check before clone
-    IRGraph<Dtype> *graph = new IRGraph<Dtype>();
+    IRGraph *graph = new IRGraph();
     /*
     for(int i=0; i<this->topologyNum(); i++){
         for(int j=0; j<this->getNumInTopoLevel(i); i++){
             auto node = this->getNodeInTopo(i, j); 
             if(node->nodeType() == NodeType::OP_NODE){
-                graph->pushOpNode(static_cast<OpNode<Dtype>*>(node)->clone()); 
+                graph->pushOpNode(static_cast<OpNode*>(node)->clone()); 
             }else if(node->nodeType() == NodeType::TENSOR_NODE){
-                graph->pushTensorNode(static_cast<TensorNode<Dtype>*>(node)->clone());
+                graph->pushTensorNode(static_cast<TensorNode*>(node)->clone());
             }
         }
     }
     */
-    std::unordered_map<TensorNode<Dtype>*, TensorNode<Dtype>*> tensors_map;
-    std::unordered_map<OpNode<Dtype>*, OpNode<Dtype>*> ops_map;   
+    std::unordered_map<TensorNode*, TensorNode*> tensors_map;
+    std::unordered_map<OpNode*, OpNode*> ops_map;   
     for(auto &N : _tensors){
-        TensorNode<Dtype> *tn =  N->clone(); 
+        TensorNode *tn =  N->clone(); 
         tensors_map[N] =  tn; 
         graph->pushTensorNode(tn);
     }
     for(auto &N : _ops){
-        OpNode<Dtype> *opn =  N->clone(); 
+        OpNode *opn =  N->clone(); 
         ops_map[N] =  opn; 
         graph->pushOpNode(opn);
     }
@@ -130,7 +128,7 @@ IRGraph<Dtype>* IRGraph<Dtype>::clone() const{
     for(auto &N : _tensors){
         auto tn = tensors_map[N];
         for(int i=0; i<N->parentNum(); i++){
-            auto it = ops_map.find((OpNode<Dtype>*)N->getParentNode(i)); 
+            auto it = ops_map.find((OpNode*)N->getParentNode(i)); 
             if(it != ops_map.end())
                 tn->exlinkUpperNode(it->second);
         }
@@ -142,14 +140,14 @@ IRGraph<Dtype>* IRGraph<Dtype>::clone() const{
     for(auto &N : _tensors){
         auto tn = tensors_map[N];
         for(int i=0; i<N->parentNum(); i++){
-            auto parent = ops_map[(OpNode<Dtype>*)N->getParentNode(i)];
+            auto parent = ops_map[(OpNode*)N->getParentNode(i)];
             tn->exlinkUpperNode(parent);
         }
     }
     for(auto &N : _ops){
         auto opn = ops_map[N];
         for(int i=0; i<N->parentNum(); i++){
-            auto parent = tensors_map[(TensorNode<Dtype>*)N->getParentNode(i)];
+            auto parent = tensors_map[(TensorNode*)N->getParentNode(i)];
             opn->exlinkUpperNode(parent);
         }
     }
@@ -157,8 +155,8 @@ IRGraph<Dtype>* IRGraph<Dtype>::clone() const{
     return graph;
 }
 
-template<typename Dtype>
-void IRGraph<Dtype>::setDeviceLabel(Device dev){
+
+void IRGraph::setDeviceLabel(Device dev){
     _dev = dev;
     for(auto tnode : _tensors){
         tnode->getLabel()->setDeviceLabel(dev.type, dev.id);
@@ -167,8 +165,4 @@ void IRGraph<Dtype>::setDeviceLabel(Device dev){
         opnode->getLabel()->setDeviceLabel(dev.type, dev.id);
     } 
 }
-
-
-INSTANTIATE_CLASS(IRGraph);
-
 } //namespace swc

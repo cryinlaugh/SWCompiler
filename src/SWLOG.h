@@ -25,8 +25,8 @@ static std::ostringstream __os;
 
 #ifdef DEBUG
 #define SWLOG(stream, type) \
-    localtime_r(&t, &ctm); \
-    std::stream<<"["#type"] ["\
+  localtime_r(&t, &ctm); \
+  std::stream<<"["#type"] ["\
              << ctm.tm_year + 1900 << "-" \
              << ctm.tm_mon + 1 << "-" \
              << ctm.tm_mday << " " \
@@ -39,8 +39,8 @@ static std::ostringstream __os;
 
 #else
 #define SWLOG(stream, type) \
-    __os.clear(); \
-    __os
+  __os.clear(); \
+  __os
 #endif
     
 #endif

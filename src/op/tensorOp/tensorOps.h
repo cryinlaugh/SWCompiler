@@ -25,10 +25,10 @@ namespace swc{
 //----Descend
 //=====================================================
 
-template <typename Dtype>
-class MatrixDuplicateOp : public Op<Dtype>{
+
+class MatrixDuplicateOp : public Op{
 public:
-    MatrixDuplicateOp(int nOutput):Op<Dtype>(TENSOR_OP, 1, nOutput, std::string("MatrixDuplicate")){
+    MatrixDuplicateOp(int nOutput):Op(TENSOR_OP, 1, nOutput, std::string("MatrixDuplicate")){
         this->_inputNDims.push_back(2);
         for(int i=0; i<nOutput; i++){
             this->_outputNDims.push_back(2);
@@ -38,10 +38,10 @@ public:
     void destroy(){};
 };
 
-template <typename Dtype>
-class MatrixSplitOp : public Op<Dtype>{
+
+class MatrixSplitOp : public Op{
 public:
-    MatrixSplitOp(int nOutput):Op<Dtype>(TENSOR_OP, 1, nOutput, std::string("MatrixSplit")){
+    MatrixSplitOp(int nOutput):Op(TENSOR_OP, 1, nOutput, std::string("MatrixSplit")){
         this->_inputNDims.push_back(2);
         for(int i=0; i<nOutput; i++){
             this->_outputNDims.push_back(2);
@@ -51,10 +51,10 @@ public:
     void destroy(){};
 };
 
-template <typename Dtype>
-class MatrixConcatOp : public Op<Dtype>{
+
+class MatrixConcatOp : public Op{
 public:
-    MatrixConcatOp(int nInput):Op<Dtype>(TENSOR_OP, nInput, 1, std::string("MatrixConcat")){
+    MatrixConcatOp(int nInput):Op(TENSOR_OP, nInput, 1, std::string("MatrixConcat")){
         for(int i=0; i<nInput; i++){
             this->_inputNDims.push_back(2);
         }
@@ -64,10 +64,10 @@ public:
     void destroy(){};
 };
 
-template <typename Dtype>
-class MatrixTransposeOp : public Op<Dtype>{
+
+class MatrixTransposeOp : public Op{
 public:
-    MatrixTransposeOp():Op<Dtype>(TENSOR_OP, 1, 1, std::string("MatrixTranspose")){
+    MatrixTransposeOp():Op(TENSOR_OP, 1, 1, std::string("MatrixTranspose")){
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
     }
@@ -75,10 +75,10 @@ public:
     void destroy(){};
 };
 
-template <typename Dtype>
-class MatrixDescendOp : public Op<Dtype>{
+
+class MatrixDescendOp : public Op{
 public:
-    MatrixDescendOp():Op<Dtype>(TENSOR_OP, 1, 1, std::string("MatrixDescend")){
+    MatrixDescendOp():Op(TENSOR_OP, 1, 1, std::string("MatrixDescend")){
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(1);
     }
@@ -98,10 +98,10 @@ public:
 //----Ascend
 //----Descend
 //=====================================================
-template <typename Dtype>
-class VectorDuplicateOp : public Op<Dtype>{
+
+class VectorDuplicateOp : public Op{
 public:
-    VectorDuplicateOp(int nOutput):Op<Dtype>(TENSOR_OP, 1, nOutput, std::string("VectorDuplicate")){
+    VectorDuplicateOp(int nOutput):Op(TENSOR_OP, 1, nOutput, std::string("VectorDuplicate")){
         this->_inputNDims.push_back(1);
         for(int i=0; i<nOutput; i++){
             this->_outputNDims.push_back(1);
@@ -111,10 +111,10 @@ public:
     void destroy(){};
 };
 
-template <typename Dtype>
-class VectorSplitOp : public Op<Dtype>{
+
+class VectorSplitOp : public Op{
 public:
-    VectorSplitOp(int nOutput):Op<Dtype>(TENSOR_OP, 1, nOutput, std::string("VectorSplit")){
+    VectorSplitOp(int nOutput):Op(TENSOR_OP, 1, nOutput, std::string("VectorSplit")){
         this->_inputNDims.push_back(1);
         for(int i=0; i<nOutput; i++){
             this->_outputNDims.push_back(1);
@@ -124,10 +124,10 @@ public:
     void destroy(){};
 };
 
-template <typename Dtype>
-class VectorConcatOp : public Op<Dtype>{
+
+class VectorConcatOp : public Op{
 public:
-    VectorConcatOp(int nInput):Op<Dtype>(TENSOR_OP, nInput, 1, std::string("VectorConcat")){
+    VectorConcatOp(int nInput):Op(TENSOR_OP, nInput, 1, std::string("VectorConcat")){
         for(int i=0; i<nInput; i++){
             this->_inputNDims.push_back(1);
         }
@@ -137,10 +137,10 @@ public:
     void destroy(){};
 };
 
-template <typename Dtype>
-class VectorAscendOp : public Op<Dtype>{
+
+class VectorAscendOp : public Op{
 public:
-    VectorAscendOp():Op<Dtype>(TENSOR_OP, 1, 1, std::string("VectorAscend")){
+    VectorAscendOp():Op(TENSOR_OP, 1, 1, std::string("VectorAscend")){
         this->_inputNDims.push_back(1);
         this->_outputNDims.push_back(2);
     }
@@ -148,10 +148,10 @@ public:
     void destroy(){};
 };
 
-template <typename Dtype>
-class VectorDescendOp : public Op<Dtype>{
+
+class VectorDescendOp : public Op{
 public:
-    VectorDescendOp():Op<Dtype>(TENSOR_OP, 1, 1, std::string("VectorDescend")){
+    VectorDescendOp():Op(TENSOR_OP, 1, 1, std::string("VectorDescend")){
         this->_inputNDims.push_back(1);
         this->_outputNDims.push_back(0);
     }
@@ -169,10 +169,10 @@ public:
 //----Ascend
 //=====================================================
 
-template <typename Dtype>
-class ScalarDuplicateOp : public Op<Dtype>{
+
+class ScalarDuplicateOp : public Op{
 public:
-    ScalarDuplicateOp(int nOutput):Op<Dtype>(TENSOR_OP, 1, nOutput, std::string("ScalarDuplicate")){
+    ScalarDuplicateOp(int nOutput):Op(TENSOR_OP, 1, nOutput, std::string("ScalarDuplicate")){
         this->_inputNDims.push_back(0);
         for(int i=0; i<nOutput; i++){
             this->_outputNDims.push_back(0);
@@ -182,10 +182,10 @@ public:
     void destroy(){};
 };
 
-template <typename Dtype>
-class ScalarAscendOp : public Op<Dtype>{
+
+class ScalarAscendOp : public Op{
 public:
-    ScalarAscendOp():Op<Dtype>(TENSOR_OP, 1, 1, std::string("ScalarAscend")){
+    ScalarAscendOp():Op(TENSOR_OP, 1, 1, std::string("ScalarAscend")){
         this->_inputNDims.push_back(0);
         this->_outputNDims.push_back(1);
     }

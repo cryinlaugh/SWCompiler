@@ -10,9 +10,20 @@
 #include "OpNode.h"
 
 namespace swc {
-
-
-INSTANTIATE_CLASS(OpNode);
+/// must clone op_ because destructed in ctor
+OpNode* OpNode::clone() const{
+    OpNode* opNode = new OpNode((name()+"_cp").c_str());
+    opNode->setOp(op_->clone());
+    return opNode;
+}
+std::string OpNode::toString() const {
+    std::stringstream os;
+    os << "OpNode " << name() << "\n"
+        << "  op: " << op_->getOpName() << "\n"
+        << "    nInput : " << op_->getnInput() << "\n"
+        << "    nOutput: " << op_->getnOutput();
+    return os.str();
+}
 
 } //namespace swc
 

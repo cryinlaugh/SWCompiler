@@ -16,27 +16,24 @@
 
 namespace swc {
 
-template<typename Dtype>
-void Optimizer<Dtype>::runOptimizer() {
+void Optimizer::runOptimizer() {
 	// SWLOG_INFO << "Start doing optimization." << std::endl;
     // runLabelingPass(0);
     // runLoweringPass();
     // runLabelingPass(0);
     
     SWLOG_DEBUG << "Start doing optimization." << std::endl;
-    PassManager<Dtype> passManager;
-    RenamingNodePass<Dtype> renamingpass(_graph);
-    passManager.add((OptimizePass<Dtype>*)&renamingpass);
-    LabelingPass<Dtype> labelingpass(_graph);
-    passManager.add((OptimizePass<Dtype>*)&labelingpass);
-    LoweringPass<Dtype> loweringpass(_graph);
-    passManager.add((OptimizePass<Dtype>*)&loweringpass);
-    passManager.add((OptimizePass<Dtype>*)&labelingpass); // run labeling again
+    PassManager passManager;
+    RenamingNodePass renamingpass(_graph);
+    passManager.add((OptimizePass*)&renamingpass);
+    LabelingPass labelingpass(_graph);
+    passManager.add((OptimizePass*)&labelingpass);
+    LoweringPass loweringpass(_graph);
+    passManager.add((OptimizePass*)&loweringpass);
+    passManager.add((OptimizePass*)&labelingpass); // run labeling again
     passManager.run();
     SWLOG_INFO << "Optimization done." << std::endl;
     
 
 }
-
-INSTANTIATE_CLASS(Optimizer);
 } // namespace swc

@@ -15,35 +15,35 @@
 #include <queue>
 namespace swc{
 
-template<typename Dtype>
+
 class PassManager{
 private:
-    std::queue<OptimizePass<Dtype>*> passQueue;
+    std::queue<OptimizePass*> passQueue;
 public :
     PassManager(){};
     ~PassManager(){};
-    void add(OptimizePass<Dtype>* pass){
+    void add(OptimizePass* pass){
         passQueue.push(pass);
     }
     void run(){
         while(!passQueue.empty()){
-            OptimizePass<Dtype>*  pass=passQueue.front();
+            OptimizePass*  pass=passQueue.front();
             pass->run();
             passQueue.pop();
         }
     }
 };
-template<typename Dtype>
+
 class Optimizer{
   public:
-    Optimizer(IRGraph<Dtype>* graph):_graph(graph){};
+    Optimizer(IRGraph* graph):_graph(graph){};
     ~Optimizer(){};
     void runOptimizer();
 
-    void setGraph(IRGraph<Dtype>* graph) { _graph = graph; }
+    void setGraph(IRGraph* graph) { _graph = graph; }
   
   private:
-    IRGraph<Dtype>* _graph;
+    IRGraph* _graph;
 };
 
 }

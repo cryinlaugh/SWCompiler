@@ -11,11 +11,12 @@
 #include <memory>
 #include <vector>
 
-// Instantiate a class with float and double specifications.
-#define INSTANTIATE_CLASS(classname) \
-  char gInstantiationGuard##classname; \
-  template class classname<float>; \
-  template class classname<double>
+enum class DataType {
+  Float_t,
+  Double_t,
+  Int8_t,
+  Int32_t
+};
 
 enum OpType {
   TENSOR_OP,
@@ -29,31 +30,31 @@ enum NodeType {
 };
 
 enum TensorType {
-    D5=5,
-    D4=4,
-    D3=3,
-    D2=2,
-    D1=1,
-    D0=0,
-    UNKNOWN=-1
+  D5=5,
+  D4=4,
+  D3=3,
+  D2=2,
+  D1=1,
+  D0=0,
+  UNKNOWN=-1
 };
 
 enum class TensorInitType {
-    NONE,
-    CONSTANT,
-    ZERO,
-    XAVIER,
-    FILE,
-    PARENTOP
+  NONE,
+  CONSTANT,
+  ZERO,
+  XAVIER,
+  FILE,
+  PARENTOP
 };
 enum class DeviceType : int {
-    CPU,
-    GPU
+  CPU,
+  GPU
 };
 
 enum class PrintStreamType {
-    COUT,
-    FILE
+  COUT,
+  FILE
 };
 
 struct Device
@@ -70,9 +71,9 @@ namespace std {
   {
     size_t operator()(const Device& d) const
     {
-        auto h1 = std::hash<int>{}(static_cast<int>(d.type));
-        auto h2 = std::hash<int>{}(d.id);
-        return h1 ^ h2;  
+      auto h1 = std::hash<int>{}(static_cast<int>(d.type));
+      auto h2 = std::hash<int>{}(d.id);
+      return h1 ^ h2;  
     }
   };
 }
@@ -80,24 +81,24 @@ namespace std {
 #define NCHW2NHWC {0, 2, 3, 1}
 #define NHWC2NCHW {0, 3, 1, 2}
 
+// Instantiate a class with float and double specifications.
+#define INSTANTIATE_CLASS(classname) \
+  char gInstantiationGuard##classname; \
+  template class classname<float>; \
+  template class classname<double>
+
 template <typename Dtype>
 class SWMem {
-    
 private:
-    
-    size_t _len;
-    Dtype* _data;
-    
+  size_t _len;
+  Dtype* _data;
 public:
-    
-    SWMem(size_t len, Dtype* data);
-    ~SWMem();
-    
-    Dtype* data();
-    Dtype* mutable_data();
+  SWMem(size_t len, Dtype* data);
+  ~SWMem();
+  Dtype* data();
+  Dtype* mutable_data();
     
 };
-
 
 template<typename U, typename V>
 int delVecMember(std::vector<U>& vec, V& del) {

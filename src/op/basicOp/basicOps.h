@@ -22,10 +22,10 @@ namespace swc{
 //----MatrixVectorMul
 //=====================================================
 
-template <typename Dtype>
-class MatrixMatrixMulOp : public Op<Dtype>{
+
+class MatrixMatrixMulOp : public Op{
 public:
-    MatrixMatrixMulOp():Op<Dtype>(BASIC_OP, 2, 1, std::string("MatrixMatrixMul")){
+    MatrixMatrixMulOp():Op(BASIC_OP, 2, 1, std::string("MatrixMatrixMul")){
         this->_inputNDims.push_back(2);
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
@@ -34,10 +34,10 @@ public:
     void destroy(){};
 };
 
-template <typename Dtype>
-class VectorMatrixMulOp : public Op<Dtype>{
+
+class VectorMatrixMulOp : public Op{
 public:
-    VectorMatrixMulOp():Op<Dtype>(BASIC_OP, 2, 1, std::string("VectorMatrixMul")){
+    VectorMatrixMulOp():Op(BASIC_OP, 2, 1, std::string("VectorMatrixMul")){
         this->_inputNDims.push_back(1);
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(1);
@@ -46,10 +46,10 @@ public:
     void destroy(){};
 };
 
-template <typename Dtype>
-class MatrixVectorMulOp : public Op<Dtype>{
+
+class MatrixVectorMulOp : public Op{
 public:
-    MatrixVectorMulOp():Op<Dtype>(BASIC_OP, 2, 1, std::string("MatrixVectorMul")){
+    MatrixVectorMulOp():Op(BASIC_OP, 2, 1, std::string("MatrixVectorMul")){
         this->_inputNDims.push_back(2);
         this->_inputNDims.push_back(1);
         this->_outputNDims.push_back(1);
@@ -67,10 +67,10 @@ public:
 //----VectorVectorInnerProduct 
 //=====================================================
 
-template <typename Dtype>
-class VectorVectorInnerProductOp : public Op<Dtype>{
+
+class VectorVectorInnerProductOp : public Op{
 public:
-    VectorVectorInnerProductOp():Op<Dtype>(BASIC_OP, 2, 1, std::string("VectorVectorInnerProduct")){
+    VectorVectorInnerProductOp():Op(BASIC_OP, 2, 1, std::string("VectorVectorInnerProduct")){
         this->_inputNDims.push_back(1);
         this->_inputNDims.push_back(1);
         this->_outputNDims.push_back(0);
@@ -94,10 +94,10 @@ public:
 //=====================================================
 
 
-template <typename Dtype>
-class ScalarMulOp : public Op<Dtype>{
+
+class ScalarMulOp : public Op{
 public:
-    ScalarMulOp():Op<Dtype>(BASIC_OP, 2, 1, std::string("ScalarMul")){
+    ScalarMulOp():Op(BASIC_OP, 2, 1, std::string("ScalarMul")){
         this->_inputNDims.push_back(0);
         this->_inputNDims.push_back(0);
         this->_outputNDims.push_back(0);
@@ -106,10 +106,10 @@ public:
     void destroy(){};
 };
 
-template <typename Dtype>
-class ScalarAddOp : public Op<Dtype>{
+
+class ScalarAddOp : public Op{
 public:
-    ScalarAddOp():Op<Dtype>(BASIC_OP, 2, 1, std::string("ScalarAdd")){
+    ScalarAddOp():Op(BASIC_OP, 2, 1, std::string("ScalarAdd")){
         this->_inputNDims.push_back(0);
         this->_inputNDims.push_back(0);
         this->_outputNDims.push_back(0);
@@ -118,10 +118,10 @@ public:
     void destroy(){};
 };
 
-template <typename Dtype>
-class ScalarMaxOp : public Op<Dtype>{
+
+class ScalarMaxOp : public Op{
 public:
-    ScalarMaxOp():Op<Dtype>(BASIC_OP, 2, 1, std::string("ScalarMax")){
+    ScalarMaxOp():Op(BASIC_OP, 2, 1, std::string("ScalarMax")){
         this->_inputNDims.push_back(0);
         this->_inputNDims.push_back(0);
         this->_outputNDims.push_back(0);
@@ -130,10 +130,10 @@ public:
     void destroy(){};
 };
 
-template <typename Dtype>
-class ScalarExpOp : public Op<Dtype>{
+
+class ScalarExpOp : public Op{
 public:
-    ScalarExpOp():Op<Dtype>(BASIC_OP, 1, 1, std::string("ScalarExp")){
+    ScalarExpOp():Op(BASIC_OP, 1, 1, std::string("ScalarExp")){
         this->_inputNDims.push_back(0);
         this->_outputNDims.push_back(0);
     }
@@ -141,10 +141,10 @@ public:
     void destroy(){};
 };
 
-template <typename Dtype>
-class ScalarNegOp : public Op<Dtype>{
+
+class ScalarNegOp : public Op{
 public:
-    ScalarNegOp():Op<Dtype>(BASIC_OP, 1, 1, std::string("ScalarNeg")){
+    ScalarNegOp():Op(BASIC_OP, 1, 1, std::string("ScalarNeg")){
         this->_inputNDims.push_back(0);
         this->_outputNDims.push_back(0);
     }
@@ -152,10 +152,10 @@ public:
     void destroy(){};
 };
 
-template <typename Dtype>
-class ScalarDivOp : public Op<Dtype>{
+
+class ScalarDivOp : public Op{
 public:
-    ScalarDivOp():Op<Dtype>(BASIC_OP, 1, 1, std::string("ScalarDiv")){
+    ScalarDivOp():Op(BASIC_OP, 1, 1, std::string("ScalarDiv")){
         this->_inputNDims.push_back(0);
         this->_outputNDims.push_back(0);
     }
@@ -163,10 +163,10 @@ public:
     void destroy(){};
 };
 
-template <typename Dtype>
-class ScalarLogOp : public Op<Dtype>{
+
+class ScalarLogOp : public Op{
 public:
-    ScalarLogOp():Op<Dtype>(BASIC_OP, 1, 1, std::string("ScalarLog")){
+    ScalarLogOp():Op(BASIC_OP, 1, 1, std::string("ScalarLog")){
         this->_inputNDims.push_back(0);
         this->_outputNDims.push_back(0);
     }

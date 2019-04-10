@@ -9,18 +9,4 @@
 
 namespace swc{
 
-
-INSTANTIATE_CLASS(MatrixMatrixMulOp);
-INSTANTIATE_CLASS(VectorMatrixMulOp);
-INSTANTIATE_CLASS(MatrixVectorMulOp);
-
-INSTANTIATE_CLASS(VectorVectorInnerProductOp);
-
-INSTANTIATE_CLASS(ScalarAddOp);
-INSTANTIATE_CLASS(ScalarMaxOp);
-INSTANTIATE_CLASS(ScalarExpOp);
-INSTANTIATE_CLASS(ScalarNegOp);
-INSTANTIATE_CLASS(ScalarDivOp);
-INSTANTIATE_CLASS(ScalarLogOp);
-
 }

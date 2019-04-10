@@ -10,9 +10,7 @@
 #include "tensor/tensor.h"
 
 namespace swc{
-
-template<typename Dtype>  
-bool Op<Dtype>::check(){
+bool Op::check(){
   if(_nInputTensor != _nInput) return false;
   if(_nOutputTensor != _nOutput) return false;
   for(int i=0; i<_nInput; i++){
@@ -23,7 +21,4 @@ bool Op<Dtype>::check(){
   }
   return true;
 }
-
-INSTANTIATE_CLASS(Op);
-
 }

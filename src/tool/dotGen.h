@@ -3,10 +3,9 @@
 
 namespace swc {
 
-template<typename Dtype> class IRGraph;
+class IRGraph;
 
-template<typename Dtype>
-void dotGen(IRGraph<Dtype>* graph); 
+void dotGen(IRGraph* graph); 
 
 } //namespace swc
 

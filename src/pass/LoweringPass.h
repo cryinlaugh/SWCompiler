@@ -10,17 +10,20 @@
 #ifndef _LOWERINGPASS_H
 #define _LOWERINGPASS_H
 #include "SWLOG.h"
-#include "../src/graphIR/IRNode.h"
+#include "OptimizePass.h"
+
 #include "TilingLabel.h"
 #include "TileHint.h"
-#include "../src/graphIR/IRGraph.h"
-#include "OptimizePass.h"
+
+#include "graphIR/OpNode.h"
+#include "graphIR/TensorNode.h"
+
 namespace swc {
-template<typename Dtype>
-class LoweringPass: public OptimizePass<Dtype> {
-    using OptimizePass<Dtype>::_graph;
+
+class LoweringPass: public OptimizePass {
+    using OptimizePass::_graph;
 public:
-    LoweringPass(IRGraph<Dtype> * graph): OptimizePass<Dtype>(graph) {};
+    LoweringPass(IRGraph * graph): OptimizePass(graph) {};
     ~LoweringPass() {};
 
     void runTileLowering() {
@@ -63,23 +66,23 @@ public:
         printf("--------------------------------------------------------------------------------------\n");
 
         int nOpNodes = this->_graph->opNodeNum();
-        std::vector<OpNode<Dtype>* > toDeleteOps;
+        std::vector<OpNode* > toDeleteOps;
         //int 
         for (int i = 0; i < nOpNodes; i++) {
-            OpNode<Dtype>* opnode = this->_graph->getOpNode(i);
+            OpNode* opnode = this->_graph->getOpNode(i);
 
 
             //lowering opnode
             OpTilingLabel * optilinglabel = dynamic_cast<OpTilingLabel*>(opnode->getLabel());
 
 
-            std::vector<OpNode<Dtype>*> tileOpNodes;
+            std::vector<OpNode*> tileOpNodes;
 
             int tilenum = optilinglabel->getReplicateNum();
 
             for(int j = 0 ; j < tilenum ; ++ j) {
                 //(std::string)opnode->name()+std::to_string(j)
-                OpNode<Dtype>*  tileOpNode = new OpNode<Dtype>("replicateOp");
+                OpNode*  tileOpNode = new OpNode("replicateOp");
                 tileOpNodes.push_back(tileOpNode);
                 this->_graph->pushOpNode(tileOpNode);
 
@@ -87,18 +90,18 @@ public:
 
             //lowering input tensors
             for (int j = 0; j < opnode->parentNum(); ++j) {
-                TensorNode<Dtype>* inputTensorNode = dynamic_cast<TensorNode<Dtype>*>(opnode->getParentNode(j));
+                TensorNode* inputTensorNode = dynamic_cast<TensorNode*>(opnode->getParentNode(j));
                 TensorTilingLabel* tlabel = dynamic_cast<TensorTilingLabel*>(inputTensorNode->getLabel());
 
                 //inputTensorNode->name()+"-tile"
-                OpNode<Dtype>*  tileOpNode = new OpNode<Dtype>("spiltOp");
+                OpNode*  tileOpNode = new OpNode("spiltOp");
                 //TBD: get label num to check it spilt  or replicate and define opnode
                 tileOpNode->exlinkUpperNode(inputTensorNode);
                 this->_graph->pushOpNode(tileOpNode);
                 int tilenum = tlabel->getTotalTileNum();
                 for(int k = 0; k < tilenum; ++k ) {
                     //(std::string)inputTensorNode->name()+std::to_string(k)
-                    TensorNode<Dtype>* tileTensorNode = new TensorNode<Dtype>("spiltTensor");
+                    TensorNode* tileTensorNode = new TensorNode("spiltTensor");
                     tileTensorNode->exlinkUpperNode(tileOpNode);
                     tileOpNodes[k]->exlinkUpperNode(tileTensorNode);
                     this->_graph->pushTensorNode(tileTensorNode);
@@ -110,18 +113,18 @@ public:
 
             //lowering output tensors
             for (int j = 0; j < opnode->childNum(); ++j) {
-                TensorNode<Dtype>* outputTensorNode = dynamic_cast<TensorNode<Dtype>*>(opnode->getChildNode(j));
+                TensorNode* outputTensorNode = dynamic_cast<TensorNode*>(opnode->getChildNode(j));
                 TensorTilingLabel* tlabel = dynamic_cast<TensorTilingLabel*>(outputTensorNode->getLabel());
 
                 //outputTensorNode->name()+"-tile"
-                OpNode<Dtype>*  tileOpNode = new OpNode<Dtype>("concactOp");
+                OpNode*  tileOpNode = new OpNode("concactOp");
                 this->_graph->pushOpNode(tileOpNode);
                 //TBD: get label num to check it concact  or reduce and define opnode
                 outputTensorNode->exlinkUpperNode(tileOpNode);
                 int tilenum = tlabel->getTotalTileNum();
                 for(int k = 0; k < tilenum; ++k ) {
                     //(std::string)outputTensorNode->name()+std::to_string(k)
-                    TensorNode<Dtype>* tileTensorNode = new TensorNode<Dtype>("concactTensor");
+                    TensorNode* tileTensorNode = new TensorNode("concactTensor");
                     tileOpNode->exlinkUpperNode(tileTensorNode);
                     tileTensorNode->exlinkUpperNode(tileOpNodes[k]);
                     this->_graph->pushTensorNode(tileTensorNode);
@@ -131,8 +134,8 @@ public:
             toDeleteOps.push_back(opnode);
 
         }
-        for(int i = 0;i < toDeleteOps.size();i++) {
-            OpNode<Dtype>* opnode = toDeleteOps[i];
+        for(size_t i = 0;i < toDeleteOps.size();i++) {
+            OpNode* opnode = toDeleteOps[i];
             int parentNum=opnode->parentNum();
             int childNum=opnode->childNum();
             for (int j = 0; j <parentNum ; ++j) {
@@ -182,29 +185,33 @@ public:
     }
 
     void runLowering() {
-      // SWLOG_INFO << "Start lowering pass: " << std::endl;
+      SWLOG_INFO << "Start lowering pass: " << std::endl;
 
       int nTensorNodes = _graph->tensorNodeNum();
       int nOpNodes = _graph->opNodeNum();
 
       for (int i = 0; i < nTensorNodes; i++) {
-        TensorNode<Dtype>* tnode = _graph->getTensorNode(i);
+        TensorNode* tnode = _graph->getTensorNode(i);
         Label* tlabel = tnode->getLabel();
         (void)tlabel;
         //do nothing for tensor nodes
-        // SWLOG_INFO << "Do nothing for " << tlabel->getTypeNameLabel()
-                    // << " ." << std::endl;
+        SWLOG_INFO << "Do nothing for " << tlabel->getTypeNameLabel() 
+                    << tlabel->getNodeNameLabel() << std::endl;
       }
 
       for (int i = 0; i < nOpNodes; i++) {
-        OpNode<Dtype>* tnode = _graph->getOpNode(i);
+        OpNode* tnode = _graph->getOpNode(i);
         Label* tlabel = tnode->getLabel();
         if(tlabel->getLowerMark()) {
-          tnode->getOp()->lowering(_graph, tnode);
+            SWLOG_INFO << "lowering " << tlabel->getTypeNameLabel() << std::endl;
+            tnode->getOp()->lowering(_graph, tnode);
+        }else{
+            SWLOG_INFO << "Do nothing for " << tlabel->getTypeNameLabel()
+                    << tlabel->getNodeNameLabel() << std::endl;
         }
       }
 
-      // SWLOG_INFO << "Finish lowering pass. " << std::endl;
+      SWLOG_INFO << "Finish lowering pass. " << std::endl;
 
     }
 

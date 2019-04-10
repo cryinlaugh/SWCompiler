@@ -47,15 +47,15 @@ static std::string emitArrayDefAndInit(std::string name, const std::vector<size_
     return str.substr(0, str.length()-2)+"};\n"; 
 } 
 
-template <typename Dtype>
-void Codegen<Dtype>::destroy(){
+
+void Codegen::destroy(){
     graph_ = nullptr;
     names_map_.clear();
     tensors_name_map_.clear();
     tensors_offset_map_.clear();
 }
-template <typename Dtype>
-void Codegen<Dtype>::initMemoryAllocators(){
+
+void Codegen::initMemoryAllocators(){
     Device cpu0;
     Device gpu0; gpu0.type=DeviceType::GPU; gpu0.id=0;
     Device gpu1; gpu1.type=DeviceType::GPU; gpu1.id=1;  
@@ -76,9 +76,17 @@ void Codegen<Dtype>::initMemoryAllocators(){
     m_gpu0->setBasePtrName(UniqueName(deviceToStr(gpu0)+"_baseptr"));
     m_gpu1->setBasePtrName(UniqueName(deviceToStr(gpu1)+"_baseptr"));
 }
+void Codegen::codeGenInit(){
+    // todo clear of new vector and map
+    // names_map_.clear();
+    // tensors_name_map_.clear();
+    // tensors_offset_map_.clear();
+    this->active_graph_= graph_; 
+    indent_ = 0;
+    initMemoryAllocators();
+}
 
-template <typename Dtype>
-void Codegen<Dtype>::emitCUDAInit(){
+void Codegen::emitCUDAInit(){
     //TODO create stream depending on number of device or config
     // one stream per device 
     int N = 0;
@@ -107,19 +115,7 @@ void Codegen<Dtype>::emitCUDAInit(){
     this->indent_--;
 }
 
-template <typename Dtype>
-void Codegen<Dtype>::codeGenInit(){
-    // todo clear of new vector and map
-    // names_map_.clear();
-    // tensors_name_map_.clear();
-    // tensors_offset_map_.clear();
-    this->active_graph_= graph_; 
-    indent_ = 0;
-    initMemoryAllocators();
-}
-
-template<typename Dtype>
-std::string Codegen<Dtype>::UniqueName(std::string name){
+std::string Codegen::UniqueName(std::string name){
     auto iter  = names_map_.find(name);
     if(iter != names_map_.end()){
         std::string uname = name;
@@ -134,10 +130,9 @@ std::string Codegen<Dtype>::UniqueName(std::string name){
     return name;
 }
 
-template<typename Dtype>
-std::string Codegen<Dtype>::generate(){
+std::string Codegen::generate(){
     codeGenInit();
-    
+
     std::ostringstream ss;
     ss << "/*************************************************************************\n"
         << "  > File Name: graph.cpp\n"
@@ -168,16 +163,19 @@ std::string Codegen<Dtype>::generate(){
     stream << "\n" << "int main(){\n";
     indent_++;
 
+    emitCUDAInit();
+    
     stream << "\n";
-    stream << "// allocate memory\n";
-    genMemAllocs();
+    stream << "// variable declaration and initiation\n";
+    emitMemAllocs();
 
     stream<< "\n";
-    genFuncCalls();
+    stream << "// call op routine functions\n";
+    emitFuncCalls();
 
     stream << "\n";
     stream << "// free memory\n";
-    genMemFree();
+    emitMemFree();
 
     stream << "return 0;\n";
 
@@ -191,20 +189,235 @@ std::string Codegen<Dtype>::generate(){
     return ss.str() + stream_.str();
 }
 
-template<typename Dtype>
-void Codegen<Dtype>::genFuncCalls(){
+void Codegen::emitMemAllocs(){
+    SWLOG_INFO << "genMemAllocs \n";
+
+    allocateMemAddr();
+
+    emitVarDeclarations();
+
+    emitMemAllocations();
+
+    emitTensorInitializations();
+}
+void Codegen::allocateMemAddr(){
+    SWLOG_INFO << "begin allocateMemAddr...\n";
+
+    allocateMemAddr(graph_);
+    for(int i=0; i<graph_->opNodeNum(); i++){
+        OpNode* opnode= graph_->getOpNode(i);
+        if(auto graphOp = dynamic_cast<SubGraphOp*>(opnode->getOp())){
+            if(graphOp->getGraph())
+                allocateMemAddr(graphOp->getGraph()); 
+        }
+    }
+    SWLOG_INFO << "end allocateMemAddr...\n";
+}
+void Codegen::allocateMemAddr(IRGraph* graph_){
+    
+    for(int i=0 ; i<graph_->tensorNodeNum(); i++){
+        TensorNode* tnode= graph_->getTensorNode(i);
+        Tensor* tensor = tnode->getTensor();
+
+        if(tensors_name_map_.count(tensor))
+            continue;
+
+        std::string bufferName = UniqueName(tnode->name()); 
+
+        size_t size = tensor->getSizeInBytes();
+
+        SWLOG_INFO << tnode->name() << " " << size << "\n";
+        
+        Label* label = tnode->getLabel();
+        Device dev = label->getDeviceLabel();
+
+        auto *allocator = dev_allocator_map_[dev];
+        if(!allocator){
+            SWLOG_ERROR << "allocator" << static_cast<int>(dev.type) << " " << dev.id << " not found\n";
+        }
+        uint64_t addr = allocator->allocate(tensor, size);
+        std::string base = allocator->getBasePtrName();
+
+        tensors_name_map_[tensor] = bufferName;
+        //TODO data type
+        tensors_offset_map_[tensor] = std::make_pair(base, addr/sizeof(float));
+        // tensors_base_map_[tensor] = base;
+    }
+}
+
+void Codegen::emitVarDeclarations(){
+    SWLOG_INFO << "begin emitVarDeclarations...\n";
+
+    std::string dtype = this->dtype();
+    for(auto m : mem_allocators_){
+        MemoryAllocator *allocator = m.get();
+        std::string base = allocator->getBasePtrName();    
+        stream << dtype << " *" << base << ";\n";    
+    }
+
+    
+    /*
+    for(int i=0 ; i<graph_->tensorNodeNum(); i++){
+        auto *tensor = graph_->getTensorNode(i)->getTensor();
+        std::string name = tensors_name_map_[tensor];
+        stream << dtype << " *" << name << ";\n";
+    }
+    */
+    for(auto it : tensors_name_map_){
+        stream << dtype << " *" << it.second << ";\n";
+    }
+
+    stream << "\n";
+
+    SWLOG_INFO << "end emitVarDeclarations...\n";
+}
+
+void Codegen::emitMemAllocations(){
+    std::string dtype = this->dtype();
+    for(auto m : mem_allocators_){
+        MemoryAllocator *allocator = m.get();
+        auto dev = allocator->getDevice();
+        std::string base = allocator->getBasePtrName();
+        uint64_t size = allocator->getMemAllocated();
+        if(size ==0 )
+            continue;
+        switch(dev.type){
+        case DeviceType::CPU:
+            stream << base << " = (" << dtype << "*)malloc(" << size << ");\n";
+            break;
+        case DeviceType::GPU:
+            stream << "\n";
+            stream << "cudaSetDevice(" << dev.id << ");\n";
+            stream << "cudaMalloc(&" << base << ", " << size << ");\n";
+            break;
+        default:
+            SWLOG_ERROR << "Unknown DeviceType\n";
+            break;
+        }
+    }
+    stream << "\n";
+}
+
+
+void Codegen::emitTensorInitializations(){
+    SWLOG_INFO << "begin emitTensorInitializations...\n";
+
+    std::set<Tensor*> visited_tensors;
+
+    emitTensorInitializations(graph_, &visited_tensors);
+    for(int i=0; i<graph_->opNodeNum(); i++){
+        OpNode* opnode= graph_->getOpNode(i);
+        if(auto graphOp = dynamic_cast<SubGraphOp*>(opnode->getOp())){
+            if(auto ngraph = graphOp->getGraph()){
+                switchTo(ngraph);
+                emitTensorInitializations(ngraph, &visited_tensors); 
+                stream << "\n";
+            }
+        }
+    }
+
+    SWLOG_INFO << "end emitTensorInitializations...\n";
+}
+
+
+void Codegen::emitTensorInitializations(IRGraph* graph_,
+        std::set<Tensor*> *visited_tensors){
+    for(int i=0 ; i<graph_->tensorNodeNum(); i++){
+        auto *tnode = graph_->getTensorNode(i);
+        auto *tensor = tnode->getTensor();
+
+        if(visited_tensors->count(tensor))
+            continue;
+        visited_tensors->insert(tensor);
+
+        std::string dtype = this->dtype();
+        std::string name = tensors_name_map_[tensor];
+        uint64_t size = tensor->size();
+        std::string base;
+        uint64_t offset;
+        std::tie(base, offset) = tensors_offset_map_[tensor];
+        stream << name << " = " << base << " + " << offset << ";\n";
+
+        TensorInitInfo info = tensor->getTensorInitInfo();
+        switch(tensor->getTensorInitType()) {
+            case TensorInitType::NONE:
+                break;
+            case TensorInitType::XAVIER: {
+                //TODO 
+                stream << "initTensorXavier(" << name << ", "
+                        << size << ", " << info.getFilterSize() <<");\n";
+                break;
+            }
+            case TensorInitType::CONSTANT: {
+                stream << "initTensorConstant(" << name << ", "
+                        << size << ", " << "1.0f);\n"; 
+                break;
+            }
+            case TensorInitType::ZERO: {
+                stream << "initTensorZero(" << name << ", "
+                        << size << ");\n"; 
+                break;
+            }
+            case TensorInitType::FILE: {
+                stream << "load(" << name << ", "
+                        << size << ", 0, \"" << info.getFilePath() << "\");\n";
+                break;
+            }
+            case TensorInitType::PARENTOP: {
+                auto *op = (OpNode*)tnode->getParentNode(0); 
+                dispathOpNode(op);
+                break;
+            }
+            default:
+                SWLOG_INFO << name << " TensorInitType= NONE\n"; 
+                break;
+
+        } // switch
+    } // tensor loop
+
+    stream << "\n";
+}
+
+std::string Codegen::emitTensorMemAlloc(TensorNode* tnode){
+    std::string bufferName = tnode->name(); // ensure IRNode name unique before Codegen 
+    int dims = tnode->getTensor()->getNDim(); 
+
+    size_t size = 1;
+    for(int dim=0; dim<dims; dim++)
+        size *= tnode->getTensor()->getDim(dim);
+
+    DataType dtype = tnode->getDataType(); 
+
+    switch(dtype){
+        case DataType::Float_t:
+            stream << "float *" << bufferName
+               << " = (float *)malloc(sizeof(float) * " << size << ");\n";
+            break;
+        case DataType::Double_t:
+            stream << "double *" << bufferName
+               << " = (double *)malloc(sizeof(double) * " << size << ");\n";
+            break;
+        default:
+            SWLOG_ERROR << "UNKNOWN DataType\n";
+    }
+
+    tensors_name_map_[tnode->getTensor()] = bufferName;
+    return bufferName;
+}
+
+void Codegen::emitFuncCalls(){
     for (int i = 0; i < graph_->topologyNum(); i++)  
         for (int j = 0; j < graph_->getNumInTopoLevel(i); j++) {
             auto node = graph_->getNodeInTopo(i, j);
             if (node->nodeType() == OP_NODE){
-                auto opnode = (OpNode<Dtype>*)node;
+                auto opnode = (OpNode*)node;
                 stream << "\n";
                 stream << "// topology(" << i << ", " << j << "): " << opnode->name() 
                         << " : " << opnode->getOpName() <<"\n";
-                if(auto graphOp = dynamic_cast<SubGraphOp<Dtype>*>(opnode->getOp())){
+                if(auto graphOp = dynamic_cast<SubGraphOp*>(opnode->getOp())){
                     if(auto ngraph = graphOp->getGraph()){
                         switchTo(ngraph);
-                        genFuncCalls(ngraph);
+                        emitFuncCalls(ngraph);
                         stream << "\n";
                     }
                 }else {
@@ -213,8 +426,22 @@ void Codegen<Dtype>::genFuncCalls(){
             }
         }
 }
-template<typename Dtype>
-void Codegen<Dtype>::switchTo(IRGraph<Dtype>* ngraph){
+void Codegen::emitFuncCalls(IRGraph* graph_){
+    for (int i = 0; i < graph_->topologyNum(); i++)  
+        for (int j = 0; j < graph_->getNumInTopoLevel(i); j++) {
+            auto node = graph_->getNodeInTopo(i, j);
+            if (node->nodeType() == OP_NODE){
+                stream << "// topology(" << i << ", " << j << "): " << node->name() << "\n";
+                auto opnode = (OpNode*)node;
+                if(auto graphOp = dynamic_cast<SubGraphOp*>(opnode->getOp())){
+                }else {
+                    dispathOpNode(opnode);
+                }
+            }
+        }
+}
+
+void Codegen::switchTo(IRGraph* ngraph){
     //Device host = this->graph_->getDeviceLabel();
     Device dev = ngraph->getDeviceLabel();
     if(dev.type == DeviceType::CPU){
@@ -224,39 +451,23 @@ void Codegen<Dtype>::switchTo(IRGraph<Dtype>* ngraph){
         stream <<  "cudaSetDevice(" << dev.id << ");\n";
     }
 }
-template<typename Dtype>
-void Codegen<Dtype>::switchFrom(IRGraph<Dtype>* ngraph){
 
+void Codegen::switchFrom(IRGraph* ngraph){
+  (void)ngraph;
 }
 
-template<typename Dtype>
-void Codegen<Dtype>::genFuncCalls(IRGraph<Dtype>* graph_){
-    for (int i = 0; i < graph_->topologyNum(); i++)  
-        for (int j = 0; j < graph_->getNumInTopoLevel(i); j++) {
-            auto node = graph_->getNodeInTopo(i, j);
-            if (node->nodeType() == OP_NODE){
-                stream << "// topology(" << i << ", " << j << "): " << node->name() << "\n";
-                auto opnode = (OpNode<Dtype>*)node;
-                if(auto graphOp = dynamic_cast<SubGraphOp<Dtype>*>(opnode->getOp())){
-                }else {
-                    dispathOpNode(opnode);
-                }
-            }
-        }
-}
 
-template<typename Dtype>
-void Codegen<Dtype>::dispathOpNode(OpNode<Dtype>* op){
+void Codegen::dispathOpNode(OpNode* op){
     if(!op->runable())
         return;
 
     Label *label = op->getLabel();
     Device dev = label->getDeviceLabel();
-    if(auto scatter = dynamic_cast<ScatterOp<Dtype>*>(op->getOp())){
-        auto* from = ((TensorNode<Dtype>*)op->getParentNode(0));  
+    if(auto scatter = dynamic_cast<ScatterOp*>(op->getOp())){
+        auto* from = ((TensorNode*)op->getParentNode(0));  
         auto* from_tensor = from->getTensor();
         Device from_dev = from->getLabel()->getDeviceLabel();
-        auto* to = ((TensorNode<Dtype>*)op->getChildNode(0));  
+        auto* to = ((TensorNode*)op->getChildNode(0));  
         auto* to_tensor = to->getTensor();
 
         size_t offset  = scatter->getOffset();
@@ -265,10 +476,10 @@ void Codegen<Dtype>::dispathOpNode(OpNode<Dtype>* op){
         emitMemcpyFromTo(from_tensor, from_dev, offset, size,
             to_tensor, dev); 
     }
-    else if(auto gather = dynamic_cast<GatherOp<Dtype>*>(op->getOp())){
-        auto* from = ((TensorNode<Dtype>*)op->getParentNode(0));  
+    else if(auto gather = dynamic_cast<GatherOp*>(op->getOp())){
+        auto* from = ((TensorNode*)op->getParentNode(0));  
         auto* from_tensor = from->getTensor();
-        auto* to = ((TensorNode<Dtype>*)op->getChildNode(0));  
+        auto* to = ((TensorNode*)op->getChildNode(0));  
         auto* to_tensor = to->getTensor();
         Device to_dev= to->getLabel()->getDeviceLabel();
 
@@ -280,10 +491,10 @@ void Codegen<Dtype>::dispathOpNode(OpNode<Dtype>* op){
     }else{
         switch(dev.type){
         case DeviceType::CPU:
-            genFuncCall(op); 
+            emitFuncCall(op); 
             break;
         case DeviceType::GPU:
-            genFuncCallCUDA(op); 
+            emitFuncCallCUDA(op); 
             break;
         default:
             SWLOG_ERROR << "unknown device type in dispathOpNode\n";
@@ -291,9 +502,9 @@ void Codegen<Dtype>::dispathOpNode(OpNode<Dtype>* op){
     }
 }
 
-template<typename Dtype>
-void Codegen<Dtype>::emitMemcpyFromTo(Tensor<Dtype>* from, Device from_dev, size_t offset, size_t size,
-            Tensor<Dtype>* to, Device to_dev){
+
+void Codegen::emitMemcpyFromTo(Tensor* from, Device from_dev, size_t offset, size_t size,
+            Tensor* to, Device to_dev){
     std::string fname = tensors_name_map_[from];
     std::string tname = tensors_name_map_[to];
     if(from_dev.type==DeviceType::CPU && to_dev.type==DeviceType::GPU){
@@ -318,15 +529,27 @@ void Codegen<Dtype>::emitMemcpyFromTo(Tensor<Dtype>* from, Device from_dev, size
     }  
 }
 
-template<typename Dtype>
-void Codegen<Dtype>::genFuncCall(OpNode<Dtype>* op){
+
+void Codegen::emitFuncCall(OpNode* op){
+    DataType dtype = op->parentNum() > 0 ?  ((TensorNode*)op->getParentNode(0))->getTensor()->getDataType() : DataType::Float_t;  
+
     std::string dtype_flag;
-    if(auto node = dynamic_cast<OpNode<float>*>(op)){
-        dtype_flag = "f";
-    }else if(auto node = dynamic_cast<OpNode<double>*>(op)){
-        dtype_flag = "d";
-    }else{
-        SWLOG_ERROR << "Unknown Dtype\n";
+    switch(dtype){
+        case DataType::Float_t:
+            dtype_flag = "f";
+            break;
+        case DataType::Double_t:
+            dtype_flag = "d";
+            break;
+        case DataType::Int8_t:
+            dtype_flag = "i8";
+            break;
+        case DataType::Int32_t:
+            dtype_flag = "i";
+            break;
+        default:
+            dtype_flag = "f";
+            SWLOG_ERROR << "UNKNOWN DataType\n";
     }
     
     Label* oplabel = op->getLabel();
@@ -335,9 +558,9 @@ void Codegen<Dtype>::genFuncCall(OpNode<Dtype>* op){
     // TODO assert legal dimensions
     if ((oplabel->getTypeNameLabel()).compare("MatrixMatrixMul") == 0) {
         //TODO assert
-        auto* A = ((TensorNode<Dtype>*)op->getParentNode(0))->getTensor();  
-        auto* B = ((TensorNode<Dtype>*)op->getParentNode(1))->getTensor();  
-        auto* C = ((TensorNode<Dtype>*)op->getChildNode(0))->getTensor();  
+        auto* A = ((TensorNode*)op->getParentNode(0))->getTensor();  
+        auto* B = ((TensorNode*)op->getParentNode(1))->getTensor();  
+        auto* C = ((TensorNode*)op->getChildNode(0))->getTensor();  
         int m = C->getDim(0);
         int k = B->getDim(0);
         int n = C->getDim(1);
@@ -351,9 +574,9 @@ void Codegen<Dtype>::genFuncCall(OpNode<Dtype>* op){
     }
     
     if((oplabel->getTypeNameLabel()) == "BatchedAdd"){
-        auto* A = ((TensorNode<Dtype>*)op->getParentNode(0))->getTensor();  
-        auto* B = ((TensorNode<Dtype>*)op->getParentNode(1))->getTensor();  
-        auto* C = ((TensorNode<Dtype>*)op->getChildNode(0))->getTensor();  
+        auto* A = ((TensorNode*)op->getParentNode(0))->getTensor();  
+        auto* B = ((TensorNode*)op->getParentNode(1))->getTensor();  
+        auto* C = ((TensorNode*)op->getChildNode(0))->getTensor();  
     
         size_t sliceNum, sliceSize;
         std::tie(sliceNum, sliceSize) = convertToDim2(A->getDims());
@@ -368,9 +591,9 @@ void Codegen<Dtype>::genFuncCall(OpNode<Dtype>* op){
                 << sliceNum << ", " << sliceSize << ");\n";
     }
     if((oplabel->getTypeNameLabel()) == "ElementAdd"){
-        auto* A = ((TensorNode<Dtype>*)op->getParentNode(0))->getTensor();  
-        auto* B = ((TensorNode<Dtype>*)op->getParentNode(1))->getTensor();  
-        auto* C = ((TensorNode<Dtype>*)op->getChildNode(0))->getTensor();  
+        auto* A = ((TensorNode*)op->getParentNode(0))->getTensor();  
+        auto* B = ((TensorNode*)op->getParentNode(1))->getTensor();  
+        auto* C = ((TensorNode*)op->getChildNode(0))->getTensor();  
     
         auto num = A->size();
 
@@ -382,12 +605,12 @@ void Codegen<Dtype>::genFuncCall(OpNode<Dtype>* op){
     }
 
     if((oplabel->getTypeNameLabel()) == "Conv2d"){
-        auto* input = ((TensorNode<Dtype>*)op->getParentNode(0))->getTensor();  
-        auto* filter = ((TensorNode<Dtype>*)op->getParentNode(1))->getTensor();  
-        auto* bias = ((TensorNode<Dtype>*)op->getParentNode(2))->getTensor();  
-        auto* out = ((TensorNode<Dtype>*)op->getChildNode(0))->getTensor();  
+        auto* input = ((TensorNode*)op->getParentNode(0))->getTensor();  
+        auto* filter = ((TensorNode*)op->getParentNode(1))->getTensor();  
+        auto* bias = ((TensorNode*)op->getParentNode(2))->getTensor();  
+        auto* out = ((TensorNode*)op->getChildNode(0))->getTensor();  
 
-        auto *conv_op = (Conv2dOp<Dtype>*)op->getOp();
+        auto *conv_op = (Conv2dOp*)op->getOp();
         auto kernels = conv_op->getKernels();
         auto strides = conv_op->getStrides();
         auto pads = conv_op->getPads();
@@ -425,14 +648,14 @@ void Codegen<Dtype>::genFuncCall(OpNode<Dtype>* op){
     }
 
     if((oplabel->getTypeNameLabel()) == "BatchNormalization"){
-        auto* input = ((TensorNode<Dtype>*)op->getParentNode(0))->getTensor();  
-        auto* scale = ((TensorNode<Dtype>*)op->getParentNode(1))->getTensor();  
-        auto* bias= ((TensorNode<Dtype>*)op->getParentNode(2))->getTensor();  
-        auto* mean = ((TensorNode<Dtype>*)op->getParentNode(3))->getTensor();  
-        auto* var = ((TensorNode<Dtype>*)op->getParentNode(4))->getTensor();  
-        auto* out = ((TensorNode<Dtype>*)op->getChildNode(0))->getTensor();  
+        auto* input = ((TensorNode*)op->getParentNode(0))->getTensor();  
+        auto* scale = ((TensorNode*)op->getParentNode(1))->getTensor();  
+        auto* bias= ((TensorNode*)op->getParentNode(2))->getTensor();  
+        auto* mean = ((TensorNode*)op->getParentNode(3))->getTensor();  
+        auto* var = ((TensorNode*)op->getParentNode(4))->getTensor();  
+        auto* out = ((TensorNode*)op->getChildNode(0))->getTensor();  
 
-        auto *bn_op = (BatchNormalizationOp<Dtype>*)op->getOp();
+        auto *bn_op = (BatchNormalizationOp*)op->getOp();
         float epsilon = bn_op->getEpsilon();
 
         auto iDims = op->name() + "_inDims";
@@ -452,10 +675,10 @@ void Codegen<Dtype>::genFuncCall(OpNode<Dtype>* op){
     if((oplabel->getTypeNameLabel()) == "MaxPool"
         || (oplabel->getTypeNameLabel()) == "AveragePool"
         ){
-        auto* input = ((TensorNode<Dtype>*)op->getParentNode(0))->getTensor();  
-        auto* out = ((TensorNode<Dtype>*)op->getChildNode(0))->getTensor();  
+        auto* input = ((TensorNode*)op->getParentNode(0))->getTensor();  
+        auto* out = ((TensorNode*)op->getChildNode(0))->getTensor();  
 
-        auto *pool_op= (MaxPoolOp<Dtype>*)op->getOp();
+        auto *pool_op= (MaxPoolOp*)op->getOp();
         auto kernels = pool_op->getKernels();
         auto strides = pool_op->getStrides();
         auto pads = pool_op->getPads();
@@ -494,8 +717,8 @@ void Codegen<Dtype>::genFuncCall(OpNode<Dtype>* op){
     }
 
     if((oplabel->getTypeNameLabel()) == "Relu"){
-        auto* input = ((TensorNode<Dtype>*)op->getParentNode(0))->getTensor();  
-        auto* out = ((TensorNode<Dtype>*)op->getChildNode(0))->getTensor();  
+        auto* input = ((TensorNode*)op->getParentNode(0))->getTensor();  
+        auto* out = ((TensorNode*)op->getChildNode(0))->getTensor();  
         
         size_t size = input->size();
         stream << "relu_" << dtype_flag << "("
@@ -506,10 +729,10 @@ void Codegen<Dtype>::genFuncCall(OpNode<Dtype>* op){
     }
 
     if((oplabel->getTypeNameLabel()) == "Transpose"){
-        auto* input = ((TensorNode<Dtype>*)op->getParentNode(0))->getTensor();  
-        auto* out = ((TensorNode<Dtype>*)op->getChildNode(0))->getTensor();  
+        auto* input = ((TensorNode*)op->getParentNode(0))->getTensor();  
+        auto* out = ((TensorNode*)op->getChildNode(0))->getTensor();  
 
-        auto *trans_op= (TranposeOp<Dtype>*)op->getOp();
+        auto *trans_op= (TranposeOp*)op->getOp();
         auto shuffle = trans_op->getShuffle();
 
         auto iDims = op->name() + "_inDims";
@@ -543,8 +766,8 @@ void Codegen<Dtype>::genFuncCall(OpNode<Dtype>* op){
 
     if ((oplabel->getTypeNameLabel()).compare("MatrixTanh") == 0) {
         //TODO assert
-        auto* A = ((TensorNode<Dtype>*)op->getParentNode(0))->getTensor();  
-        auto* B = ((TensorNode<Dtype>*)op->getChildNode(0))->getTensor();  
+        auto* A = ((TensorNode*)op->getParentNode(0))->getTensor();  
+        auto* B = ((TensorNode*)op->getChildNode(0))->getTensor();  
         int m = A->getDim(0);
         int n = A->getDim(1);
         
@@ -556,8 +779,8 @@ void Codegen<Dtype>::genFuncCall(OpNode<Dtype>* op){
     } 
     if ((oplabel->getTypeNameLabel()).compare("MatrixSoftmax") == 0) {
         //TODO assert
-        auto* A = ((TensorNode<Dtype>*)op->getParentNode(0))->getTensor();  
-        auto* B = ((TensorNode<Dtype>*)op->getChildNode(0))->getTensor();  
+        auto* A = ((TensorNode*)op->getParentNode(0))->getTensor();  
+        auto* B = ((TensorNode*)op->getChildNode(0))->getTensor();  
         int m = A->getDim(0);
         int n = A->getDim(1);
         
@@ -570,231 +793,9 @@ void Codegen<Dtype>::genFuncCall(OpNode<Dtype>* op){
 }
 
 // TODO depreciate this function 
-template<typename Dtype>
-void Codegen<Dtype>::genMemAllocs(){
-    SWLOG_INFO << "genMemAllocs \n";
+std::string Codegen::dtype(){ return "float"; }
 
-    allocateMemAddr();
-
-    emitVarDeclarations();
-
-    emitCUDAInit();
-    emitMemAllocations();
-
-    emitTensorInitializations();
-
-}
-
-template<typename Dtype>
-std::string Codegen<Dtype>::genTensorMemAlloc(TensorNode<Dtype>* tnode){
-    std::string bufferName = UniqueName(tnode->name()); 
-    int dims = tnode->getTensor()->getNDim(); 
-    size_t size = 1;
-    for(int dim=0; dim<dims; dim++)
-        size *= tnode->getTensor()->getDim(dim);
-
-    if(auto node = dynamic_cast<TensorNode<float>*>(tnode)){
-        stream << "float *" << bufferName
-               << " = (float *)malloc(sizeof(float) * " << size << ");\n";
-    }
-    else if(auto node = dynamic_cast<TensorNode<double>*>(tnode)){
-        stream << "double *" << bufferName
-               << " = (double *)malloc(sizeof(double) * " << size << ");\n";
-    }
-
-    tensors_name_map_[tnode->getTensor()] = bufferName;
-    return bufferName;
-}
-
-template <typename Dtype>
-void Codegen<Dtype>::allocateMemAddr(){
-    SWLOG_INFO << "---- " << "begin allocateMemAddr...\n";
-
-    allocateMemAddr(graph_);
-    for(int i=0; i<graph_->opNodeNum(); i++){
-        OpNode<Dtype>* opnode= graph_->getOpNode(i);
-        if(auto graphOp = dynamic_cast<SubGraphOp<Dtype>*>(opnode->getOp())){
-            if(graphOp->getGraph())
-                allocateMemAddr(graphOp->getGraph()); 
-        }
-    }
-
-    SWLOG_INFO << "---- " << "end allocateMemAddr...\n";
-}
-
-template <typename Dtype>
-void Codegen<Dtype>::allocateMemAddr(IRGraph<Dtype>* graph_){
-    
-    for(int i=0 ; i<graph_->tensorNodeNum(); i++){
-        TensorNode<Dtype>* tnode= graph_->getTensorNode(i);
-        Tensor<Dtype>* tensor = tnode->getTensor();
-
-        if(tensors_name_map_.count(tensor))
-            continue;
-
-        std::string bufferName = UniqueName(tnode->name()); 
-
-        size_t size = tensor->getSizeInBytes();
-
-        SWLOG_INFO << "---- " << tnode->name() << " " << size << "\n";
-        
-        Label* label = tnode->getLabel();
-        Device dev = label->getDeviceLabel();
-
-        auto *allocator = dev_allocator_map_[dev];
-        if(!allocator){
-            SWLOG_ERROR << "allocator" << static_cast<int>(dev.type) << " " << dev.id << " not found\n";
-        }
-        uint64_t addr = allocator->allocate(tensor, size);
-        std::string base = allocator->getBasePtrName();
-
-        tensors_name_map_[tensor] = bufferName;
-        tensors_offset_map_[tensor] = std::make_pair(base, addr/sizeof(Dtype));
-        // tensors_base_map_[tensor] = base;
-    }
-}
-
-template<> std::string Codegen<float>::dtype(){ return "float"; }
-template<> std::string Codegen<double>::dtype(){ return "double"; }
-
-template <typename Dtype>
-void Codegen<Dtype>::emitVarDeclarations(){
-    SWLOG_INFO << "---- " << "begin emitVarDeclarations...\n";
-
-    std::string dtype = this->dtype();
-    for(auto m : mem_allocators_){
-        MemoryAllocator *allocator = m.get();
-        std::string base = allocator->getBasePtrName();    
-        stream << dtype << " *" << base << ";\n";    
-    }
-
-    
-    /*
-    for(int i=0 ; i<graph_->tensorNodeNum(); i++){
-        auto *tensor = graph_->getTensorNode(i)->getTensor();
-        std::string name = tensors_name_map_[tensor];
-        stream << dtype << " *" << name << ";\n";
-    }
-    */
-    for(auto it : tensors_name_map_){
-        stream << dtype << " *" << it.second << ";\n";
-    }
-
-    stream << "\n";
-
-    SWLOG_INFO << "---- " << "end emitVarDeclarations...\n";
-}
-
-template <typename Dtype>
-void Codegen<Dtype>::emitMemAllocations(){
-    std::string dtype = this->dtype();
-    for(auto m : mem_allocators_){
-        MemoryAllocator *allocator = m.get();
-        auto dev = allocator->getDevice();
-        std::string base = allocator->getBasePtrName();
-        uint64_t size = allocator->getMemAllocated();
-        if(size ==0 )
-            continue;
-        switch(dev.type){
-        case DeviceType::CPU:
-            stream << base << " = (" << dtype << "*)malloc(" << size << ");\n";
-            break;
-        case DeviceType::GPU:
-            stream << "\n";
-            stream << "cudaSetDevice(" << dev.id << ");\n";
-            stream << "cudaMalloc(&" << base << ", " << size << ");\n";
-            break;
-        default:
-            SWLOG_ERROR << "Unknown DeviceType\n";
-            break;
-        }
-    }
-
-    stream << "\n";
-}
-
-template <typename Dtype>
-void Codegen<Dtype>::emitTensorInitializations(){
-    SWLOG_INFO << "---- " << "begin emitTensorInitializations...\n";
-
-    std::set<Tensor<Dtype>*> visited_tensors;
-
-    emitTensorInitializations(graph_, &visited_tensors);
-    for(int i=0; i<graph_->opNodeNum(); i++){
-        OpNode<Dtype>* opnode= graph_->getOpNode(i);
-        if(auto graphOp = dynamic_cast<SubGraphOp<Dtype>*>(opnode->getOp())){
-            if(auto ngraph = graphOp->getGraph()){
-                switchTo(ngraph);
-                emitTensorInitializations(ngraph, &visited_tensors); 
-                stream << "\n";
-            }
-        }
-    }
-
-    SWLOG_INFO << "---- " << "end emitTensorInitializations...\n";
-}
-
-template <typename Dtype>
-void Codegen<Dtype>::emitTensorInitializations(IRGraph<Dtype>* graph_,
-        std::set<Tensor<Dtype>*> *visited_tensors){
-    for(int i=0 ; i<graph_->tensorNodeNum(); i++){
-        auto *tnode = graph_->getTensorNode(i);
-        auto *tensor = tnode->getTensor();
-
-        if(visited_tensors->count(tensor))
-            continue;
-        visited_tensors->insert(tensor);
-
-        std::string dtype = this->dtype();
-        std::string name = tensors_name_map_[tensor];
-        uint64_t size = tensor->size();
-        std::string base;
-        uint64_t offset;
-        std::tie(base, offset) = tensors_offset_map_[tensor];
-        stream << name << " = " << base << " + " << offset << ";\n";
-
-        TensorInitInfo<Dtype> info = tensor->getTensorInitInfo();
-        switch(tensor->getTensorInitType()) {
-            case TensorInitType::NONE:
-                break;
-            case TensorInitType::XAVIER: {
-                //TODO 
-                stream << "initTensorXavier(" << name << ", "
-                        << size << ", " << info.getFilterSize() <<");\n";
-                break;
-            }
-            case TensorInitType::CONSTANT: {
-                stream << "initTensorConstant(" << name << ", "
-                        << size << ", " << "1.0f);\n"; 
-                break;
-            }
-            case TensorInitType::ZERO: {
-                stream << "initTensorZero(" << name << ", "
-                        << size << ");\n"; 
-                break;
-            }
-            case TensorInitType::FILE: {
-                stream << "load(" << name << ", "
-                        << size << ", 0, \"" << info.getFilePath() << "\");\n";
-                break;
-            }
-            case TensorInitType::PARENTOP: {
-                auto *op = (OpNode<Dtype>*)tnode->getParentNode(0); 
-                dispathOpNode(op);
-                break;
-            }
-            default:
-                SWLOG_INFO << name << " TensorInitType= NONE\n"; 
-                break;
-
-        } // switch
-    } // tensor loop
-
-    stream << "\n";
-}
-
-template<typename Dtype>
-void Codegen<Dtype>::genMemFree(){
+void Codegen::emitMemFree(){
     SWLOG_INFO << "genMemoryFree\n";
 
     std::string dtype = this->dtype();
@@ -822,8 +823,8 @@ void Codegen<Dtype>::genMemFree(){
 
     stream << "\n";
 }
-template<typename Dtype>
-void Codegen<Dtype>::genFuncCallCUDA(OpNode<Dtype>* op){
+
+void Codegen::emitFuncCallCUDA(OpNode* op){
     std::string dtype_flag = dtype();
     
     Label* oplabel = op->getLabel();
@@ -832,9 +833,9 @@ void Codegen<Dtype>::genFuncCallCUDA(OpNode<Dtype>* op){
     // TODO assert legal dimensions
     if ((oplabel->getTypeNameLabel()).compare("MatrixMatrixMul") == 0) {
 
-        auto* A = ((TensorNode<Dtype>*)op->getParentNode(0))->getTensor();  
-        auto* B = ((TensorNode<Dtype>*)op->getParentNode(1))->getTensor();  
-        auto* C = ((TensorNode<Dtype>*)op->getChildNode(0))->getTensor();  
+        auto* A = ((TensorNode*)op->getParentNode(0))->getTensor();  
+        auto* B = ((TensorNode*)op->getParentNode(1))->getTensor();  
+        auto* C = ((TensorNode*)op->getChildNode(0))->getTensor();  
         int m = C->getDim(0); 
         int k = A->getDim(1);
         int n = C->getDim(1);
@@ -856,8 +857,8 @@ void Codegen<Dtype>::genFuncCallCUDA(OpNode<Dtype>* op){
     }
     if ((oplabel->getTypeNameLabel()).compare("MatrixTanh") == 0) {
         //TODO assert
-        auto* A = ((TensorNode<Dtype>*)op->getParentNode(0))->getTensor();  
-        auto* B = ((TensorNode<Dtype>*)op->getChildNode(0))->getTensor();  
+        auto* A = ((TensorNode*)op->getParentNode(0))->getTensor();  
+        auto* B = ((TensorNode*)op->getChildNode(0))->getTensor();  
         int m = A->getDim(0);
         int n = A->getDim(1);
         
@@ -870,8 +871,8 @@ void Codegen<Dtype>::genFuncCallCUDA(OpNode<Dtype>* op){
     } 
     if ((oplabel->getTypeNameLabel()).compare("MatrixSoftmax") == 0) {
         //TODO assert
-        auto* A = ((TensorNode<Dtype>*)op->getParentNode(0))->getTensor();  
-        auto* B = ((TensorNode<Dtype>*)op->getChildNode(0))->getTensor();  
+        auto* A = ((TensorNode*)op->getParentNode(0))->getTensor();  
+        auto* B = ((TensorNode*)op->getChildNode(0))->getTensor();  
         int m = A->getDim(0);
         int n = A->getDim(1);
         
@@ -883,8 +884,6 @@ void Codegen<Dtype>::genFuncCallCUDA(OpNode<Dtype>* op){
         
     }      
 }
-
-INSTANTIATE_CLASS(Codegen);
 
 } //namespace codegen
 } // namespace swc

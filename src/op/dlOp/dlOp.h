@@ -24,10 +24,10 @@ namespace swc{
 //=====================================================
 
 
-template <typename Dtype>
-class MatrixMatrixFCOp : public Op<Dtype>{
+
+class MatrixMatrixFCOp : public Op{
 public:
-    MatrixMatrixFCOp():Op<Dtype>(DL_OP, 2, 1, std::string("MatrixMatrixFC")){
+    MatrixMatrixFCOp():Op(DL_OP, 2, 1, std::string("MatrixMatrixFC")){
         this->_inputNDims.push_back(2);
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
@@ -36,14 +36,14 @@ public:
     void destroy(){};
 
     //for lowering
-    void lowering(IRGraph<Dtype>* graph, IRNode* node);
+    void lowering(IRGraph* graph, IRNode* node);
 
 };
 
-template <typename Dtype>
-class MatrixTanhOp : public Op<Dtype>{
+
+class MatrixTanhOp : public Op{
 public:
-    MatrixTanhOp():Op<Dtype>(DL_OP, 1,1, std::string("MatrixTanh")) {
+    MatrixTanhOp():Op(DL_OP, 1,1, std::string("MatrixTanh")) {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
     };
@@ -51,10 +51,10 @@ public:
     void destroy(){};
 };
 
-template <typename Dtype>
-class MatrixSoftmaxOp : public Op<Dtype>{
+
+class MatrixSoftmaxOp : public Op{
 public:
-    MatrixSoftmaxOp(): Op<Dtype>(DL_OP, 1,1, std::string("MatrixSoftmax")) {
+    MatrixSoftmaxOp(): Op(DL_OP, 1,1, std::string("MatrixSoftmax")) {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
     };
@@ -63,10 +63,10 @@ public:
 
 };
 
-template <typename Dtype>
-class MatrixLogNegLossOp : public Op<Dtype>{
+
+class MatrixLogNegLossOp : public Op{
 public:
-    MatrixLogNegLossOp():Op<Dtype>(DL_OP, 1,1, std::string("MatrixLogNegLoss")) {
+    MatrixLogNegLossOp():Op(DL_OP, 1,1, std::string("MatrixLogNegLoss")) {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(0);
     };
@@ -74,10 +74,10 @@ public:
     void destroy(){};
 };
 
-template <typename Dtype>
-class MatrixTanhGradOp : public Op<Dtype>{
+
+class MatrixTanhGradOp : public Op{
 public:
-    MatrixTanhGradOp():Op<Dtype>(DL_OP, 2,1, std::string("MatrixTanhGrad")) {
+    MatrixTanhGradOp():Op(DL_OP, 2,1, std::string("MatrixTanhGrad")) {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
     };
@@ -85,10 +85,10 @@ public:
     void destroy(){};
 };
 
-template <typename Dtype>
-class MatrixSoftmaxGradOp : public Op<Dtype>{
+
+class MatrixSoftmaxGradOp : public Op{
 public:
-    MatrixSoftmaxGradOp(): Op<Dtype>(DL_OP, 2,1, std::string("MatrixSoftmaxGrad")) {
+    MatrixSoftmaxGradOp(): Op(DL_OP, 2,1, std::string("MatrixSoftmaxGrad")) {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
     };
@@ -96,10 +96,10 @@ public:
     void destroy(){};
 };
 
-template <typename Dtype>
-class MatrixTransOp : public Op<Dtype>{
+
+class MatrixTransOp : public Op{
 public:
-    MatrixTransOp(): Op<Dtype>(DL_OP, 1,1, std::string("MatrixTrans")) {
+    MatrixTransOp(): Op(DL_OP, 1,1, std::string("MatrixTrans")) {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
     };
@@ -107,10 +107,10 @@ public:
     void destroy(){};
 };
 
-template <typename Dtype>
-class MatrixAddOp : public Op<Dtype>{
+
+class MatrixAddOp : public Op{
 public:
-    MatrixAddOp(): Op<Dtype>(DL_OP, 2,1, std::string("MatrixAdd")) {
+    MatrixAddOp(): Op(DL_OP, 2,1, std::string("MatrixAdd")) {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
     };
@@ -118,40 +118,40 @@ public:
     void destroy(){};
 };
 
-template <typename Dtype>
-class ElementAddOp: public Op<Dtype>{
+
+class ElementAddOp: public Op{
 public:
-    ElementAddOp(): Op<Dtype>(DL_OP, 2,1, std::string("ElementAdd")) {
+    ElementAddOp(): Op(DL_OP, 2,1, std::string("ElementAdd")) {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
     };
     ~ElementAddOp();
     void destroy(){};
 };
-template <typename Dtype>
-class ElementSubOp: public Op<Dtype>{
+
+class ElementSubOp: public Op{
 public:
-    ElementSubOp(): Op<Dtype>(DL_OP, 2,1, std::string("ElementAdd")) {
+    ElementSubOp(): Op(DL_OP, 2,1, std::string("ElementAdd")) {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
     };
     ~ElementSubOp();
     void destroy(){};
 };
-template <typename Dtype>
-class ElementMulOp: public Op<Dtype>{
+
+class ElementMulOp: public Op{
 public:
-    ElementMulOp(): Op<Dtype>(DL_OP, 2,1, std::string("ElementAdd")) {
+    ElementMulOp(): Op(DL_OP, 2,1, std::string("ElementAdd")) {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
     };
     ~ElementMulOp();
     void destroy(){};
 };
-template <typename Dtype>
-class ElementDivOp: public Op<Dtype>{
+
+class ElementDivOp: public Op{
 public:
-    ElementDivOp(): Op<Dtype>(DL_OP, 2,1, std::string("ElementAdd")) {
+    ElementDivOp(): Op(DL_OP, 2,1, std::string("ElementAdd")) {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
     };
@@ -159,12 +159,12 @@ public:
     void destroy(){};
 };
 
-template <typename Dtype>
-class PrintMatrixOp : public Op<Dtype>{
+
+class PrintMatrixOp : public Op{
     PrintStreamType type_;
     std::string outfile_;
 public:
-    PrintMatrixOp(): Op<Dtype>(DL_OP, 1,0, std::string("PrintMatrix")) {
+    PrintMatrixOp(): Op(DL_OP, 1,0, std::string("PrintMatrix")) {
         this->_inputNDims.push_back(2);
     };
     ~PrintMatrixOp();
@@ -177,48 +177,48 @@ public:
     std::string getOutFile() { return outfile_; }
 };
 
-template <typename Dtype>
-class ScatterOp: public Op<Dtype>{
+
+class ScatterOp: public Op{
     size_t offset_;
 public:
-    ScatterOp() : Op<Dtype>(DL_OP, 0, 0, "Scatter"), offset_(0){}
-    ScatterOp(size_t offset) : Op<Dtype>(DL_OP, 0, 0, "Scatter"), offset_(offset){}
+    ScatterOp() : Op(DL_OP, 0, 0, "Scatter"), offset_(0){}
+    ScatterOp(size_t offset) : Op(DL_OP, 0, 0, "Scatter"), offset_(offset){}
     ~ScatterOp();
 
     void setOffset(size_t offset) { offset_ = offset; }
     size_t getOffset() {return offset_; }
 };
 
-template <typename Dtype>
-class GatherOp: public Op<Dtype>{
+
+class GatherOp: public Op{
     size_t offset_;
 public:
-    GatherOp() : Op<Dtype>(DL_OP, 0, 0, "Gather"), offset_(0){}
-    GatherOp(size_t offset) : Op<Dtype>(DL_OP, 0, 0, "Gather"), offset_(offset){}
+    GatherOp() : Op(DL_OP, 0, 0, "Gather"), offset_(0){}
+    GatherOp(size_t offset) : Op(DL_OP, 0, 0, "Gather"), offset_(offset){}
     ~GatherOp();
     void setOffset(size_t offset) { offset_ = offset; }
     size_t getOffset() {return offset_; }
 };
 
-template <typename Dtype>
-class SubGraphOp: public Op<Dtype>{
-    IRGraph<Dtype>* graph_;
+
+class SubGraphOp: public Op{
+    IRGraph* graph_;
 public:
-    SubGraphOp() : Op<Dtype>(DL_OP, 0, 0, "SubGraph"){}
+    SubGraphOp() : Op(DL_OP, 0, 0, "SubGraph"){}
     ~SubGraphOp();
-    void setGraph(IRGraph<Dtype>* graph) { graph_ = graph; }
-    IRGraph<Dtype>* getGraph() {return graph_; }
+    void setGraph(IRGraph* graph) { graph_ = graph; }
+    IRGraph* getGraph() {return graph_; }
 
 };
 
-template <typename Dtype>
-class Conv2dOp : public Op<Dtype>{
+
+class Conv2dOp : public Op{
     std::vector<size_t> kernels_;
     std::vector<size_t> strides_;
     std::vector<size_t> pads_;
     int group_{1};
 public:
-    Conv2dOp(): Op<Dtype>(DL_OP, 3,1, std::string("Conv2d")) {
+    Conv2dOp(): Op(DL_OP, 3,1, std::string("Conv2d")) {
         this->_inputNDims.push_back(4);
         this->_inputNDims.push_back(4);
         this->_inputNDims.push_back(1);
@@ -226,7 +226,7 @@ public:
     };
     Conv2dOp(std::vector<size_t> &kernels,
             std::vector<size_t> &strides,
-            std::vector<size_t> &pads): Op<Dtype>(DL_OP, 3,1, std::string("Conv2d")) {
+            std::vector<size_t> &pads): Op(DL_OP, 3,1, std::string("Conv2d")) {
         kernels_.assign(kernels.begin(), kernels.end());
         strides_.assign(strides.begin(), strides.end());
         pads_.assign(pads.begin(), pads.end());
@@ -243,11 +243,11 @@ public:
     void destroy(){}
 };
 
-template <typename Dtype>
-class BatchNormalizationOp : public Op<Dtype>{
+
+class BatchNormalizationOp : public Op{
     float epsilon_;
 public:
-    BatchNormalizationOp(float eps): Op<Dtype>(DL_OP, 5,1, std::string("BatchNormalization")) {
+    BatchNormalizationOp(float eps): Op(DL_OP, 5,1, std::string("BatchNormalization")) {
     epsilon_ = eps;
        //TODO : dims of input 
     }
@@ -256,10 +256,10 @@ public:
     void destroy(){}
 };
 
-template <typename Dtype>
-class ReluOp: public Op<Dtype>{
+
+class ReluOp: public Op{
 public:
-    ReluOp(): Op<Dtype>(DL_OP, 1,1, std::string("Relu")) {
+    ReluOp(): Op(DL_OP, 1,1, std::string("Relu")) {
         this->_inputNDims.push_back(4);
         this->_outputNDims.push_back(4);
     }
@@ -267,19 +267,19 @@ public:
     void destroy(){}
 };
 
-template <typename Dtype>
-class MaxPoolOp: public Op<Dtype>{
+
+class MaxPoolOp: public Op{
     std::vector<size_t> kernels_;
     std::vector<size_t> strides_;
     std::vector<size_t> pads_;
 public:
-    MaxPoolOp(): Op<Dtype>(DL_OP, 1,1, std::string("MaxPool")) {
+    MaxPoolOp(): Op(DL_OP, 1,1, std::string("MaxPool")) {
         this->_inputNDims.push_back(4);
         this->_outputNDims.push_back(4);
     }
     MaxPoolOp(std::vector<size_t> &kernels,
             std::vector<size_t> &strides,
-            std::vector<size_t> &pads): Op<Dtype>(DL_OP, 1,1, std::string("MaxPool")) {
+            std::vector<size_t> &pads): Op(DL_OP, 1,1, std::string("MaxPool")) {
         kernels_.assign(kernels.begin(), kernels.end());
         strides_.assign(strides.begin(), strides.end());
         pads_.assign(pads.begin(), pads.end());
@@ -293,19 +293,19 @@ public:
     void destroy(){}
 };
 
-template <typename Dtype>
-class AvgPoolOp: public Op<Dtype>{
+
+class AvgPoolOp: public Op{
     std::vector<size_t> kernels_;
     std::vector<size_t> strides_;
     std::vector<size_t> pads_;
 public:
-    AvgPoolOp(): Op<Dtype>(DL_OP, 1,1, std::string("AveragePool")) {
+    AvgPoolOp(): Op(DL_OP, 1,1, std::string("AveragePool")) {
         this->_inputNDims.push_back(4);
         this->_outputNDims.push_back(4);
     }
     AvgPoolOp(std::vector<size_t> &kernels,
             std::vector<size_t> &strides,
-            std::vector<size_t> &pads): Op<Dtype>(DL_OP, 1,1, std::string("AveragePool")) {
+            std::vector<size_t> &pads): Op(DL_OP, 1,1, std::string("AveragePool")) {
         kernels_.assign(kernels.begin(), kernels.end());
         strides_.assign(strides.begin(), strides.end());
         pads_.assign(pads.begin(), pads.end());
@@ -318,10 +318,10 @@ public:
     std::vector<size_t> getStrides() { return strides_; }
     void destroy(){}
 };
-template <typename Dtype>
-class BatchedAddOp: public Op<Dtype>{
+
+class BatchedAddOp: public Op{
 public:
-    BatchedAddOp(): Op<Dtype>(DL_OP, 2,1, std::string("BatchedAdd")) {
+    BatchedAddOp(): Op(DL_OP, 2,1, std::string("BatchedAdd")) {
         this->_inputNDims.push_back(2);
         this->_inputNDims.push_back(1);
         this->_outputNDims.push_back(2);
@@ -330,11 +330,11 @@ public:
     void destroy(){}
 };
 
-template <typename Dtype>
-class TranposeOp: public Op<Dtype>{
+
+class TranposeOp: public Op{
     std::vector<size_t> shuffle_;
 public:
-    TranposeOp(const std::initializer_list<size_t> &shuffle): Op<Dtype>(DL_OP, 1,1, std::string("Transpose")) {
+    TranposeOp(const std::initializer_list<size_t> &shuffle): Op(DL_OP, 1,1, std::string("Transpose")) {
         this->_inputNDims.push_back(4);
         this->_outputNDims.push_back(4);
         for(auto i : shuffle)
@@ -354,10 +354,10 @@ public:
 //----VectorLogNegLoss 
 //=====================================================
 
-template <typename Dtype>
-class VectorTanhOp : public Op<Dtype>{
+
+class VectorTanhOp : public Op{
 public:
-    VectorTanhOp():Op<Dtype>(DL_OP, 1,1, std::string("VectorTanh")) {
+    VectorTanhOp():Op(DL_OP, 1,1, std::string("VectorTanh")) {
         this->_inputNDims.push_back(1);
         this->_outputNDims.push_back(1);
     };
@@ -365,10 +365,10 @@ public:
     void destroy(){};
 };
 
-template <typename Dtype>
-class VectorSoftmaxOp : public Op<Dtype>{
+
+class VectorSoftmaxOp : public Op{
 public:
-    VectorSoftmaxOp(): Op<Dtype>(DL_OP, 1,1, std::string("VectorSoftmax")) {
+    VectorSoftmaxOp(): Op(DL_OP, 1,1, std::string("VectorSoftmax")) {
         this->_inputNDims.push_back(1);
         this->_outputNDims.push_back(1);
     };
@@ -377,10 +377,10 @@ public:
 };
 
 
-template <typename Dtype>
-class VectorLogNegLossOp : public Op<Dtype>{
+
+class VectorLogNegLossOp : public Op{
 public:
-    VectorLogNegLossOp():Op<Dtype>(DL_OP, 1,1, std::string("VectorLogNegLoss")) {
+    VectorLogNegLossOp():Op(DL_OP, 1,1, std::string("VectorLogNegLoss")) {
         this->_inputNDims.push_back(1);
         this->_outputNDims.push_back(0);
     };
@@ -395,10 +395,10 @@ public:
 //----ScalarTanh
 //=====================================================
 
-template <typename Dtype>
-class ScalarTanhOp : public Op<Dtype>{
+
+class ScalarTanhOp : public Op{
 public:
-    ScalarTanhOp():Op<Dtype>(DL_OP, 1,1, std::string("ScalarTanh")) {
+    ScalarTanhOp():Op(DL_OP, 1,1, std::string("ScalarTanh")) {
         this->_inputNDims.push_back(0);
         this->_outputNDims.push_back(0);
     };
