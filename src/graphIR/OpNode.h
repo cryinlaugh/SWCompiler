@@ -16,13 +16,14 @@
 namespace swc {
 
 class OpNode : public IRNode {
-public:
-    OpNode() :  op_(NULL) {};
-    explicit OpNode(const char name[]) : IRNode(OP_NODE, name) {};
-    explicit OpNode(const char name[], Op* op) : IRNode(OP_NODE, name), op_(op) {};
+  public:
+    OpNode() : op_(NULL){};
+    explicit OpNode(const char name[]) : IRNode(OP_NODE, name){};
+    explicit OpNode(const char name[], Op *op)
+        : IRNode(OP_NODE, name), op_(op){};
     ~OpNode(){};
 
-    void destroy(){
+    void destroy() {
         // printf("free OpNode:%s\n", name().c_str());
 
         getOp()->destroy();
@@ -30,31 +31,27 @@ public:
         // this->~OpNode();
     };
 
-    void setOp(Op* op) {
-        op_ = op;
-    }
+    void setOp(Op *op) { op_ = op; }
 
-    Op* getOp() {
-        return op_;
-    }
+    Op *getOp() { return op_; }
 
     const std::string getOpName() { return op_->getOpName(); }
 
-    OpNode* clone() const;
+    OpNode *clone() const;
     std::string toString() const;
-    void setRunOnce() {run_once_=true;}
+    void setRunOnce() { run_once_ = true; }
     bool runable() {
         bool run = run_;
-        if(run_once_)
+        if (run_once_)
             run_ = false;
-         return run;
+        return run;
     }
 
-private:
-    Op* op_; 
+  private:
+    Op *op_;
     bool run_{true};
     bool run_once_{false};
 };
 
-} //namespace swc
+} // namespace swc
 #endif /* !OPNODE_H_ */

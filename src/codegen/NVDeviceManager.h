@@ -7,9 +7,9 @@
 #ifndef _NV_DEVICE_MANAGER_H_
 #define _NV_DEVICE_MANAGER_H_
 #include "DeviceManager.h"
-class NVDeviceManager : public DeviceManager{
+class NVDeviceManager : public DeviceManager {
 
-public:
+  public:
     NVDeviceManager(std::string name) : DeviceManager(DeviceType::CPU, name) {}
     ~NVDeviceManager() {}
 };

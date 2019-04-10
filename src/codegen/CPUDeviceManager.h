@@ -7,9 +7,9 @@
 #ifndef _CPU_DEVICE_MANAGER_H_
 #define _CPU_DEVICE_MANAGER_H_
 #include "DeviceManager.h"
-class CPUDeviceManager : public DeviceManager{
+class CPUDeviceManager : public DeviceManager {
 
-public:
+  public:
     CPUDeviceManager(std::string name) : DeviceManager(DeviceType::CPU, name) {}
     ~CPUDeviceManager() {}
 };

@@ -15,29 +15,28 @@
 
 namespace swc {
 
-class TensorNode : public IRNode
-{
+class TensorNode : public IRNode {
   public:
-    TensorNode() : tensor_(NULL) {};
-    explicit TensorNode(const char name[], IRNode *parent = nullptr) : IRNode(TENSOR_NODE, name, parent) {};
-    explicit TensorNode(const char name[], Tensor *tensor, IRNode *parent = nullptr) : IRNode(TENSOR_NODE, name, parent), tensor_(tensor) {};
-    explicit TensorNode(const char name[], const std::initializer_list<int> &shape, IRNode *parent = nullptr) : IRNode(TENSOR_NODE, name, parent){    
+    TensorNode() : tensor_(NULL){};
+    explicit TensorNode(const char name[], IRNode *parent = nullptr)
+        : IRNode(TENSOR_NODE, name, parent){};
+    explicit TensorNode(const char name[], Tensor *tensor,
+                        IRNode *parent = nullptr)
+        : IRNode(TENSOR_NODE, name, parent), tensor_(tensor){};
+    explicit TensorNode(const char name[],
+                        const std::initializer_list<int> &shape,
+                        IRNode *parent = nullptr)
+        : IRNode(TENSOR_NODE, name, parent) {
         tensor_ = new Tensor(shape);
     }
 
     ~TensorNode(){};
 
-    void destroy(){
-        printf("free TensorNode:%s\n", name().c_str());
-    };
+    void destroy() { printf("free TensorNode:%s\n", name().c_str()); };
 
-    void setTensor(Tensor* tensor) {
-      tensor_ = tensor; 
-    }
+    void setTensor(Tensor *tensor) { tensor_ = tensor; }
 
-    Tensor* getTensor() {
-      return tensor_;
-    }
+    Tensor *getTensor() { return tensor_; }
 
     DataType getDataType() { return tensor_->getDataType(); }
     std::vector<unsigned long> getDims() { return tensor_->getDims(); }
@@ -45,8 +44,8 @@ class TensorNode : public IRNode
     std::string toString() const;
 
   private:
-    Tensor* tensor_; 
+    Tensor *tensor_;
 };
 
-} //namespace swc
+} // namespace swc
 #endif /* !TENSORNODE_H_ */

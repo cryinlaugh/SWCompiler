@@ -5,8 +5,8 @@ namespace swc {
 
 class IRGraph;
 
-void dotGen(IRGraph* graph); 
+void dotGen(IRGraph *graph);
 
-} //namespace swc
+} // namespace swc
 
 #endif /* !DOTGEN_H_ */

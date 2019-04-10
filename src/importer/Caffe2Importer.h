@@ -11,10 +11,10 @@
 
 #include "graphIR/IRGraph.h"
 
-namespace caffe2{
+namespace caffe2 {
 class NetDef;
 class OperatorDef;
-}
+} // namespace caffe2
 /*
 namespace swc{
     template <typename T> class IRGraph;
@@ -22,23 +22,25 @@ namespace swc{
 }
 */
 
-namespace swc{
+namespace swc {
 
-#define MAX_PROTO_SIZE 0x7FFFFFFF //2G
-class Caffe2Importer{
-private:
+#define MAX_PROTO_SIZE 0x7FFFFFFF // 2G
+class Caffe2Importer {
+  private:
     IRGraph *graph_;
-    std::unordered_map<std::string, IRNode*> name_irnode_map_;
-    std::unordered_map<std::string, TensorNode*> name_tNode_map_;
-    std::unordered_map<std::string, OpNode*> name_opNode_map_;
+    std::unordered_map<std::string, IRNode *> name_irnode_map_;
+    std::unordered_map<std::string, TensorNode *> name_tNode_map_;
+    std::unordered_map<std::string, OpNode *> name_opNode_map_;
     void loadProto(caffe2::NetDef &net, const std::string &file);
     void loadNetwork(caffe2::NetDef &net);
     void loadTensors(caffe2::NetDef &tensors);
     void loadOp(const caffe2::OperatorDef &op);
     void loadTensor(const caffe2::OperatorDef &op);
-public:
+
+  public:
     Caffe2Importer(IRGraph *g, const std::string &netProtoFile,
-                 const std::string &tensorProtoFile, std::vector<TensorNode*> &udef_nodes);
+                   const std::string &tensorProtoFile,
+                   std::vector<TensorNode *> &udef_nodes);
 };
-}
+} // namespace swc
 #endif

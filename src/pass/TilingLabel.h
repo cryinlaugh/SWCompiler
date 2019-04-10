@@ -11,104 +11,77 @@
 #ifndef _TILELABEL_H
 #define _TILELABEL_H
 
-#include <string>
-#include <vector>
-#include <algorithm>
 #include "../graphIR/TensorNode.h"
 #include "Label.h"
 #include "TileHint.h"
+#include <algorithm>
+#include <string>
+#include <vector>
 namespace swc {
 
-
-class TensorTilingLabel: public Label {
-private:
-    //Label* _label;
-    int _tilenum;//
+class TensorTilingLabel : public Label {
+  private:
+    // Label* _label;
+    int _tilenum; //
     std::vector<int> _tiles;
-    //get tilenum;
-    //std::vector<TensorShape*> _slices;
-    //std::vector<TileHint> _tilehints;
+    // get tilenum;
+    // std::vector<TensorShape*> _slices;
+    // std::vector<TileHint> _tilehints;
 
-public:
+  public:
     TensorTilingLabel(int ndim) : Label(), _tilenum(ndim) {
 
         _tiles.reserve(ndim);
         _tilenum = 1;
-
-
     };
-    ~TensorTilingLabel() {};
+    ~TensorTilingLabel(){};
 
     void addTileBydim(int dim, int spiltnum) {
-        //simple implement
+        // simple implement
         // don't allow tile by same dim
 
-        if(_tiles[dim] == 0)
+        if (_tiles[dim] == 0)
             _tiles[dim] = spiltnum;
         else
 
             _tiles[dim] *= spiltnum;
-        //recalculate tilenum
+        // recalculate tilenum
         _tilenum = _tilenum * spiltnum;
-
-
     }
 
-    void replicate(int num) {
-        _tilenum = _tilenum * num;
-    }
+    void replicate(int num) { _tilenum = _tilenum * num; }
 
-    int getTotalTileNum() {
-        return _tilenum;
-    }
+    int getTotalTileNum() { return _tilenum; }
 
-    int getTileNumByDim(int dim) {
-        return _tiles[dim];
-    }
-
-
+    int getTileNumByDim(int dim) { return _tiles[dim]; }
 };
 
-class OpTilingLabel: public Label {
+class OpTilingLabel : public Label {
 
-private:
-    //Label* _label;
+  private:
+    // Label* _label;
     std::string _pattern;
     int _replicatenum;
     // int num;
-    // string pattern : simple num, map-n-reduce , map-n-without reduce ,filter -n ,scan-n
+    // string pattern : simple num, map-n-reduce , map-n-without reduce ,filter
+    // -n ,scan-n
 
-public:
-    OpTilingLabel() : Label() {};
+  public:
+    OpTilingLabel() : Label(){};
 
-    ~OpTilingLabel() {};
+    ~OpTilingLabel(){};
 
-    void setReplicateNum(int num) {
-        _replicatenum = num;
-    }
+    void setReplicateNum(int num) { _replicatenum = num; }
 
+    int getReplicateNum() { return _replicatenum; }
 
-    int getReplicateNum() {
-        return _replicatenum;
-    }
+    void setPattern(std::string pattern) { _pattern = pattern; }
 
+    std::string getPattern() { return _pattern; }
 
-
-
-    void setPattern(std::string pattern) {
-        _pattern = pattern;
-
-    }
-
-
-    std::string getPattern() {
-        return _pattern;
-    }
-
-    //map-n-without-reduce
-
+    // map-n-without-reduce
 };
 
-}
+} // namespace swc
 
 #endif

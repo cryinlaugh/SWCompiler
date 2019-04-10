@@ -9,19 +9,17 @@
 #define _OPTIMIZEPASS_H
 #include "graphIR/IRGraph.h"
 #include <queue>
-namespace swc{
+namespace swc {
 
-class OptimizePass{
-protected:
-    IRGraph* _graph;
-public:
-    OptimizePass(IRGraph * graph):_graph(graph){};
+class OptimizePass {
+  protected:
+    IRGraph *_graph;
+
+  public:
+    OptimizePass(IRGraph *graph) : _graph(graph){};
     ~OptimizePass(){};
-    virtual void run(){
-
-        std::cout<<"father run "<<std::endl;
-    }
+    virtual void run() { std::cout << "father run " << std::endl; }
 };
 
-}
+} // namespace swc
 #endif
