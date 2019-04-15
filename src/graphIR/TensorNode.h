@@ -18,12 +18,12 @@ namespace swc {
 class TensorNode : public IRNode {
   public:
     TensorNode() : tensor_(NULL){};
-    explicit TensorNode(const char name[], IRNode *parent = nullptr)
+    explicit TensorNode(std::string name, IRNode *parent = nullptr)
         : IRNode(TENSOR_NODE, name, parent){};
-    explicit TensorNode(const char name[], Tensor *tensor,
+    explicit TensorNode(std::string name, Tensor *tensor,
                         IRNode *parent = nullptr)
         : IRNode(TENSOR_NODE, name, parent), tensor_(tensor){};
-    explicit TensorNode(const char name[],
+    explicit TensorNode(std::string name,
                         const std::initializer_list<int> &shape,
                         IRNode *parent = nullptr)
         : IRNode(TENSOR_NODE, name, parent) {
@@ -35,8 +35,10 @@ class TensorNode : public IRNode {
     void destroy() { printf("free TensorNode:%s\n", name().c_str()); };
 
     void setTensor(Tensor *tensor) { tensor_ = tensor; }
-
     Tensor *getTensor() { return tensor_; }
+
+    void setTraining(int train) { tensor_->setTraining(train); }
+    int getTraining() { return tensor_->getTraining(); }
 
     DataType getDataType() { return tensor_->getDataType(); }
     std::vector<unsigned long> getDims() { return tensor_->getDims(); }

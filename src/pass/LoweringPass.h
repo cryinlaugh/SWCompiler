@@ -200,21 +200,14 @@ class LoweringPass : public OptimizePass {
             TensorNode *tnode = _graph->getTensorNode(i);
             Label *tlabel = tnode->getLabel();
             (void)tlabel;
-            // do nothing for tensor nodes
-            SWLOG_INFO << "Do nothing for " << tlabel->getTypeNameLabel()
-                       << tlabel->getNodeNameLabel() << std::endl;
         }
 
         for (int i = 0; i < nOpNodes; i++) {
             OpNode *tnode = _graph->getOpNode(i);
             Label *tlabel = tnode->getLabel();
             if (tlabel->getLowerMark()) {
-                SWLOG_INFO << "lowering " << tlabel->getTypeNameLabel()
-                           << std::endl;
                 tnode->getOp()->lowering(_graph, tnode);
             } else {
-                SWLOG_INFO << "Do nothing for " << tlabel->getTypeNameLabel()
-                           << tlabel->getNodeNameLabel() << std::endl;
             }
         }
 

@@ -1,3 +1,10 @@
+/*************************************************************************
+    > File Name: MemoryAllocator.cpp
+    > Author: wayne
+    > Mail:
+    > Created Time: 四  3/14 16:03:50 2019
+ ************************************************************************/
+
 #include "MemoryAllocator.h"
 
 void MemoryAllocator::clear() {

@@ -22,6 +22,8 @@ class Label {
 
     int _toLower;
 
+    int _train{0};
+
     TensorInitType _initTypeLabel;
     Device _dev;
 
@@ -40,13 +42,15 @@ class Label {
     }
 
     void setLowerMark() { _toLower = 1; };
+    int getLowerMark() const { return _toLower; }
+
+    void setTraining(int train) { _train = train; }
+    bool needTraining() { return _train == 1; }
 
     std::string getNodeNameLabel() const { return _nodeNameLabel; }
     std::string getTypeNameLabel() const { return _typeNameLabel; }
     TensorInitType getTensorInitTypeLabel() const { return _initTypeLabel; }
     Device getDeviceLabel() const { return _dev; }
-
-    int getLowerMark() const { return _toLower; }
 };
 
 } // namespace swc

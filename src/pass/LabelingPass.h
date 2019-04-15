@@ -54,22 +54,39 @@ class LabelingPass : public OptimizePass {
         for (int i = 0; i < nTensorNodes; i++) {
             TensorNode *tnode = _graph->getTensorNode(i);
             Label *label = tnode->getLabel();
+            (void)label;
             // do nothing for tensor nodes
-            SWLOG_INFO << "Do nothing for " << label->getTypeNameLabel() << " "
-                       << label->getNodeNameLabel() << " ." << std::endl;
         }
 
         for (int i = 0; i < nOpNodes; i++) {
             OpNode *node = _graph->getOpNode(i);
             Label *label = node->getLabel();
             if ((label->getTypeNameLabel()).compare("MatrixMatrixFC") == 0) {
-                SWLOG_INFO << label->getTypeNameLabel()
+                SWLOG_INFO << label->getTypeNameLabel() << " "
+                           << label->getNodeNameLabel()
+                           << " operator is marked to be lowered." << std::endl;
+                label->setLowerMark();
+            } else if ((label->getTypeNameLabel())
+                           .compare("MatrixMatrixFCGrad") == 0) {
+                SWLOG_INFO << label->getTypeNameLabel() << " "
+                           << label->getNodeNameLabel()
                            << " operator is marked to be lowered." << std::endl;
                 label->setLowerMark();
             } else {
-                SWLOG_INFO << "Do nothing for " << label->getTypeNameLabel()
-                           << " operator " << node->name() << std::endl;
             }
+        }
+    }
+
+    void setTraining() {
+        int nTensorNodes = _graph->tensorNodeNum();
+        for (int i = 0; i < nTensorNodes; i++) {
+            TensorNode *tnode = _graph->getTensorNode(i);
+            Label *label = tnode->getLabel();
+            label->setTraining(tnode->getTraining());
+
+            SWLOG_INFO << label->getTypeNameLabel() << " "
+                       << label->getNodeNameLabel()
+                       << " train: " << tnode->getTraining() << std::endl;
         }
     }
 
@@ -77,6 +94,7 @@ class LabelingPass : public OptimizePass {
         SWLOG_INFO << "Start Labeling Pass." << std::endl;
         initLabelingPass();
         setLoweringMark();
+        setTraining();
         SWLOG_INFO << "Finish Labeling Pass." << std::endl;
     }
 };

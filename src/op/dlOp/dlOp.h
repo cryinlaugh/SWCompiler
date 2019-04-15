@@ -24,14 +24,30 @@ namespace swc {
 //=====================================================
 
 class MatrixMatrixFCOp : public Op {
+    // input, weight, bias
+    // output
   public:
-    MatrixMatrixFCOp() : Op(DL_OP, 2, 1, std::string("MatrixMatrixFC")) {
+    MatrixMatrixFCOp() : Op(DL_OP, 3, 1, std::string("MatrixMatrixFC")) {
         this->_inputNDims.push_back(2);
         this->_inputNDims.push_back(2);
+        this->_inputNDims.push_back(1);
         this->_outputNDims.push_back(2);
     }
     ~MatrixMatrixFCOp() {}
     void destroy(){};
+
+    // for lowering
+    void lowering(IRGraph *graph, IRNode *node);
+};
+
+class MatrixMatrixFCGradOp : public Op {
+    // input, wieght, bias, orig_output, orig_output_grad
+    // input_grad, weight_grad, bias_grad
+  public:
+    MatrixMatrixFCGradOp()
+        : Op(DL_OP, 5, 3, std::string("MatrixMatrixFCGrad")) {}
+    ~MatrixMatrixFCGradOp() {}
+    void destroy() {}
 
     // for lowering
     void lowering(IRGraph *graph, IRNode *node);
@@ -47,14 +63,50 @@ class MatrixTanhOp : public Op {
     void destroy(){};
 };
 
+class MatrixTanhGradOp : public Op {
+  public:
+    MatrixTanhGradOp() : Op(DL_OP, 2, 1, std::string("MatrixTanhGrad")) {}
+    ~MatrixTanhGradOp();
+    void destroy() {}
+};
+
 class MatrixSoftmaxOp : public Op {
   public:
-    MatrixSoftmaxOp() : Op(DL_OP, 1, 1, std::string("MatrixSoftmax")) {
+    MatrixSoftmaxOp() : Op(DL_OP, 2, 1, std::string("MatrixSoftmax")) {
         this->_inputNDims.push_back(2);
+        this->_inputNDims.push_back(1);
         this->_outputNDims.push_back(2);
     };
     ~MatrixSoftmaxOp();
     void destroy(){};
+};
+
+class MatrixSoftmaxGradOp : public Op {
+  public:
+    MatrixSoftmaxGradOp() : Op(DL_OP, 3, 1, std::string("MatrixSoftmaxGrad")){};
+    ~MatrixSoftmaxGradOp();
+    void destroy() {}
+};
+
+class SGDOp : public Op {
+    // weight weight_grad momentum
+    // weight
+    float lr_{0.001};
+    float decay_{0.001};
+    float momentum_{0.9};
+    size_t batch_{1};
+
+  public:
+    SGDOp() : Op(DL_OP, 3, 1, std::string("SGD")) {}
+    SGDOp(float lr, float decay, float momentum, size_t batch)
+        : Op(DL_OP, 2, 1, std::string("SGD")), lr_(lr), decay_(decay),
+          momentum_(momentum), batch_(batch) {}
+    ~SGDOp();
+    float getLR() { return lr_; }
+    float getDecay() { return decay_; }
+    float getMomentum() { return momentum_; }
+    size_t getBatch() { return batch_; }
+    void destroy() {}
 };
 
 class MatrixLogNegLossOp : public Op {
@@ -64,26 +116,6 @@ class MatrixLogNegLossOp : public Op {
         this->_outputNDims.push_back(0);
     };
     ~MatrixLogNegLossOp();
-    void destroy(){};
-};
-
-class MatrixTanhGradOp : public Op {
-  public:
-    MatrixTanhGradOp() : Op(DL_OP, 2, 1, std::string("MatrixTanhGrad")) {
-        this->_inputNDims.push_back(2);
-        this->_outputNDims.push_back(2);
-    };
-    ~MatrixTanhGradOp();
-    void destroy(){};
-};
-
-class MatrixSoftmaxGradOp : public Op {
-  public:
-    MatrixSoftmaxGradOp() : Op(DL_OP, 2, 1, std::string("MatrixSoftmaxGrad")) {
-        this->_inputNDims.push_back(2);
-        this->_outputNDims.push_back(2);
-    };
-    ~MatrixSoftmaxGradOp();
     void destroy(){};
 };
 
@@ -317,18 +349,28 @@ class BatchedAddOp : public Op {
     void destroy() {}
 };
 
-class TranposeOp : public Op {
+class BatchedReduceAddOp : public Op {
+  public:
+    BatchedReduceAddOp() : Op(DL_OP, 1, 1, std::string("BatchedReduceAdd")) {
+        this->_inputNDims.push_back(2);
+        this->_outputNDims.push_back(1);
+    }
+    ~BatchedReduceAddOp();
+    void destroy() {}
+};
+
+class TransposeOp : public Op {
     std::vector<size_t> shuffle_;
 
   public:
-    TranposeOp(const std::initializer_list<size_t> &shuffle)
+    TransposeOp(const std::initializer_list<size_t> &shuffle)
         : Op(DL_OP, 1, 1, std::string("Transpose")) {
         this->_inputNDims.push_back(4);
         this->_outputNDims.push_back(4);
         for (auto i : shuffle)
             shuffle_.push_back(i);
     }
-    ~TranposeOp();
+    ~TransposeOp();
     std::vector<size_t> getShuffle() { return shuffle_; }
     void destroy() {}
 };

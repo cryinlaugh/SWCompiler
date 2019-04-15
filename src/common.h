@@ -13,6 +13,13 @@
 
 enum class DataType { Float_t, Double_t, Int8_t, Int32_t };
 
+struct TrainingProfile {
+    float lr{0.001};
+    float decay{0.001};
+    float momentum{0.9};
+    size_t batch{1};
+};
+
 enum OpType { TENSOR_OP, BASIC_OP, DL_OP };
 
 enum NodeType { TENSOR_NODE, OP_NODE };

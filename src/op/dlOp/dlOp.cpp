@@ -33,14 +33,14 @@ void MatrixMatrixFCOp::lowering(IRGraph *graph, IRNode *node) {
 
     std::string mm_name = node->name() + "_mm";
     auto *mm_op = new MatrixMatrixMulOp();
-    auto *O1 = new OpNode(mm_name.c_str(), mm_op);
+    auto *O1 = new OpNode(mm_name, mm_op);
     std::string mm_out_name = mm_name + "_out";
     auto *O1_out =
-        new TensorNode(mm_out_name.c_str(), {(int)idims[0], (int)wdims[1]}, O1);
+        new TensorNode(mm_out_name, {(int)idims[0], (int)wdims[1]}, O1);
 
     std::string madd_name = node->name() + "_add";
     auto *madd_op = new BatchedAddOp();
-    auto *O2 = new OpNode(madd_name.c_str(), madd_op);
+    auto *O2 = new OpNode(madd_name, madd_op);
 
     // link parent nodes
     LINKUPPER(O1, node->getParentNode(0), node->getParentNode(1));
@@ -67,10 +67,74 @@ void MatrixMatrixFCOp::lowering(IRGraph *graph, IRNode *node) {
     node->destroy();
 
     // Update graph info
-    graph->findInOut();
     graph->updateTopology();
-    graph->updateTopoNodeList();
     SWLOG_INFO << "Finish lowering MatrixMatrixFCOp." << std::endl;
+}
+void MatrixMatrixFCGradOp::lowering(IRGraph *graph, IRNode *node) {
+    SWLOG_INFO << "Lowering MatrixMatrixFCGradOp ..." << std::endl;
+    for (int i = 0; i < node->parentNum(); i++) {
+        std::cout << node->getParentNode(i)->name() << std::endl;
+    }
+
+    for (int i = 0; i < node->childNum(); i++) {
+        std::cout << node->getChildNode(i)->name() << std::endl;
+    }
+    auto *input = (TensorNode *)node->getParentNode(0);
+    auto *weight = (TensorNode *)node->getParentNode(1);
+    auto *bias = (TensorNode *)node->getParentNode(2);
+    auto *output = (TensorNode *)node->getParentNode(3);
+    auto *outputG = (TensorNode *)node->getParentNode(4);
+
+    auto *inputG = (TensorNode *)node->getChildNode(0);
+    auto *weightG = (TensorNode *)node->getChildNode(1);
+    auto *biasG = (TensorNode *)node->getChildNode(2);
+
+    auto idims = input->getDims();
+    auto wdims = weight->getDims();
+
+    // Y = XW + B 8*10 8*512 512*10 10
+    // dx = dy*WT
+    // may be we tanspose W again, we can optimize tanspose-transpose
+    auto op_w_t =
+        new OpNode("op_" + weight->name() + "_T", new TransposeOp({1, 0}));
+    op_w_t->exlinkUpperNode(weight);
+    Tensor *wt =
+        new Tensor(weight->getTensor()->getShuffledTensorShape({1, 0}));
+    auto w_trans = new TensorNode(weight->name() + "_T", wt, op_w_t);
+
+    auto dx = new OpNode(node->name() + "_dx_mm", new MatrixMatrixMulOp());
+    dx->exlinkUpperNode(outputG, w_trans);
+    std::cout << "FCGrad inputG " << inputG->name() << " link to " << dx->name()
+              << std::endl;
+    inputG->exlinkUpperNode(dx);
+
+    // dw = XT*dy
+    auto op_x_t =
+        new OpNode("op_" + input->name() + "_T", new TransposeOp({1, 0}));
+    op_x_t->exlinkUpperNode(input);
+    Tensor *xt = new Tensor(input->getTensor()->getShuffledTensorShape({1, 0}));
+    auto x_trans = new TensorNode(input->name() + "_T", xt, op_x_t);
+
+    auto dw = new OpNode(node->name() + "_dw_mm", new MatrixMatrixMulOp());
+    dw->exlinkUpperNode(x_trans, outputG);
+    weightG->exlinkUpperNode(dw);
+
+    // dB = reduceadd dy
+    auto db = new OpNode(node->name() + "_db_bra", new BatchedReduceAddOp());
+    db->exlinkUpperNode(outputG);
+    biasG->exlinkUpperNode(db);
+
+    node->destroyUpperNode(input, weight, bias, output, outputG);
+    inputG->destroyUpperNode(node);
+    weightG->destroyUpperNode(node);
+    biasG->destroyUpperNode(node);
+
+    graph->delOpNode(node);
+    graph->pushOpNode(op_w_t, op_x_t, dx, dw, db);
+    graph->pushTensorNode(w_trans, x_trans);
+
+    graph->updateTopology();
+    SWLOG_INFO << "Finish lowering MatrixMatrixFCGradOp." << std::endl;
 }
 
 } // namespace swc

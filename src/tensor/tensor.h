@@ -8,7 +8,7 @@
 #ifndef _TENSOR_H
 #define _TENSOR_H
 
-#include "../common.h"
+#include "common.h"
 #include <string>
 
 namespace swc {
@@ -27,19 +27,22 @@ class TensorShape {
 };
 
 class TensorInitInfo {
-    std::string file_; // FILE initialization
-    float constant_;   // constant initialization
-    float filterSize_; // xavier initialization
+    std::string file_{nullptr}; // FILE initialization
+    float constant_{0};   // constant initialization
+    float filterSize_{1}; // xavier initialization
+    size_t offset_{0};
   public:
     TensorInitInfo() : file_(""), constant_(0), filterSize_(3) {}
 
     std::string getFilePath() const { return file_; }
     float getConstant() const { return constant_; }
     float getFilterSize() const { return filterSize_; }
+    size_t getOffset() const { return offset_; }
 
     void setFilePath(std::string f) { file_ = f; }
     void setConstant(float c) { constant_ = c; }
     void setFilterSize(float fsize) { filterSize_ = fsize; }
+    void setOffset(size_t offset) { offset_ = offset; }
 };
 
 class Tensor {
@@ -49,6 +52,8 @@ class Tensor {
 
     TensorInitType initType_;
     TensorInitInfo initInfo_;
+
+    int train_{0};
 
   public:
     Tensor() {
@@ -79,6 +84,7 @@ class Tensor {
         shape_ = shape;
         dataType_ = dtype;
     }
+    TensorShape* getShuffledTensorShape(const std::vector<size_t> &shuffle) const;
 
     DataType getDataType() { return dataType_; }
 
@@ -91,11 +97,14 @@ class Tensor {
         return dims;
     }
 
-    void setTensorInit(TensorInitType type, float value);
-    void setTensorInit(TensorInitType type, std::string file);
+    void setTensorInit(TensorInitType type, float value=0);
+    void setTensorInit(TensorInitType type, std::string file, size_t offset=0);
 
     TensorInitType getTensorInitType() { return initType_; }
     TensorInitInfo getTensorInitInfo() const { return initInfo_; }
+
+    void setTraining(int train) { train_ = train; }
+    int getTraining() { return train_; }
 
     TensorShape *getTensorShape() const { return shape_; }
     size_t size() const { return shape_->size(); }

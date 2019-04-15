@@ -12,8 +12,9 @@
 namespace swc {
 /// share tensor, that tensor_ point to
 TensorNode *TensorNode::clone() const {
-    TensorNode *tn = new TensorNode((name() + "_cp").c_str());
+    TensorNode *tn = new TensorNode(name());
     tn->setTensor(tensor_);
+    tn->setLabel(getLabel()); // mainly for training flag
     return tn;
 }
 

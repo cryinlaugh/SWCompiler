@@ -32,6 +32,10 @@ void Tensor::setTensorInit(TensorInitType type, float value) {
         initInfo_.setConstant(value);
         break;
     }
+    case TensorInitType::ZERO: {
+        initInfo_.setConstant(0);
+        break;
+    }
     case TensorInitType::XAVIER: {
         initInfo_.setFilterSize(value);
         break;
@@ -41,9 +45,11 @@ void Tensor::setTensorInit(TensorInitType type, float value) {
     }
 }
 
-void Tensor::setTensorInit(TensorInitType type, std::string file) {
+void Tensor::setTensorInit(TensorInitType type, std::string file, size_t offset) {
+    assert((type==TensorInitType::FILE) && "init type does not match value");
     initType_ = type;
     initInfo_.setFilePath(file);
+    initInfo_.setOffset(offset);
 }
 
 size_t Tensor::getSizeInBytes() const {
@@ -59,6 +65,16 @@ size_t Tensor::getSizeInBytes() const {
     default:
         SWLOG_ERROR << "UNKNOWN DataType\n";
     }
+}
+
+TensorShape* Tensor::getShuffledTensorShape(const std::vector<size_t> &shuffle) const{
+    std::vector<unsigned long> *shape = new std::vector<unsigned long>();
+    for (auto idx : shuffle) {
+        if ((int)idx < shape_->getNDim())
+            shape->push_back(shape_->getDim(idx));
+    }
+
+    return new TensorShape(shape);
 }
 /*
 

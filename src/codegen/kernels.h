@@ -19,7 +19,7 @@ void initTensorXavier(T *data, size_t size, float filterSize) {
     }
 }
 
-template <typename T> void initTensorConstant(T *data, size_t size, T value) {
+template <typename T> void initTensorConstant(T *data, size_t size, float value) {
     std::fill(&data[0], &data[0] + size, value);
 }
 
@@ -370,6 +370,27 @@ void batchedadd_f(float *dest, const float *batch, const float *slice,
             dest[base + i] = batch[base + i] + slice[i];
         }
     }
+}
+
+void batchedreduceadd_f(float *dest, const float *batch, size_t numSlice, size_t sliceSize) {
+    for (size_t n = 0; n < numSlice; n++) {
+        float sum = 0;
+        size_t base = n * sliceSize;
+        for (size_t i = 0; i < sliceSize; i++) {
+            sum += batch[base+i];
+        }
+        dest[n] = sum; 
+    }
+}
+
+void sgd_f(size_t size, float *out, float *w, float *dw, float *dw_mom, float lr, float decay, float momentum, size_t batch) {
+    float neglr = -lr / batch;
+    for(int i=0; i<size; i++){
+
+        float negDelta = (w[i]*decay + dw[i]) * neglr + dw_mom[i]*momentum;
+        dw_mom[i] = negDelta;
+        out[i] += negDelta; 
+    } 
 }
 
 void relu_f(const float *src, float *dest, size_t size) {

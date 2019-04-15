@@ -49,6 +49,8 @@ template <typename T> void IRGraph::updateTopology(T node) {
 }
 
 void IRGraph::updateTopology() {
+    findInOut();
+
     typename std::vector<TensorNode *>::iterator tnIter;
     typename std::vector<OpNode *>::iterator opIter;
 
@@ -59,6 +61,8 @@ void IRGraph::updateTopology() {
 
     for (tnIter = _inNodes.begin(); tnIter != _inNodes.end(); tnIter++)
         updateTopology(*tnIter);
+
+    updateTopoNodeList();
 }
 
 void IRGraph::updateTopoNodeList() {

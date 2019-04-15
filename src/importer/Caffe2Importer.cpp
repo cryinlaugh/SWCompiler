@@ -1,8 +1,8 @@
 /*************************************************************************
-	> File Name: Caffe2Importer.cpp
-	> Author: wayne
-	> Mail:  
-	> Created Time: 四  3/28 10:12:26 2019
+    > File Name: Caffe2Importer.cpp
+    > Author: wayne
+    > Mail:
+    > Created Time: 四  3/28 10:12:26 2019
  ************************************************************************/
 
 #include "Caffe2Importer.h"
@@ -71,8 +71,6 @@ static std::vector<size_t> getStrides(const ArgumentMap &args) {
         std::vector<size_t> strides(2, value);
         return strides;
     }
-    // TODO
-    // kernel_h kernel_w ...
     return {1, 1};
 }
 
@@ -111,18 +109,6 @@ static std::string getNodeName(std::string oldName) {
     }
 
     return name;
-}
-
-// TODO: as TensorShape member function
-TensorShape *getShuffledTensorShape(const TensorShape *in,
-                                    const std::vector<size_t> &shuffle) {
-    std::vector<unsigned long> *shape = new std::vector<unsigned long>();
-    for (auto idx : shuffle) {
-        if ((int)idx < in->getNDim())
-            shape->push_back(in->getDim(idx));
-    }
-
-    return new TensorShape(shape);
 }
 
 Caffe2Importer::Caffe2Importer(IRGraph *g, const std::string &netProtoFile,
@@ -209,7 +195,7 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
             bias = name_tNode_map_[op.input(2)];
         } else {
             std::string nm = opName + "_bias";
-            bias = new TensorNode(nm.c_str(), {(int)inDims[3]});
+            bias = new TensorNode(nm, {(int)inDims[3]});
             graph_->pushTensorNode(bias);
         }
 
@@ -219,16 +205,16 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
 
         std::string trans_op_name = "op_" + weight->name() + "_T";
         auto trans =
-            new OpNode(trans_op_name.c_str(), new TranposeOp(NCHW2NHWC));
+            new OpNode(trans_op_name, new TransposeOp(NCHW2NHWC));
         LINKUPPER(trans, weight);
 
-        Tensor *wt = new Tensor(getShuffledTensorShape(
-            weight->getTensor()->getTensorShape(), NCHW2NHWC));
+        Tensor *wt =
+            new Tensor(weight->getTensor()->getShuffledTensorShape(NCHW2NHWC));
         std::string trans_name = weight->name() + "_T";
-        auto w_trans = new TensorNode(trans_name.c_str(), wt, trans);
+        auto w_trans = new TensorNode(trans_name, wt, trans);
 
         auto *convOp = new Conv2dOp(kernels, strides, pads);
-        opNode = new OpNode(opName.c_str(), convOp);
+        opNode = new OpNode(opName, convOp);
         opNode->exlinkUpperNode(data, w_trans, bias);
 
         std::vector<size_t> ohw =
@@ -242,7 +228,7 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
 
         std::string res_name = op.output(0);
         auto out_tnode = new TensorNode(
-            res_name.c_str(), {n, (int)ohw[0], (int)ohw[1], c}, opNode);
+            res_name, {n, (int)ohw[0], (int)ohw[1], c}, opNode);
         name_tNode_map_[res_name] = out_tnode;
         graph_->pushTensorNode(out_tnode);
     }
@@ -266,19 +252,19 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
         }
 
         auto *BNOp = new BatchNormalizationOp(epsilon);
-        opNode = new OpNode(opName.c_str(), BNOp);
+        opNode = new OpNode(opName, BNOp);
         opNode->exlinkUpperNode(data, scale, bias, mean, var);
 
         std::string res_name = op.output(0);
         auto *tshape = data->getTensor()->getTensorShape();
         auto *out_tnode =
-            new TensorNode(res_name.c_str(), new Tensor(tshape), opNode);
+            new TensorNode(res_name, new Tensor(tshape), opNode);
         name_tNode_map_[res_name] = out_tnode;
         graph_->pushTensorNode(out_tnode);
     }
 
     if (opType == "Relu") {
-        opNode = new OpNode(opName.c_str(), new ReluOp());
+        opNode = new OpNode(opName, new ReluOp());
 
         std::string iname = op.input(0);
         auto *in = name_tNode_map_[iname];
@@ -289,12 +275,12 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
         if (name_tNode_map_.count(res_name)) {
             std::cout << res_name << " exist\n";
             auto *tensor = name_tNode_map_[res_name]->getTensor();
-            out_tnode = new TensorNode(res_name.c_str(), tensor, opNode);
+            out_tnode = new TensorNode(res_name, tensor, opNode);
         } else {
             std::cout << res_name << " non exist\n";
             auto *tshape = in->getTensor()->getTensorShape();
             out_tnode =
-                new TensorNode(res_name.c_str(), new Tensor(tshape), opNode);
+                new TensorNode(res_name, new Tensor(tshape), opNode);
         }
         // name mapping to newest operator's  res TensorNode
         name_tNode_map_[res_name] = out_tnode;
@@ -302,7 +288,7 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
     }
 
     if (opType == "Sum") {
-        opNode = new OpNode(opName.c_str(), new ElementAddOp());
+        opNode = new OpNode(opName, new ElementAddOp());
         auto *lhs = name_tNode_map_[op.input(0)];
         auto *rhs = name_tNode_map_[op.input(1)];
         LINKUPPER(opNode, lhs, rhs);
@@ -311,11 +297,11 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
         TensorNode *out_tnode;
         if (name_tNode_map_.count(res_name)) {
             auto *tensor = name_tNode_map_[res_name]->getTensor();
-            out_tnode = new TensorNode(res_name.c_str(), tensor, opNode);
+            out_tnode = new TensorNode(res_name, tensor, opNode);
         } else {
             auto *tshape = lhs->getTensor()->getTensorShape();
             out_tnode =
-                new TensorNode(res_name.c_str(), new Tensor(tshape), opNode);
+                new TensorNode(res_name, new Tensor(tshape), opNode);
         }
         // name mapping to newest operator's  res TensorNode
         name_tNode_map_[res_name] = out_tnode;
@@ -330,7 +316,7 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
         std::vector<size_t> pads = getPads(args);
 
         auto *poolOp = new MaxPoolOp(kernels, strides, pads);
-        opNode = new OpNode(opName.c_str(), poolOp);
+        opNode = new OpNode(opName, poolOp);
         LINKUPPER(opNode, in);
 
         std::vector<size_t> inDims = in->getDims();
@@ -341,7 +327,7 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
 
         std::string res_name = op.output(0);
         auto *out_tnode = new TensorNode(
-            res_name.c_str(), {n, (int)ohw[0], (int)ohw[1], c}, opNode);
+            res_name, {n, (int)ohw[0], (int)ohw[1], c}, opNode);
         name_tNode_map_[res_name] = out_tnode;
         graph_->pushTensorNode(out_tnode);
     }
@@ -354,7 +340,7 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
         std::vector<size_t> pads = getPads(args);
 
         auto *poolOp = new AvgPoolOp(kernels, strides, pads);
-        opNode = new OpNode(opName.c_str(), poolOp);
+        opNode = new OpNode(opName, poolOp);
         LINKUPPER(opNode, in);
 
         std::vector<size_t> inDims = in->getDims();
@@ -367,13 +353,13 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
 
         std::string res_name = op.output(0);
         auto *out_tnode = new TensorNode(
-            res_name.c_str(), {n, (int)ohw[0], (int)ohw[1], c}, opNode);
+            res_name, {n, (int)ohw[0], (int)ohw[1], c}, opNode);
         name_tNode_map_[res_name] = out_tnode;
         graph_->pushTensorNode(out_tnode);
     }
 
     if (opType == "FC") {
-        opNode = new OpNode(opName.c_str(), new MatrixMatrixFCOp());
+        opNode = new OpNode(opName, new MatrixMatrixFCOp());
 
         assert(op.input_size() == 3 && "FC bias is needed!!");
         auto in = name_tNode_map_[op.input(0)];
@@ -382,28 +368,28 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
 
         // trans weight
         std::string trans_op_name = "op_" + weight->name() + "_T";
-        auto trans = new OpNode(trans_op_name.c_str(), new TranposeOp({1, 0}));
+        auto trans = new OpNode(trans_op_name, new TransposeOp({1, 0}));
         LINKUPPER(trans, weight);
 
-        Tensor *wt = new Tensor(getShuffledTensorShape(
-            weight->getTensor()->getTensorShape(), {1, 0}));
+        Tensor *wt =
+            new Tensor(weight->getTensor()->getShuffledTensorShape({1, 0}));
         std::string trans_name = weight->name() + "_T";
-        auto w_trans = new TensorNode(trans_name.c_str(), wt, trans);
+        auto w_trans = new TensorNode(trans_name, wt, trans);
 
         if (in->getTensor()->getNDim() == 4) {
             // trans input
 
             std::string trans_in_op_name = "op_" + in->name() + "_T";
 
-            auto trans_in =
-                new OpNode(trans_in_op_name.c_str(), new TranposeOp(NHWC2NCHW));
+            auto trans_in = new OpNode(trans_in_op_name,
+                                       new TransposeOp(NHWC2NCHW));
             LINKUPPER(trans_in, in);
 
-            Tensor *inT = new Tensor(getShuffledTensorShape(
-                in->getTensor()->getTensorShape(), NHWC2NCHW));
+            Tensor *inT =
+                new Tensor(in->getTensor()->getShuffledTensorShape(NHWC2NCHW));
             std::string trans_in_name = in->name() + "_T";
             auto in_trans =
-                new TensorNode(trans_in_name.c_str(), inT, trans_in);
+                new TensorNode(trans_in_name, inT, trans_in);
             opNode->exlinkUpperNode(in_trans, w_trans, bias);
             graph_->pushOpNode(trans, trans_in);
             graph_->pushTensorNode(w_trans, in_trans);
@@ -428,7 +414,7 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
         int sec = weightDims[1];
 
         std::string res_name = op.output(0);
-        auto *out_tnode = new TensorNode(res_name.c_str(), {n, sec}, opNode);
+        auto *out_tnode = new TensorNode(res_name, {n, sec}, opNode);
         name_tNode_map_[res_name] = out_tnode;
         graph_->pushTensorNode(out_tnode);
     }
@@ -437,13 +423,13 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
         std::string iname = op.input(0);
         auto *in = name_tNode_map_[iname]; // TensorNode<Dtype>*
 
-        opNode = new OpNode(opName.c_str(), new MatrixSoftmaxOp());
+        opNode = new OpNode(opName, new MatrixSoftmaxOp());
         LINKUPPER(opNode, in);
 
         std::string res_name = op.output(0);
         auto *tshape = in->getTensor()->getTensorShape();
         auto *out_tnode =
-            new TensorNode(res_name.c_str(), new Tensor(tshape), opNode);
+            new TensorNode(res_name, new Tensor(tshape), opNode);
         name_tNode_map_[opName] = out_tnode;
         graph_->pushTensorNode(out_tnode);
     }
@@ -541,7 +527,7 @@ void Caffe2Importer::loadTensor(const caffe2::OperatorDef &op) {
         std::string name = output;
         if (name_tNode_map_.count(name))
             return;
-        TensorNode *tnode = new TensorNode(name.c_str(), tensor);
+        TensorNode *tnode = new TensorNode(name, tensor);
         graph_->pushTensorNode(tnode);
         name_tNode_map_[name] = tnode;
     }

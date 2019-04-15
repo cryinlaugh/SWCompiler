@@ -58,9 +58,11 @@ class Op {
         SWLOG_INFO << "Unimplemented in base Op class" << std::endl;
     }
 
+    /*
     Op *clone() const {
         return new Op(_opType, _nInput, _nOutput, _opClassName);
     }
+    */
 
   protected:
     /* The following variables are constant values in a specific Op Class

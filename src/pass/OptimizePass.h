@@ -18,6 +18,7 @@ class OptimizePass {
   public:
     OptimizePass(IRGraph *graph) : _graph(graph){};
     ~OptimizePass(){};
+    void setGraph(IRGraph *graph) { _graph = graph; }
     virtual void run() { std::cout << "father run " << std::endl; }
 };
 

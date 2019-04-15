@@ -1,8 +1,8 @@
 /*************************************************************************
-	> File Name: RenamingNodePass.h
-	> Author: wayne
-	> Mail:  
-	> Created Time: 一  4/ 8 16:32:26 2019
+    > File Name: RenamingNodePass.h
+    > Author: wayne
+    > Mail:
+    > Created Time: 一  4/ 8 16:32:26 2019
  ************************************************************************/
 #ifndef _RENAMINGNODEPASS_H_
 #define _RENAMINGNODEPASS_H_
@@ -47,6 +47,8 @@ class UniqueName {
         names_map_[name] = 0;
         return name;
     }
+
+    void clear() { names_map_.clear(); }
 };
 
 class RenamingNodePass : public OptimizePass {
@@ -56,6 +58,10 @@ class RenamingNodePass : public OptimizePass {
   public:
     RenamingNodePass(IRGraph *graph) : OptimizePass(graph){};
     ~RenamingNodePass() {}
+    void setGraph(IRGraph *graph) {
+        _graph = graph;
+        uniqueName.clear();
+    }
 
     void run() {
         int nTensorNodes = _graph->tensorNodeNum();

@@ -30,7 +30,7 @@ int main() {
     //=============================
 
     // define tensor nodes
-    TensorNode *dataTensorNode_0 = new TensorNode("Data_0");
+    TensorNode *dataTensorNode_0 = new TensorNode("data_0");
     // Init tensor nodes as following:
     //--init TensorShape:
     TensorShape *dataTensorShape_0 =
@@ -40,14 +40,14 @@ int main() {
     //--set tensor in tensor node
     dataTensorNode_0->setTensor(dataTensor_0);
 
-    TensorNode *weightTensorNode_0 = new TensorNode("Weight_0", {1000, 1000});
+    TensorNode *weightTensorNode_0 = new TensorNode("weight_0", {1000, 1000});
     weightTensorNode_0->getLabel()->setTensorInitTypeLabel(
         TensorInitType::CONSTANT);
 
-    TensorNode *biasTensorNode_0 = new TensorNode("Bias_0", {1000});
+    TensorNode *biasTensorNode_0 = new TensorNode("bias_0", {1000});
 
     // define op nodes
-    OpNode *fcOpNode_0 = new OpNode("FC_0");
+    OpNode *fcOpNode_0 = new OpNode("fc_0");
     // Init op nodes as following:
     //--init Op:
     MatrixMatrixFCOp *fcOp_0 = new MatrixMatrixFCOp();

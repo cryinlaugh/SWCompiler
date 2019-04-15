@@ -19,8 +19,8 @@ namespace swc {
 class IRNode {
   public:
     IRNode();
-    IRNode(const NodeType nodeType, const char name[], IRNode *parent = nullptr)
-        : _name(std::string(name)), _nodeType(nodeType), _label(new Label()) {
+    IRNode(const NodeType nodeType, std::string name, IRNode *parent = nullptr)
+        : _name(name), _nodeType(nodeType), _label(new Label()) {
         _topologyId = 0;
         if (parent)
             exlinkUpperNode(parent);
@@ -88,13 +88,13 @@ class IRNode {
     inline const std::string name() const { return _name; };
     inline void setName(std::string name) { _name = name; };
 
-    inline const int parentNum() const { return _parentNodes.size(); }
-    inline const int childNum() const { return _childNodes.size(); }
+    inline int parentNum() const { return _parentNodes.size(); }
+    inline int childNum() const { return _childNodes.size(); }
 
-    inline const int topologyId() const { return _topologyId; }
+    inline int topologyId() const { return _topologyId; }
     inline void setTopologyId(int topologyId) { _topologyId = topologyId; }
 
-    inline const NodeType nodeType() const { return _nodeType; }
+    inline NodeType nodeType() const { return _nodeType; }
     inline void setNodeType(NodeType nodeType) { _nodeType = nodeType; }
 
     Label *getLabel() const { return _label; }

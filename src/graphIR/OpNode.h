@@ -18,8 +18,8 @@ namespace swc {
 class OpNode : public IRNode {
   public:
     OpNode() : op_(NULL){};
-    explicit OpNode(const char name[]) : IRNode(OP_NODE, name){};
-    explicit OpNode(const char name[], Op *op)
+    explicit OpNode(std::string name) : IRNode(OP_NODE, name){};
+    explicit OpNode(std::string name, Op *op)
         : IRNode(OP_NODE, name), op_(op){};
     ~OpNode(){};
 

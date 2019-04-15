@@ -12,8 +12,8 @@
 namespace swc {
 /// must clone op_ because destructed in ctor
 OpNode *OpNode::clone() const {
-    OpNode *opNode = new OpNode((name() + "_cp").c_str());
-    opNode->setOp(op_->clone());
+    OpNode *opNode = new OpNode(name());
+    opNode->setOp(op_);
     return opNode;
 }
 std::string OpNode::toString() const {

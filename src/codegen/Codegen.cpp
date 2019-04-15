@@ -249,8 +249,9 @@ void Codegen::allocateMemAddr(IRGraph *graph_) {
 
         tensors_name_map_[tensor] = bufferName;
         // TODO data type
-        tensors_offset_map_[tensor] =
-            std::make_pair(base, addr / sizeof(float));
+        // tensors_offset_map_[tensor] = std::make_pair(base, addr /
+        // sizeof(float));
+        tensors_offset_map_[tensor] = std::make_pair(base, addr);
         // tensors_base_map_[tensor] = base;
     }
 }
@@ -258,11 +259,12 @@ void Codegen::allocateMemAddr(IRGraph *graph_) {
 void Codegen::emitVarDeclarations() {
     SWLOG_INFO << "begin emitVarDeclarations...\n";
 
-    std::string dtype = this->dtype();
+    // std::string dtype = this->dtype();
     for (auto m : mem_allocators_) {
         MemoryAllocator *allocator = m.get();
         std::string base = allocator->getBasePtrName();
-        stream << dtype << " *" << base << ";\n";
+        // stream << dtype << " *" << base << ";\n";
+        stream << "char *" << base << ";\n";
     }
 
     /*
@@ -272,9 +274,9 @@ void Codegen::emitVarDeclarations() {
         stream << dtype << " *" << name << ";\n";
     }
     */
-    for (auto it : tensors_name_map_) {
-        stream << dtype << " *" << it.second << ";\n";
-    }
+    // for (auto it : tensors_name_map_) {
+    //     stream << dtype << " *" << it.second << ";\n";
+    // }
 
     stream << "\n";
 
@@ -282,7 +284,7 @@ void Codegen::emitVarDeclarations() {
 }
 
 void Codegen::emitMemAllocations() {
-    std::string dtype = this->dtype();
+    // std::string dtype = this->dtype();
     for (auto m : mem_allocators_) {
         MemoryAllocator *allocator = m.get();
         auto dev = allocator->getDevice();
@@ -292,7 +294,9 @@ void Codegen::emitMemAllocations() {
             continue;
         switch (dev.type) {
         case DeviceType::CPU:
-            stream << base << " = (" << dtype << "*)malloc(" << size << ");\n";
+            // stream << base << " = (" << dtype << "*)malloc(" << size <<
+            // ");\n";
+            stream << base << " = (char*)malloc(" << size << ");\n";
             break;
         case DeviceType::GPU:
             stream << "\n";
@@ -337,13 +341,28 @@ void Codegen::emitTensorInitializations(IRGraph *graph_,
             continue;
         visited_tensors->insert(tensor);
 
-        std::string dtype = this->dtype();
+        std::string dtype;
+        switch (tnode->getDataType()) {
+        case DataType::Float_t:
+            dtype = "float";
+            break;
+        case DataType::Double_t:
+            dtype = "double";
+            break;
+        case DataType::Int32_t:
+            dtype = "int";
+            break;
+        default:
+            SWLOG_ERROR << "UNKNOWN DataType\n";
+        }
+
         std::string name = tensors_name_map_[tensor];
         uint64_t size = tensor->size();
         std::string base;
         uint64_t offset;
         std::tie(base, offset) = tensors_offset_map_[tensor];
-        stream << name << " = " << base << " + " << offset << ";\n";
+        stream << dtype << "* " << name << " = reinterpret_cast<" << dtype
+               << "*>(" << base << " + " << offset << ");\n";
 
         TensorInitInfo info = tensor->getTensorInitInfo();
         switch (tensor->getTensorInitType()) {
@@ -357,7 +376,7 @@ void Codegen::emitTensorInitializations(IRGraph *graph_,
         }
         case TensorInitType::CONSTANT: {
             stream << "initTensorConstant(" << name << ", " << size << ", "
-                   << "1.0f);\n";
+                   << info.getConstant() << ");\n";
             break;
         }
         case TensorInitType::ZERO: {
@@ -365,8 +384,9 @@ void Codegen::emitTensorInitializations(IRGraph *graph_,
             break;
         }
         case TensorInitType::FILE: {
-            stream << "load(" << name << ", " << size << ", 0, \""
-                   << info.getFilePath() << "\");\n";
+            stream << "load(" << name << ", " << size << ", "
+                   << info.getOffset() << ", "
+                   << "\"" << info.getFilePath() << "\");\n";
             break;
         }
         case TensorInitType::PARENTOP: {
@@ -597,6 +617,22 @@ void Codegen::emitFuncCall(OpNode *op) {
                << ", " << tensors_name_map_[A] << ", " << tensors_name_map_[B]
                << ", " << sliceNum << ", " << sliceSize << ");\n";
     }
+    if ((oplabel->getTypeNameLabel()) == "BatchedReduceAdd") {
+        auto *input = ((TensorNode *)op->getParentNode(0))->getTensor();
+        auto *output = ((TensorNode *)op->getChildNode(0))->getTensor();
+
+        size_t sliceNum, sliceSize;
+        std::tie(sliceNum, sliceSize) = convertToDim2(input->getDims());
+        auto bdim = output->size();
+        (void)bdim;
+        assert((sliceSize == bdim) &&
+               "batch flattened dim.second != bias dim!");
+
+        stream << "batchedreduceadd_" << dtype_flag << "("
+               << tensors_name_map_[output] << ", " << tensors_name_map_[input]
+               << ", " << sliceNum << ", " << sliceSize << ");\n";
+    }
+
     if ((oplabel->getTypeNameLabel()) == "ElementAdd") {
         auto *A = ((TensorNode *)op->getParentNode(0))->getTensor();
         auto *B = ((TensorNode *)op->getParentNode(1))->getTensor();
@@ -715,7 +751,7 @@ void Codegen::emitFuncCall(OpNode *op) {
         auto *input = ((TensorNode *)op->getParentNode(0))->getTensor();
         auto *out = ((TensorNode *)op->getChildNode(0))->getTensor();
 
-        auto *trans_op = (TranposeOp *)op->getOp();
+        auto *trans_op = (TransposeOp *)op->getOp();
         auto shuffle = trans_op->getShuffle();
 
         auto iDims = op->name() + "_inDims";
@@ -762,6 +798,57 @@ void Codegen::emitFuncCall(OpNode *op) {
         stream << "matrixSoftmax_" << dtype_flag << "(" << m << ", " << n
                << ", " << tensors_name_map_[A] << ", " << n << ", "
                << tensors_name_map_[B] << ", " << n << ");\n";
+    }
+    if ((oplabel->getTypeNameLabel()).compare("MatrixTanhGrad") == 0) {
+        // TODO assert
+        auto *input = ((TensorNode *)op->getParentNode(0))->getTensor();
+        auto *output = ((TensorNode *)op->getParentNode(1))->getTensor();
+        auto *outputG = ((TensorNode *)op->getParentNode(2))->getTensor();
+        auto *inputG = ((TensorNode *)op->getChildNode(0))->getTensor();
+        int m = input->getDim(0);
+        int n = input->getDim(1);
+
+        stream << "matrixTanhGrad_" << dtype_flag << "(" << m << ", " << n
+               << ", " << tensors_name_map_[inputG] << ", " << n << ", "
+               << tensors_name_map_[output] << ", " << n << ", "
+               << tensors_name_map_[outputG] << ", " << n << ");\n";
+    }
+    if ((oplabel->getTypeNameLabel()).compare("MatrixSoftmaxGrad") == 0) {
+        // TODO assert
+        auto *input = ((TensorNode *)op->getParentNode(0))->getTensor();
+        auto *label = ((TensorNode *)op->getParentNode(1))->getTensor();
+        auto *output = ((TensorNode *)op->getParentNode(2))->getTensor();
+        // auto *outputG = ((TensorNode *)op->getParentNode(3))->getTensor();
+        auto *inputG = ((TensorNode *)op->getChildNode(0))->getTensor();
+        int m = input->getDim(0);
+        int n = input->getDim(1);
+
+        stream << "matrixSoftmaxGrad_" << dtype_flag << "(" << m << ", " << n
+               << ", " << tensors_name_map_[inputG] << ", " << n << ", "
+               << tensors_name_map_[output] << ", " << n << ", "
+               << tensors_name_map_[label] << ");\n";
+    }
+
+    if ((oplabel->getTypeNameLabel()).compare("SGD") == 0) {
+        auto *input = ((TensorNode *)op->getParentNode(0))->getTensor();
+        auto *inputG = ((TensorNode *)op->getParentNode(1))->getTensor();
+        auto *momen = ((TensorNode *)op->getParentNode(2))->getTensor();
+        auto *input_mirror = ((TensorNode *)op->getChildNode(0))->getTensor();
+
+        auto *sgdOp = (SGDOp *)op->getOp();
+        float lr = sgdOp->getLR();
+        float decay = sgdOp->getDecay();
+        float momentum = sgdOp->getMomentum();
+        size_t batch = sgdOp->getBatch();
+
+        assert(input == input_mirror &&
+               "SGD input and output ptr should refer to the same Tensor\n");
+        size_t size = input->size();
+        stream << "sgd_" << dtype_flag << "(" << size << ", "
+               << tensors_name_map_[input_mirror] << ", "
+               << tensors_name_map_[input] << ", " << tensors_name_map_[inputG]
+               << ", " << tensors_name_map_[momen] << ", " << lr << ", "
+               << decay << ", " << momentum << ", " << batch << ");\n ";
     }
 }
 
