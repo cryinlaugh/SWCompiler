@@ -15,6 +15,7 @@
 
 #include <sstream>
 #include <unordered_map>
+#include <cassert>
 
 namespace swc {
 

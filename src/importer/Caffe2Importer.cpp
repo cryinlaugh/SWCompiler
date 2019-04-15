@@ -7,6 +7,8 @@
 
 #include "Caffe2Importer.h"
 #include "caffe2.pb.h"
+
+#include <algorithm>
 #include <cassert>
 #include <cstdlib>
 #include <fstream>
@@ -167,7 +169,7 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
     // std::string opName = op.name().length() ? op.name() : op.output(0);
     //
     std::string opName = opType;
-    transform(opName.begin(), opName.end(), opName.begin(), ::tolower);
+    std::transform(opName.begin(), opName.end(), opName.begin(), ::tolower);
 
     std::cout << opName << " " << op.output(0) << std::endl
               << "\ttype  : " << op.type() << std::endl

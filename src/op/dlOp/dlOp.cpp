@@ -7,6 +7,8 @@
 
 #include "dlOp.h"
 
+#include <cassert>
+
 #include "SWDSL.h"
 #include "graphIR/IRGraph.h"
 #include "graphIR/IRNode.h"

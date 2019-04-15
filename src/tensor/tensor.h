@@ -11,6 +11,8 @@
 #include "common.h"
 #include <string>
 
+#include <cassert>
+
 namespace swc {
 
 class TensorShape {
