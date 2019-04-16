@@ -64,6 +64,7 @@ size_t Tensor::getSizeInBytes() const {
         return shape_->size() * sizeof(int32_t);
     default:
         SWLOG_ERROR << "UNKNOWN DataType\n";
+        return shape_->size() * sizeof(float);
     }
 }
 

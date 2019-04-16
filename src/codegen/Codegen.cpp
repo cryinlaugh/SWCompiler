@@ -498,7 +498,7 @@ void Codegen::dispathOpNode(OpNode *op) {
         auto *to_tensor = to->getTensor();
 
         size_t offset = scatter->getOffset();
-        size_t size = from_tensor->getSizeInBytes();
+        size_t size = to_tensor->getSizeInBytes();
 
         emitMemcpyFromTo(from_tensor, from_dev, offset, size, to_tensor, dev);
     } else if (auto gather = dynamic_cast<GatherOp *>(op->getOp())) {
@@ -544,13 +544,13 @@ void Codegen::emitMemcpyFromTo(Tensor *from, Device from_dev, size_t offset,
 
     if (from_dev.type == DeviceType::GPU && to_dev.type == DeviceType::CPU) {
         if (flag_multiStream) {
-            stream << "cudaMemcpyAsync(" << fname << ", " << tname << "+"
-                   << offset << ", " << size << ", "
-                   << "cudaMemcpyDeviceToHost, stream[" << to_dev.id << "]);\n";
+            stream << "cudaMemcpyAsync(" << tname << "+" << offset 
+                   << ", " << fname <<  ", " << size << ", "
+                   << "cudaMemcpyDeviceToHost, stream[" << from_dev.id << "]);\n";
 
         } else {
-            stream << "cudaMemcpy(" << fname << ", " << tname << "+" << offset
-                   << ", " << size << ", "
+            stream << "cudaMemcpy(" << tname << "+" << offset
+                   <<", " << fname << ", " << size << ", "
                    << "cudaMemcpyDeviceToHost);\n";
         }
     }
@@ -923,8 +923,25 @@ void Codegen::emitFuncCallCUDA(OpNode *op) {
         int n = A->getDim(1);
 
         stream << "matrixTanh_" << dtype_flag << "<<<1, " << m << ", 0, stream["
-               << oplabel->getDeviceLabel().id << "]>>>" << tensors_name_map_[A]
+               << oplabel->getDeviceLabel().id << "]>>>(" << tensors_name_map_[A]
                << ", " << tensors_name_map_[B] << ", " << n << ");\n";
+    }
+    if ((oplabel->getTypeNameLabel()) == "BatchedAdd") {
+        auto *A = ((TensorNode *)op->getParentNode(0))->getTensor();
+        auto *B = ((TensorNode *)op->getParentNode(1))->getTensor();
+        auto *C = ((TensorNode *)op->getChildNode(0))->getTensor();
+
+        size_t sliceNum, sliceSize;
+        std::tie(sliceNum, sliceSize) = convertToDim2(A->getDims());
+        auto bdim = B->size();
+        (void)bdim;
+        assert((sliceSize == bdim) &&
+               "batch flattened dim.second != bias dim!");
+
+        stream << "batchedadd_" << dtype_flag << "<<<1, " << sliceNum << ", 0, stream["
+               << oplabel->getDeviceLabel().id << "]>>>(" << tensors_name_map_[C]
+               << ", " << tensors_name_map_[A] << ", " << tensors_name_map_[B]
+               << ", " << sliceSize << ");\n";
     }
     if ((oplabel->getTypeNameLabel()).compare("MatrixSoftmax") == 0) {
         // TODO assert
@@ -934,7 +951,7 @@ void Codegen::emitFuncCallCUDA(OpNode *op) {
         int n = A->getDim(1);
 
         stream << "matrixSoftmax_" << dtype_flag << "<<<1, " << m
-               << ", 0, stream[" << oplabel->getDeviceLabel().id << "]>>>"
+               << ", 0, stream[" << oplabel->getDeviceLabel().id << "]>>>("
                << tensors_name_map_[A] << ", " << tensors_name_map_[B] << ", "
                << n << ");\n";
     }

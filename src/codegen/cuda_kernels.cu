@@ -25,4 +25,15 @@ __global__ void matrixTanh_float(float *src, float *dest, int n){
         dest[i*n + j] = 1 - 2 / (expf(src[i*n + j] * 2) + 1);
     }
 }
+
+__global__ void batchedadd_float(float *dest, const float *batch, const float *slice,
+                                  int sliceSize){
+    int n = blockIdx.x *blockDim.x + threadIdx.x;
+    size_t base = n * sliceSize;
+    // For each element in the slice.
+    for (size_t i = 0; i < sliceSize; i++) {
+        dest[base + i] = batch[base + i] + slice[i];
+    }
+}
+
 )";
