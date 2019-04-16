@@ -56,6 +56,8 @@ include_directories(${PROTOBUF_INCLUDE_DIRS})
 
 PROTOBUF_GENERATE_CPP(CAFFE2_SRCS CAFFE2_HDRS src/importer/caffe2.proto)
 
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
 
 # Source 
 file(GLOB_RECURSE SOURCES 
@@ -69,7 +71,8 @@ add_library(graphcore
 target_compile_definitions(graphcore
                            INTERFACE
                              -DGOOGLE_PROTOBUF_NO_RTTI)
-target_link_libraries(graphcore PUBLIC ${PROTOBUF_LIBRARY})
+target_link_libraries(graphcore PUBLIC ${PROTOBUF_LIBRARY}
+                        Threads::Threads)
 
 
 # Libraries are compiled
