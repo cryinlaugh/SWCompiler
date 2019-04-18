@@ -27,6 +27,8 @@ void MatrixMatrixFCOp::lowering(IRGraph *graph, IRNode *node) {
     // OP(O1, MatrixMatrixMulOp);
     assert(node->parentNum() == 3 &&
            "FC input should be 3: data, weight, bias");
+    assert(node->childNum() == 1 &&
+           "FC input should be 1");
 
     Device dev = node->getLabel()->getDeviceLabel();
 
@@ -101,7 +103,7 @@ void MatrixMatrixFCGradOp::lowering(IRGraph *graph, IRNode *node) {
     auto idims = input->getDims();
     auto wdims = weight->getDims();
 
-    // Y = XW + B 8*10 8*512 512*10 10
+    // Y = XW + B e.g. 8*10 8*512 512*10 10
     // dx = dy*WT
     // may be we tanspose W again, we can optimize tanspose-transpose
     auto op_w_t =

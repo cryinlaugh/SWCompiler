@@ -128,7 +128,7 @@ std::string dotGenOpNode(OpNode *opnode) {
 
 void dotGen(IRGraph *graph, std::string dotFileName) {
 
-    std::cout << "Generate the dotFile for drawing." << std::endl;
+    std::cout << "Generate the dotFile " << dotFileName << std::endl;
 
     std::string dot_Total;
 
@@ -159,14 +159,16 @@ void dotGen(IRGraph *graph, std::string dotFileName) {
     dotfile << dot_end << std::endl;
 
     // make svg
-    std::string svgFileName = "IRGraph.svg";
+    //std::string svgFileName = "IRGraph.svg";
+    std::string svgFileName = dotFileName.substr(0, dotFileName.length()-3)+"svg"; 
     std::string dotGenCMD = "dot -T svg " + dotFileName + " -o " + svgFileName;
+    std::cout << dotGenCMD << "\n";
 
     char *cmd = (char *)dotGenCMD.data();
 
     assert(system(cmd) == 0);
 }
 
-void dotGen(IRGraph *graph) { dotGen(graph, "IRGraph.dot"); }
+//void dotGen(IRGraph *graph) { dotGen(graph, "IRGraph.dot"); }
 
 } // namespace swc

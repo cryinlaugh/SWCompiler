@@ -10,7 +10,7 @@ using namespace std;
 
 int main() {
     //============================
-    // Example of 1 FC layer:
+    // Example of 2 FC layer:
     //  T:data0   T:weight0
     //     \       /
     //      \     /

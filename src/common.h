@@ -13,6 +13,8 @@
 
 enum class DataType { Float_t, Double_t, Int8_t, Int32_t };
 
+enum ParallelStrategy { SLICE, TILING };  
+
 struct TrainingProfile {
     float lr{0.001};
     float decay{0.001};

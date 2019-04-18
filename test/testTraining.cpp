@@ -3,8 +3,6 @@
 #include "SWC.h"
 #include "diff/AutoDiff.h"
 
-#define Dtype float
-
 using namespace swc;
 using namespace std;
 

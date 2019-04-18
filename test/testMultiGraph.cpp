@@ -169,13 +169,12 @@ int main(){
     // // Optimizer is a must because Codegen need label 
     // Optimizer* opt = new Optimizer(MLPLayer);
     // opt->runOptimizer();
-    // dotGen(MLPLayer);
 
 
     subGraph1->updateTopology();
     Optimizer* opt = new Optimizer(subGraph1);
     opt->runOptimizer();
-    dotGen(subGraph1);
+    //dotGen(subGraph1);
 
     subGraph0->updateTopology();
     opt->setGraph(subGraph0);
@@ -184,6 +183,7 @@ int main(){
     MLPLayer->updateTopology();
     opt->setGraph(MLPLayer);
     opt->runOptimizer();
+    dotGen(MLPLayer);
 
     codegen::Codegen* cg = new codegen::Codegen(MLPLayer);
     string code = cg->generate();

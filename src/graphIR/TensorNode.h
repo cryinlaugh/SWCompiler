@@ -46,7 +46,7 @@ class TensorNode : public IRNode {
     std::string toString() const;
 
   private:
-    Tensor *tensor_;
+    Tensor *tensor_{nullptr};
 };
 
 } // namespace swc
