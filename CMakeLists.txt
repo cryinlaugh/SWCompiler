@@ -16,6 +16,14 @@ if(CMAKE_BUILD_TYPE STREQUAL Debug)
   add_definitions(-DDEBUG)
 endif()
 
+if(LEVELDEBUG)
+  if(CMAKE_BUILD_TYPE STREQUAL Debug)
+    add_definitions(-DLEVELDEBUG=${LEVELDEBUG})
+  else()
+    add_definitions(-DLEVELDEBUG=100)
+  endif()
+endif ()
+
 set(SW_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
 # set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${SW_BINARY_DIR}/bin)
 
