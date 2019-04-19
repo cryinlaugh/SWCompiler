@@ -30,9 +30,10 @@ class TensorShape {
 
 class TensorInitInfo {
     std::string file_{nullptr}; // FILE initialization
-    float constant_{0};   // constant initialization
-    float filterSize_{1}; // xavier initialization
+    float constant_{0};         // constant initialization
+    float filterSize_{1};       // xavier initialization
     size_t offset_{0};
+
   public:
     TensorInitInfo() : file_(""), constant_(0), filterSize_(3) {}
 
@@ -68,7 +69,7 @@ class Tensor {
         shape_ = shape;
         initType_ = TensorInitType::NONE;
     }
-    Tensor(const std::initializer_list<int> &shape,
+    Tensor(const std::initializer_list<size_t> &shape,
            DataType dtype = DataType::Float_t) {
         dataType_ = dtype;
         std::vector<size_t> *vec = new std::vector<size_t>();
@@ -86,7 +87,8 @@ class Tensor {
         shape_ = shape;
         dataType_ = dtype;
     }
-    TensorShape* getShuffledTensorShape(const std::vector<size_t> &shuffle) const;
+    TensorShape *
+    getShuffledTensorShape(const std::vector<size_t> &shuffle) const;
 
     DataType getDataType() { return dataType_; }
 
@@ -99,8 +101,9 @@ class Tensor {
         return dims;
     }
 
-    void setTensorInit(TensorInitType type, float value=0);
-    void setTensorInit(TensorInitType type, std::string file, size_t offset=0);
+    void setTensorInit(TensorInitType type, float value = 0);
+    void setTensorInit(TensorInitType type, std::string file,
+                       size_t offset = 0);
 
     TensorInitType getTensorInitType() { return initType_; }
     TensorInitInfo getTensorInitInfo() const { return initInfo_; }

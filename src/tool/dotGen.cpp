@@ -3,6 +3,7 @@
 #include <cassert>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <stdlib.h>
 
 #include "graphIR/IRGraph.h"
@@ -77,6 +78,14 @@ std::string dotGenTensorNode(TensorNode *tnode) {
 
     // generate the tensorInfo
     tensorInfo = tensorInfo + "label = \"{Name: " + tensorName + " |";
+
+    std::ostringstream os;
+    os << "Tensor: " << std::hex << tnode->getTensor() << " |";
+    os << "isExternal: " << tnode->isExternal() << " |";
+    auto dev = tnode->getLabel()->getDeviceLabel();
+    os << "Dev: " << static_cast<int>(dev.type) << " " << dev.id << " |";
+    tensorInfo += os.str();
+
     tensorInfo = tensorInfo + "NDim: " + std::to_string(NDim) + " |";
 
     // for (int i = 0; i < NDim; ++i) {
@@ -159,8 +168,9 @@ void dotGen(IRGraph *graph, std::string dotFileName) {
     dotfile << dot_end << std::endl;
 
     // make svg
-    //std::string svgFileName = "IRGraph.svg";
-    std::string svgFileName = dotFileName.substr(0, dotFileName.length()-3)+"svg"; 
+    // std::string svgFileName = "IRGraph.svg";
+    std::string svgFileName =
+        dotFileName.substr(0, dotFileName.length() - 3) + "svg";
     std::string dotGenCMD = "dot -T svg " + dotFileName + " -o " + svgFileName;
     std::cout << dotGenCMD << "\n";
 
@@ -169,6 +179,6 @@ void dotGen(IRGraph *graph, std::string dotFileName) {
     assert(system(cmd) == 0);
 }
 
-//void dotGen(IRGraph *graph) { dotGen(graph, "IRGraph.dot"); }
+// void dotGen(IRGraph *graph) { dotGen(graph, "IRGraph.dot"); }
 
 } // namespace swc

@@ -38,6 +38,7 @@ class OpNode : public IRNode {
     const std::string getOpName() { return op_->getOpName(); }
 
     OpNode *clone() const;
+    OpNode *deepClone() const;
     std::string toString() const;
     void setRunOnce() { run_once_ = true; }
     bool runable() {

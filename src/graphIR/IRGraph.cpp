@@ -13,156 +13,245 @@
 #include "op/dlOp/dlOp.h"
 
 #include "common.h"
+#include <cassert>
+#include <queue>
 #include <unordered_map>
 #include <unordered_set>
-#include <queue>
-#include <cassert>
+#include <vector>
 
 namespace swc {
 
-IRNode* IRGraph::getNodeByName(std::string name) const {
-    for(auto &node : _tensors)
-        if(node->name() == name)
+IRNode *IRGraph::getNodeByName(std::string name) const {
+    for (auto &node : _tensors)
+        if (node->name() == name)
             return node;
 
-    for(auto &node : _ops)
-        if(node->name() == name)
+    for (auto &node : _ops)
+        if (node->name() == name)
             return node;
     return nullptr;
 }
-    bool buildSubGraph(TensorNode *in, TensorNode *out,
-                        ParallelStrategy strategy, 
-                        int axis=0,
-                        int num=2);
-bool IRGraph::buildSubGraph(TensorNode *in, TensorNode *out,
-                            ParallelStrategy strategy, 
-                            int axis,
-                            int num) {
 
-    std::cout << "begin build SubGraph\n";
+bool IRGraph::buildSubGraphs(TensorNode *in, TensorNode *out,
+                             ParallelStrategy strategy, int axis, int num) {
+    assert(strategy == ParallelStrategy::SLICE && "only support SLICE ");
+    assert(axis == 0 && "only herizonnal SLICE ");
 
-    std::vector<IRNode *> subGraphNodes;
-    std::unordered_set<IRNode *> found; 
-    std::queue<IRNode *> toVisit; 
+    auto inDims = in->getDims();
+    size_t dimPerSub = inDims[/*axis*/ 0] / num;
+    assert((inDims[0] % dimPerSub) == 0 && "");
 
+    OpNode *subGNode = extractSubGraph(in, out);
+    if (!subGNode)
+        return false;
+
+    auto subInDims = inDims;
+    subInDims[axis] = dimPerSub;
+    std::vector<size_t> *shape = new std::vector<size_t>();
+    for (auto dim : subInDims)
+        shape->push_back(dim);
+
+    IRGraph *subG = ((SubGraphOp *)subGNode->getOp())->getGraph();
+    auto *inNodeOfSubG = (TensorNode *)subG->getNodeByName(in->name() + "_sub");
+    if (!inNodeOfSubG)
+        return false;
+    inNodeOfSubG->setTensor(new Tensor(new TensorShape(shape)));
+    subG->initTensorNodes();
+
+    for (int i = 1; i < num; i++) {
+        // TensorNode reference to the same Tensor
+        // OpNode reference to the same Op
+        auto *subG_cp = subG->clone();
+        inNodeOfSubG =
+            (TensorNode *)subG_cp->getNodeByName(in->name() + "_sub");
+        if (!inNodeOfSubG)
+            return false;
+
+        inNodeOfSubG->setTensor(new Tensor(new TensorShape(shape)));
+        subG_cp->initTensorNodes();
+
+        auto *subG_Op = new SubGraphOp();
+        subG_Op->setGraph(subG_cp);
+        auto *subGNode_cp = new OpNode("subG", subG_Op);
+
+        for (auto &p : subGNode->getParentNodes())
+            subGNode_cp->exlinkUpperNode(p);
+        for (auto &c : subGNode->getChildNodes())
+            c->exlinkUpperNode(subGNode_cp);
+
+        this->pushOpNode(subGNode_cp);
+    }
+}
+
+OpNode *IRGraph::extractSubGraph(TensorNode *in, TensorNode *out) {
+
+    std::cout << "extract SubGraph from " << in->name() << " to " << out->name()
+              << "\n";
+
+    std::unordered_set<IRNode *> found;
+    std::queue<IRNode *> toVisit;
     found.insert(out);
     toVisit.push(out);
 
-    while(!toVisit.empty()){
+    while (!toVisit.empty()) {
         auto *cur = toVisit.front();
         toVisit.pop();
 
-        if(cur == in)
+        if (cur == in)
             continue;
 
-        for(auto child : cur->getParentNodes()){
-           if(!found.count(child)){
+        for (auto child : cur->getParentNodes()) {
+            if (!found.count(child)) {
                 toVisit.push(child);
                 found.insert(child);
-           }
-        }
-    }
-
-    std::cout << "BFS ok\n";
-    if(found.count(in)){
-        assert(strategy == ParallelStrategy::SLICE && "only support SLICE ");
-        assert(axis == 0 && "only herizonnal SLICE ");
-
-        auto inDims = in->getDims();
-        size_t dimPerSub = inDims[/*axis*/0] / num;
-        assert((inDims[0]%dimPerSub)==0 && "");
-        //size_t lastSubDim = (inDims[0]%dimPerSub) ? (inDims[0]%dimPerSub) : dimPerSub;
-
-        IRGraph *subG = new IRGraph();
-        SubGraphOp *subG_Op = new SubGraphOp();
-        subG_Op->setGraph(subG);
-        OpNode *subGNode = new OpNode("subG", subG_Op); 
-
-        for(auto irNode : found){
-            std::cout << "process node " << irNode->name() << "\n";
-            if(irNode->nodeType() == OP_NODE){
-                auto *node = (OpNode*)irNode;
-                subG->pushOpNode(node); 
-                this->delOpNode(node); 
-            }else if(irNode->nodeType() == TENSOR_NODE){
-                auto *node = (TensorNode *)irNode;
-                if(node == in) {
-
-                    TensorNode *node_mirror = node->clone();  
-                    node_mirror->setExternal(true);
-
-                    OpNode *scatter = new OpNode("scatter", new ScatterOp()); 
-                    scatter->exlinkUpperNode(node_mirror);
-
-                    TensorNode *node_sub = new TensorNode(node->name()+"_sub", new Tensor(node->getTensor()->getTensorShape()), scatter);
-                    node->replaceUseKeepOrder(node_sub);
-
-                    subG->pushTensorNode(node_mirror, node_sub); 
-                    subG->pushOpNode(scatter); 
-
-                    continue;
-                }
-                if(node == out) {
-                    // suppose TensorNode only have one ParentNode
-                    assert(node->parentNum()==1 && ""); 
-
-                    TensorNode *node_sub = new TensorNode(node->name()+"_sub", new Tensor(node->getTensor()->getTensorShape()));
-                    node_sub->exlinkUpperNode(node->getParentNode(0));
-
-                    TensorNode *node_mirror = node->clone();  
-                    node_mirror->setExternal(true);
-                    OpNode *gather = new OpNode("gather", new GatherOp()); 
-                    gather->exlinkUpperNode(node_sub);
-                    node_mirror->exlinkUpperNode(gather);
-
-                    subG->pushTensorNode(node_mirror, node_sub); 
-                    subG->pushOpNode(gather); 
-                    continue;
-                }
-                if(node->parentNum() == 0){
-                    // parameter of Op. e.g. weight and bias of FC; 
-                    // filter and bias of Conv
-
-                    TensorNode *node_mirror = node->clone();  
-                    node_mirror->setExternal(true);
-                    OpNode *scatter = new OpNode("scatter", new ScatterOp()); 
-                    scatter->exlinkUpperNode(node_mirror);
-
-                    TensorNode *node_sub = new TensorNode(node->name()+"_sub", new Tensor(node->getTensor()->getTensorShape()), scatter);
-                    node->replaceUseKeepOrder(node_sub);
-
-                    subG->pushTensorNode(node_mirror, node_sub); 
-                    subG->pushOpNode(scatter); 
-                    subGNode->exlinkUpperNode(node);
-
-                    continue;
-                }
-
-                subG->pushTensorNode(node); 
-                this->delTensorNode(node); 
             }
         }
-
-
-        for(auto c : in->getChildNodes()){
-            c->destroyUpperNode(in);
-        }
-        
-        for(auto p : out->getParentNodes()){
-            std::cout << "destroy " << out->name()
-                    << "->" << p->name() << "\n";
-            out->destroyUpperNode(p);
-            std::cout << p->name() << " has childs " << p->childNum() << "\n";
-            std::cout << p->getChildNode(0)->name() << "\n";
-        }
-        subGNode->exlinkUpperNode(in);
-        out->exlinkUpperNode(subGNode);
-
-        this->pushOpNode(subGNode); 
-        std::cout << "build subGraph successfully\n";
-        return true;
     }
-    return false;
+
+    if (!found.count(in)) {
+        return nullptr;
+    }
+
+    IRGraph *subG = new IRGraph();
+    SubGraphOp *subG_Op = new SubGraphOp();
+    subG_Op->setGraph(subG);
+    OpNode *subGNode = new OpNode("subG", subG_Op);
+
+    for (auto irNode : found) {
+        std::cout << "process node " << irNode->name() << "\n";
+        if (irNode->nodeType() == OP_NODE) {
+            auto *node = (OpNode *)irNode;
+            subG->pushOpNode(node);
+            this->delOpNode(node);
+        } else if (irNode->nodeType() == TENSOR_NODE) {
+            auto *node = (TensorNode *)irNode;
+            if (node == in) {
+
+                TensorNode *node_mirror = node->clone();
+                node_mirror->setExternal(true);
+
+                OpNode *scatter = new OpNode("scatter", new ScatterOp());
+                scatter->exlinkUpperNode(node_mirror);
+
+                TensorNode *node_sub = new TensorNode(
+                    node->name() + "_sub",
+                    new Tensor(node->getTensor()->getTensorShape()), scatter);
+                node->replaceUseKeepOrder(node_sub);
+
+                subG->pushTensorNode(node_mirror, node_sub);
+                subG->pushOpNode(scatter);
+
+                continue;
+            }
+            if (node == out) {
+                // suppose TensorNode only have one ParentNode
+                assert(node->parentNum() == 1 && "");
+
+                TensorNode *node_sub = new TensorNode(
+                    node->name() + "_sub",
+                    new Tensor(node->getTensor()->getTensorShape()));
+                node_sub->exlinkUpperNode(node->getParentNode(0));
+
+                TensorNode *node_mirror = node->clone();
+                node_mirror->setExternal(true);
+                OpNode *gather = new OpNode("gather", new GatherOp());
+                gather->exlinkUpperNode(node_sub);
+                node_mirror->exlinkUpperNode(gather);
+
+                subG->pushTensorNode(node_mirror, node_sub);
+                subG->pushOpNode(gather);
+                continue;
+            }
+            if (node->parentNum() == 0) {
+                // parameter of Op. e.g. weight and bias of FC;
+                // filter and bias of Conv
+
+                TensorNode *node_mirror = node->clone();
+                node_mirror->setExternal(true);
+                OpNode *scatter = new OpNode("scatter", new ScatterOp());
+                scatter->setRunOnce();
+                scatter->exlinkUpperNode(node_mirror);
+
+                TensorNode *node_sub = new TensorNode(
+                    node->name() + "_sub",
+                    new Tensor(node->getTensor()->getTensorShape()), scatter);
+                node->replaceUseKeepOrder(node_sub);
+
+                subG->pushTensorNode(node_mirror, node_sub);
+                subG->pushOpNode(scatter);
+                subGNode->exlinkUpperNode(node);
+
+                continue;
+            }
+
+            subG->pushTensorNode(node);
+            this->delTensorNode(node);
+        } // TENSOR_NODE
+    }     // for irNode : found
+
+    for (auto c : in->getChildNodes()) {
+        if (found.count(c))
+            c->destroyUpperNode(in);
+    }
+
+    for (auto p : out->getParentNodes()) {
+        std::cout << "destroy " << out->name() << "->" << p->name() << "\n";
+        if (found.count(p))
+            out->destroyUpperNode(p);
+    }
+    subGNode->exlinkUpperNode(in);
+    out->exlinkUpperNode(subGNode);
+
+    this->pushOpNode(subGNode);
+    std::cout << "extract subGraph successfully\n";
+
+    return subGNode;
+}
+
+//---------------------------------------------------------
+void IRGraph::initTensorNodes() {
+    updateTopology();
+
+    for (int i = 0; i < topologyNum(); i++) {
+        for (int j = 0; j < getNumInTopoLevel(i); j++) {
+            auto *irNode = getNodeInTopo(i, j);
+            if (irNode->nodeType() == OP_NODE) {
+                auto *node = (OpNode *)irNode;
+                auto *op = node->getOp();
+                if (dynamic_cast<MatrixMatrixFCOp *>(op)) {
+                    auto idims =
+                        ((TensorNode *)node->getParentNode(0))->getDims();
+                    auto *weight = (TensorNode *)node->getParentNode(1);
+                    auto wdims = weight->getDims();
+                    // TODO ref count for tensor to decide whether release
+                    // tensor
+                    weight->setTensor(new Tensor({idims[1], wdims[1]}));
+
+                    auto *out = (TensorNode *)node->getChildNode(0);
+                    out->setTensor(new Tensor({idims[0], wdims[1]}));
+                }
+                if (dynamic_cast<MatrixTanhOp *>(op)) {
+                    auto idims =
+                        ((TensorNode *)node->getParentNode(0))->getDims();
+                    auto *out = (TensorNode *)node->getChildNode(0);
+                    out->setTensor(new Tensor({idims[0], idims[1]}));
+                }
+                if (dynamic_cast<MatrixSoftmaxOp *>(op)) {
+                    auto idims =
+                        ((TensorNode *)node->getParentNode(0))->getDims();
+                    auto *out = (TensorNode *)node->getChildNode(0);
+                    out->setTensor(new Tensor({idims[0], idims[1]}));
+                }
+                if (dynamic_cast<ScatterOp *>(op)) {
+                    // child reinit
+                    auto *out = (TensorNode *)node->getChildNode(0);
+                    // auto odims = out->getDims();
+                    auto *shape = out->getTensor()->getTensorShape();
+                    out->setTensor(new Tensor(shape));
+                }
+            }
+        }
+    }
 }
 
 void IRGraph::findInOut() {
@@ -261,7 +350,7 @@ IRGraph *IRGraph::clone() const {
     std::unordered_map<TensorNode *, TensorNode *> tensors_map;
     std::unordered_map<OpNode *, OpNode *> ops_map;
     for (auto &N : _tensors) {
-        TensorNode *tn = N->clone();
+        TensorNode *tn = (N->isExternal()) ? N->clone() : N->deepClone();
         tensors_map[N] = tn;
         graph->pushTensorNode(tn);
     }
@@ -308,7 +397,9 @@ void IRGraph::setDeviceLabel(Device dev) {
     for (auto tnode : _tensors) {
         // suppose Device Graph, all TensorNodes(in degree=0)
         // should be mirror of cpu TensorNodes
-        if(!tnode->isExternal())
+        if (tnode->isExternal())
+            std::cout << tnode->name() << " External skip\n";
+        if (!tnode->isExternal())
             tnode->getLabel()->setDeviceLabel(dev.type, dev.id);
     }
     for (auto opnode : _ops) {

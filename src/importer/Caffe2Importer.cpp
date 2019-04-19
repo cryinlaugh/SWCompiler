@@ -197,7 +197,7 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
             bias = name_tNode_map_[op.input(2)];
         } else {
             std::string nm = opName + "_bias";
-            bias = new TensorNode(nm, {(int)inDims[3]});
+            bias = new TensorNode(nm, {inDims[3]});
             graph_->pushTensorNode(bias);
         }
 
@@ -206,8 +206,7 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
         std::vector<size_t> pads = getPads(args);
 
         std::string trans_op_name = "op_" + weight->name() + "_T";
-        auto trans =
-            new OpNode(trans_op_name, new TransposeOp(NCHW2NHWC));
+        auto trans = new OpNode(trans_op_name, new TransposeOp(NCHW2NHWC));
         LINKUPPER(trans, weight);
 
         Tensor *wt =
@@ -225,12 +224,12 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
         graph_->pushOpNode(trans);
         graph_->pushTensorNode(w_trans);
 
-        int n = inDims[0]; // from data
-        int c = w_trans->getDims()[0];
+        size_t n = inDims[0]; // from data
+        size_t c = w_trans->getDims()[0];
 
         std::string res_name = op.output(0);
-        auto out_tnode = new TensorNode(
-            res_name, {n, (int)ohw[0], (int)ohw[1], c}, opNode);
+        auto out_tnode =
+            new TensorNode(res_name, {n, ohw[0], ohw[1], c}, opNode);
         name_tNode_map_[res_name] = out_tnode;
         graph_->pushTensorNode(out_tnode);
     }
@@ -259,8 +258,7 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
 
         std::string res_name = op.output(0);
         auto *tshape = data->getTensor()->getTensorShape();
-        auto *out_tnode =
-            new TensorNode(res_name, new Tensor(tshape), opNode);
+        auto *out_tnode = new TensorNode(res_name, new Tensor(tshape), opNode);
         name_tNode_map_[res_name] = out_tnode;
         graph_->pushTensorNode(out_tnode);
     }
@@ -281,8 +279,7 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
         } else {
             std::cout << res_name << " non exist\n";
             auto *tshape = in->getTensor()->getTensorShape();
-            out_tnode =
-                new TensorNode(res_name, new Tensor(tshape), opNode);
+            out_tnode = new TensorNode(res_name, new Tensor(tshape), opNode);
         }
         // name mapping to newest operator's  res TensorNode
         name_tNode_map_[res_name] = out_tnode;
@@ -302,8 +299,7 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
             out_tnode = new TensorNode(res_name, tensor, opNode);
         } else {
             auto *tshape = lhs->getTensor()->getTensorShape();
-            out_tnode =
-                new TensorNode(res_name, new Tensor(tshape), opNode);
+            out_tnode = new TensorNode(res_name, new Tensor(tshape), opNode);
         }
         // name mapping to newest operator's  res TensorNode
         name_tNode_map_[res_name] = out_tnode;
@@ -322,14 +318,14 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
         LINKUPPER(opNode, in);
 
         std::vector<size_t> inDims = in->getDims();
-        int n = inDims[0];
-        int c = inDims[3];
+        size_t n = inDims[0];
+        size_t c = inDims[3];
         std::vector<size_t> ohw =
             inferConvOutDims(inDims[1], inDims[2], kernels, strides, pads);
 
         std::string res_name = op.output(0);
-        auto *out_tnode = new TensorNode(
-            res_name, {n, (int)ohw[0], (int)ohw[1], c}, opNode);
+        auto *out_tnode =
+            new TensorNode(res_name, {n, ohw[0], ohw[1], c}, opNode);
         name_tNode_map_[res_name] = out_tnode;
         graph_->pushTensorNode(out_tnode);
     }
@@ -346,16 +342,16 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
         LINKUPPER(opNode, in);
 
         std::vector<size_t> inDims = in->getDims();
-        int n = inDims[0];
-        int c = inDims[3];
+        size_t n = inDims[0];
+        size_t c = inDims[3];
         std::vector<size_t> ohw =
             inferConvOutDims(inDims[1], inDims[2], kernels, strides, pads);
         std::cout << "AveragePool " << n << " " << ohw[0] << " " << ohw[1]
                   << " " << c << "\n";
 
         std::string res_name = op.output(0);
-        auto *out_tnode = new TensorNode(
-            res_name, {n, (int)ohw[0], (int)ohw[1], c}, opNode);
+        auto *out_tnode =
+            new TensorNode(res_name, {n, ohw[0], ohw[1], c}, opNode);
         name_tNode_map_[res_name] = out_tnode;
         graph_->pushTensorNode(out_tnode);
     }
@@ -383,15 +379,14 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
 
             std::string trans_in_op_name = "op_" + in->name() + "_T";
 
-            auto trans_in = new OpNode(trans_in_op_name,
-                                       new TransposeOp(NHWC2NCHW));
+            auto trans_in =
+                new OpNode(trans_in_op_name, new TransposeOp(NHWC2NCHW));
             LINKUPPER(trans_in, in);
 
             Tensor *inT =
                 new Tensor(in->getTensor()->getShuffledTensorShape(NHWC2NCHW));
             std::string trans_in_name = in->name() + "_T";
-            auto in_trans =
-                new TensorNode(trans_in_name, inT, trans_in);
+            auto in_trans = new TensorNode(trans_in_name, inT, trans_in);
             opNode->exlinkUpperNode(in_trans, w_trans, bias);
             graph_->pushOpNode(trans, trans_in);
             graph_->pushTensorNode(w_trans, in_trans);
@@ -412,8 +407,8 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
         assert((flatdim == weightDims[0]) &&
                "input flattenedDim not equal with weight\n");
 
-        int n = inDims[0]; // from data
-        int sec = weightDims[1];
+        size_t n = inDims[0]; // from data
+        size_t sec = weightDims[1];
 
         std::string res_name = op.output(0);
         auto *out_tnode = new TensorNode(res_name, {n, sec}, opNode);
@@ -430,8 +425,7 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
 
         std::string res_name = op.output(0);
         auto *tshape = in->getTensor()->getTensorShape();
-        auto *out_tnode =
-            new TensorNode(res_name, new Tensor(tshape), opNode);
+        auto *out_tnode = new TensorNode(res_name, new Tensor(tshape), opNode);
         name_tNode_map_[opName] = out_tnode;
         graph_->pushTensorNode(out_tnode);
     }

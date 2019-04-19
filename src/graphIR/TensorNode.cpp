@@ -15,6 +15,17 @@ TensorNode *TensorNode::clone() const {
     TensorNode *tn = new TensorNode(name());
     tn->setTensor(tensor_);
     tn->setLabel(getLabel()); // mainly for training flag
+    tn->setExternal(isExternal());
+    return tn;
+}
+
+// TensorShape can be globally shared
+// so we create new Tensor()
+// but point to the same tenorshape
+TensorNode *TensorNode::deepClone() const {
+    TensorNode *tn = new TensorNode(name());
+    tn->setTensor(new Tensor(tensor_->getTensorShape()));
+    tn->setExternal(isExternal());
     return tn;
 }
 

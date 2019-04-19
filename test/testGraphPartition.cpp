@@ -10,7 +10,7 @@ using namespace std;
 
 int main() {
     //============================
-    // Example of 1 FC layer:
+    // Example of 2 FC layer:
     //  T:data_0   T:weight_0
     //     \       /
     //      \     /
@@ -39,7 +39,6 @@ int main() {
     data_0_Tensor->setTensorInit(TensorInitType::FILE, "mnist_images_8.bin");
     weight_0_Tensor->setTensorInit(TensorInitType::FILE, "mlp_weight_0.bin");
     bias_0_Tensor->setTensorInit(TensorInitType::FILE, "mlp_bias_0.bin");
-
 
     OP(fc_0, MatrixMatrixFCOp);
     LINKUPPER(fc_0, data_0, weight_0, bias_0);
@@ -79,7 +78,6 @@ int main() {
     TENSOR(data_4, 8, 10);
     LINKUPPER(data_4, softmax);
 
-
     GpT(mlp, data_3, data_4, weight_1, bias_1, labeln);
     GpO(mlp, fc_1, softmax);
 
@@ -91,41 +89,49 @@ int main() {
     CHECKT(data_2);
     CHECKG(mlp);
 
-    bool res = mlp->buildSubGraph(data_0, data_2,
-            ParallelStrategy::SLICE, 0, 1);
-    if(res){
+    bool res =
+        mlp->buildSubGraphs(data_0, data_2, ParallelStrategy::SLICE, 0, 2);
+    if (res) {
         std::cout << "build SubGraph Ok\n";
     }
 
     Device cpu0;
-    Device dev_gpu0; dev_gpu0.type=DeviceType::GPU; dev_gpu0.id=0;
+    Device dev_gpu[2];
+    dev_gpu[0].type = DeviceType::GPU;
+    dev_gpu[0].id = 0;
+    dev_gpu[1].type = DeviceType::GPU;
+    dev_gpu[1].id = 1;
 
     mlp->updateTopology();
-    Optimizer* opt = new Optimizer(mlp);
+    Optimizer *opt = new Optimizer(mlp);
     opt->runOptimizer();
     dotGen(mlp);
 
-    for(int i=0; i<mlp->opNodeNum(); i++){
+    int dev_id = 0;
+    for (int i = 0; i < mlp->opNodeNum(); i++) {
         auto *node = mlp->getOpNode(i);
-        if(auto *op = dynamic_cast<SubGraphOp*>(node->getOp())){
+        if (auto *op = dynamic_cast<SubGraphOp *>(node->getOp())) {
             std::cout << "subGraph Node " << node->name() << "\n";
             auto *subG = op->getGraph();
 
             // Be aware of implementation of IRGraph::setDeviceLabel()
             // external TensorNodes will not be labeled
             // since they are mirror of cpu Main IRGraph nodes.
-            subG->setDeviceLabel(dev_gpu0);
+
+            subG->setDeviceLabel(dev_gpu[dev_id++]);
 
             subG->updateTopology();
             opt->setGraph(subG);
             opt->runOptimizer();
-            dotGen(subG, "subG.dot");
+            dotGen(subG, node->name() + ".dot");
         }
     }
 
     codegen::Codegen *cg = new codegen::Codegen(mlp);
     string code = cg->generate();
     cout << code;
+
+    SWLOG_DEBUG(10) << "debug test 10\n";
 
     return 0;
 }

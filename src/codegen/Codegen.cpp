@@ -70,8 +70,8 @@ void Codegen::initMemoryAllocators() {
     auto m_gpu1 = std::make_shared<MemoryAllocator>(gpu1, "gpu1", 0xFFFFFFFF);
 
     mem_allocators_.push_back(m_cpu0);
-    // mem_allocators_.push_back(m_gpu0);
-    // mem_allocators_.push_back(m_gpu1);
+    mem_allocators_.push_back(m_gpu0);
+    mem_allocators_.push_back(m_gpu1);
 
     dev_allocator_map_[cpu0] = m_cpu0.get();
     dev_allocator_map_[gpu0] = m_gpu0.get();
@@ -216,7 +216,9 @@ void Codegen::allocateMemAddr() {
         OpNode *opnode = graph_->getOpNode(i);
         if (auto graphOp = dynamic_cast<SubGraphOp *>(opnode->getOp())) {
             if (graphOp->getGraph())
-                allocateMemAddr(graphOp->getGraph());
+                SWLOG_INFO << "allocateMemAddr on subG: " << opnode->name()
+                           << "\n";
+            allocateMemAddr(graphOp->getGraph());
         }
     }
     SWLOG_INFO << "end allocateMemAddr...\n";
@@ -234,12 +236,15 @@ void Codegen::allocateMemAddr(IRGraph *graph_) {
 
         size_t size = tensor->getSizeInBytes();
 
-        SWLOG_INFO << tnode->name() << " " << size << "\n";
-
         Label *label = tnode->getLabel();
         Device dev = label->getDeviceLabel();
 
-        auto *allocator = dev_allocator_map_[dev];
+        SWLOG_INFO << "allocateMemAddr " << tnode->name() << " " << size
+                   << " on dev(" << static_cast<int>(dev.type) << ", " << dev.id
+                   << ")."
+                   << "\n";
+
+        auto *allocator = dev_allocator_map_.at(dev);
         if (!allocator) {
             SWLOG_ERROR << "allocator" << static_cast<int>(dev.type) << " "
                         << dev.id << " not found\n";
@@ -544,13 +549,14 @@ void Codegen::emitMemcpyFromTo(Tensor *from, Device from_dev, size_t offset,
 
     if (from_dev.type == DeviceType::GPU && to_dev.type == DeviceType::CPU) {
         if (flag_multiStream) {
-            stream << "cudaMemcpyAsync(" << tname << "+" << offset 
-                   << ", " << fname <<  ", " << size << ", "
-                   << "cudaMemcpyDeviceToHost, stream[" << from_dev.id << "]);\n";
+            stream << "cudaMemcpyAsync(" << tname << "+" << offset << ", "
+                   << fname << ", " << size << ", "
+                   << "cudaMemcpyDeviceToHost, stream[" << from_dev.id
+                   << "]);\n";
 
         } else {
-            stream << "cudaMemcpy(" << tname << "+" << offset
-                   <<", " << fname << ", " << size << ", "
+            stream << "cudaMemcpy(" << tname << "+" << offset << ", " << fname
+                   << ", " << size << ", "
                    << "cudaMemcpyDeviceToHost);\n";
         }
     }
@@ -923,8 +929,9 @@ void Codegen::emitFuncCallCUDA(OpNode *op) {
         int n = A->getDim(1);
 
         stream << "matrixTanh_" << dtype_flag << "<<<1, " << m << ", 0, stream["
-               << oplabel->getDeviceLabel().id << "]>>>(" << tensors_name_map_[A]
-               << ", " << tensors_name_map_[B] << ", " << n << ");\n";
+               << oplabel->getDeviceLabel().id << "]>>>("
+               << tensors_name_map_[A] << ", " << tensors_name_map_[B] << ", "
+               << n << ");\n";
     }
     if ((oplabel->getTypeNameLabel()) == "BatchedAdd") {
         auto *A = ((TensorNode *)op->getParentNode(0))->getTensor();
@@ -938,10 +945,10 @@ void Codegen::emitFuncCallCUDA(OpNode *op) {
         assert((sliceSize == bdim) &&
                "batch flattened dim.second != bias dim!");
 
-        stream << "batchedadd_" << dtype_flag << "<<<1, " << sliceNum << ", 0, stream["
-               << oplabel->getDeviceLabel().id << "]>>>(" << tensors_name_map_[C]
-               << ", " << tensors_name_map_[A] << ", " << tensors_name_map_[B]
-               << ", " << sliceSize << ");\n";
+        stream << "batchedadd_" << dtype_flag << "<<<1, " << sliceNum
+               << ", 0, stream[" << oplabel->getDeviceLabel().id << "]>>>("
+               << tensors_name_map_[C] << ", " << tensors_name_map_[A] << ", "
+               << tensors_name_map_[B] << ", " << sliceSize << ");\n";
     }
     if ((oplabel->getTypeNameLabel()).compare("MatrixSoftmax") == 0) {
         // TODO assert

@@ -24,7 +24,7 @@ class TensorNode : public IRNode {
                         IRNode *parent = nullptr)
         : IRNode(TENSOR_NODE, name, parent), tensor_(tensor){};
     explicit TensorNode(std::string name,
-                        const std::initializer_list<int> &shape,
+                        const std::initializer_list<size_t> &shape,
                         IRNode *parent = nullptr)
         : IRNode(TENSOR_NODE, name, parent) {
         tensor_ = new Tensor(shape);
@@ -43,6 +43,7 @@ class TensorNode : public IRNode {
     DataType getDataType() { return tensor_->getDataType(); }
     std::vector<unsigned long> getDims() { return tensor_->getDims(); }
     TensorNode *clone() const;
+    TensorNode *deepClone() const;
     std::string toString() const;
 
   private:

@@ -27,8 +27,7 @@ void MatrixMatrixFCOp::lowering(IRGraph *graph, IRNode *node) {
     // OP(O1, MatrixMatrixMulOp);
     assert(node->parentNum() == 3 &&
            "FC input should be 3: data, weight, bias");
-    assert(node->childNum() == 1 &&
-           "FC input should be 1");
+    assert(node->childNum() == 1 && "FC input should be 1");
 
     Device dev = node->getLabel()->getDeviceLabel();
 
@@ -41,8 +40,7 @@ void MatrixMatrixFCOp::lowering(IRGraph *graph, IRNode *node) {
     auto *mm_op = new MatrixMatrixMulOp();
     auto *O1 = new OpNode(mm_name, mm_op);
     std::string mm_out_name = mm_name + "_out";
-    auto *O1_out =
-        new TensorNode(mm_out_name, {(int)idims[0], (int)wdims[1]}, O1);
+    auto *O1_out = new TensorNode(mm_out_name, {idims[0], wdims[1]}, O1);
 
     O1->getLabel()->setDeviceLabel(dev.type, dev.id);
     O1_out->getLabel()->setDeviceLabel(dev.type, dev.id);

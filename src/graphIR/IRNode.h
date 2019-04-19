@@ -77,14 +77,10 @@ class IRNode {
         destroyUpperNode(args...);
     }
 
-    const std::vector<IRNode *> &getParentNodes() const {
-        return _parentNodes;
-    }
+    const std::vector<IRNode *> &getParentNodes() const { return _parentNodes; }
     const std::vector<IRNode *> &getChildNodes() const { return _childNodes; }
 
-    std::vector<IRNode *> &getParentNodes() {
-        return _parentNodes;
-    }
+    std::vector<IRNode *> &getParentNodes() { return _parentNodes; }
     std::vector<IRNode *> &getChildNodes() { return _childNodes; }
 
     IRNode *getParentNode(int i) const { return _parentNodes[i]; }
@@ -114,9 +110,9 @@ class IRNode {
         }
         */
 
-        for(auto c : _childNodes){
-            for(auto &cp : c->getParentNodes()){
-                if(cp == this){
+        for (auto c : _childNodes) {
+            for (auto &cp : c->getParentNodes()) {
+                if (cp == this) {
                     cp = node;
                     this->delChildNode(c);
                     node->pushChildNode(c);
@@ -128,10 +124,11 @@ class IRNode {
     void setLabel(Label *label) { _label = label; }
     Label *getLabel() const { return _label; }
 
-    void setExternal(bool flag) { _isExternal = flag; } 
-    bool isExternal() { return _isExternal; }
+    void setExternal(bool flag) { _isExternal = flag; }
+    bool isExternal() const { return _isExternal; }
 
     virtual IRNode *clone() const = 0;
+    virtual IRNode *deepClone() const = 0;
 
   private:
     std::vector<IRNode *> _parentNodes;

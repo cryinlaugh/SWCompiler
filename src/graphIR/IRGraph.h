@@ -39,14 +39,18 @@ class IRGraph {
         return _nodesByTopology[i];
     }
     IRNode *getNodeInTopo(int i, int j) const { return _nodesByTopology[i][j]; }
-    IRNode* getNodeByName(std::string name) const;
+    IRNode *getNodeByName(std::string name) const;
+
+    /// \brief extract subGraph by in/out \p TensorNode
+    /// \return OpNode*(SubGraphOp*)->subG(type: IRGraph)
+    OpNode *extractSubGraph(TensorNode *in, TensorNode *out);
 
     // parallel through split `in`
     // e.g. SLICE in on axis 0(horizonal), num=2
-    bool buildSubGraph(TensorNode *in, TensorNode *out,
-                        ParallelStrategy strategy, 
-                        int axis=0,
-                        int num=2);
+    bool buildSubGraphs(TensorNode *in, TensorNode *out,
+                        ParallelStrategy strategy, int axis = 0, int num = 2);
+
+    void initTensorNodes();
 
     // GraphStructure Construct Interface
     void pushTensorNode(){};
