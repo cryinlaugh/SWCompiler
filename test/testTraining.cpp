@@ -8,7 +8,7 @@ using namespace std;
 
 int main() {
     //============================
-    // Example of 1 FC layer:
+    // Example of 2 FC layer:
     //  T:data_0   T:weight_0
     //     \       /
     //      \     /
@@ -39,7 +39,6 @@ int main() {
     bias_0_Tensor->setTensorInit(TensorInitType::CONSTANT, 0);
     weight_0->setTraining(1);
     bias_0->setTraining(1);
-
 
     OP(fc_0, MatrixMatrixFCOp);
     LINKUPPER(fc_0, data_0, weight_0, bias_0);
@@ -81,7 +80,6 @@ int main() {
     TENSOR(data_4, 8, 10);
     LINKUPPER(data_4, softmax);
 
-
     GpT(mlp, data_3, data_4, weight_1, bias_1, labeln);
     GpO(mlp, fc_1, softmax);
 
@@ -95,15 +93,14 @@ int main() {
 
     mlp->updateTopology();
 
-
-    SWLOG_DEBUG << "Start doing optimization on mlp." << std::endl;
+    SWLOG_INFO << "Start doing optimization on mlp." << std::endl;
     PassManager passManager;
     RenamingNodePass renamingpass(mlp);
     passManager.add((OptimizePass *)&renamingpass);
     LabelingPass labelingpass(mlp);
     passManager.add((OptimizePass *)&labelingpass);
     passManager.run();
-    SWLOG_DEBUG << "Done doing optimization on mlp." << std::endl;
+    SWLOG_INFO << "Done doing optimization on mlp." << std::endl;
 
     /*
     Optimizer *opt = new Optimizer(mlp);
@@ -113,7 +110,7 @@ int main() {
 
     TrainingProfile profile;
     profile.batch = data_0->getDims()[0];
-    
+
     IRGraph *net = getTrainNet(mlp, profile);
     net->updateTopology();
 

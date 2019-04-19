@@ -7,7 +7,7 @@
 
 struct TrainingProfile;
 
-namespace swc{
+namespace swc {
 class IRGraph;
 
 IRGraph *getTrainNet(IRGraph *graph, TrainingProfile &profile);

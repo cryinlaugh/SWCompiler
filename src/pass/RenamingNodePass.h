@@ -13,9 +13,9 @@
 #include "graphIR/OpNode.h"
 #include "graphIR/TensorNode.h"
 
+#include <cassert>
 #include <sstream>
 #include <unordered_map>
-#include <cassert>
 
 namespace swc {
 

@@ -44,11 +44,11 @@ int main() {
     // run fc0 and tanh0 on gpu
     OP(gpu0, SubGraphOp);
     OP(gpu1, SubGraphOp);
-    
+
     LINKUPPER(gpu0, data0, weight0, bias0);
-    LINKUPPER(gpu1, data0, weight0, bias0); 
-    
-    TENSOR(data2, 8, 512); 
+    LINKUPPER(gpu1, data0, weight0, bias0);
+
+    TENSOR(data2, 8, 512);
     LINKUPPER(data2, gpu0, gpu1);
 
     // define IR graph
@@ -76,22 +76,25 @@ int main() {
     TENSOR(data_4, 8, 10);
     LINKUPPER(data_4, softmax);
 
-
     GpT(mlp, data_3, data_4, weight_1, bias_1, labeln);
     GpO(mlp, fc_1, softmax);
 
     //==================================
     Device cpu0;
-    Device dev_gpu0; dev_gpu0.type=DeviceType::GPU; dev_gpu0.id=0;
-    Device dev_gpu1; dev_gpu1.type=DeviceType::GPU; dev_gpu1.id=1;
+    Device dev_gpu0;
+    dev_gpu0.type = DeviceType::GPU;
+    dev_gpu0.id = 0;
+    Device dev_gpu1;
+    dev_gpu1.type = DeviceType::GPU;
+    dev_gpu1.id = 1;
     //-----------GPU0-------------------------------------
-    TensorNode* data0_rep0 = new TensorNode("data0");
+    TensorNode *data0_rep0 = new TensorNode("data0");
     data0_rep0->setTensor(data0->getTensor());
-    TensorNode* weight0_rep0 = new TensorNode("weight0");
+    TensorNode *weight0_rep0 = new TensorNode("weight0");
     weight0_rep0->setTensor(weight0->getTensor());
-    TensorNode* bias0_rep0 = new TensorNode("bias_0");
+    TensorNode *bias0_rep0 = new TensorNode("bias_0");
     bias0_rep0->setTensor(bias0->getTensor());
-    
+
     OP(scatter00, ScatterOp);
     OP(scatter01, ScatterOp);
     OP(scatter02, ScatterOp);
@@ -101,9 +104,9 @@ int main() {
     LINKUPPER(scatter01, weight0_rep0);
     LINKUPPER(scatter02, bias0_rep0);
 
-    TENSOR(data0_gpu0, 4 , 784);
-	  TENSOR(weight0_gpu0, 784, 512);
-	  TENSOR(bias0_gpu0, 512);
+    TENSOR(data0_gpu0, 4, 784);
+    TENSOR(weight0_gpu0, 784, 512);
+    TENSOR(bias0_gpu0, 512);
     weight0_gpu0_Tensor->setTensorInit(TensorInitType::PARENTOP, 0);
     bias0_gpu0_Tensor->setTensorInit(TensorInitType::PARENTOP, 0);
     LINKUPPER(data0_gpu0, scatter00);
@@ -114,7 +117,7 @@ int main() {
     LINKUPPER(matmul0_gpu0, data0_gpu0, weight0_gpu0, bias0_gpu0);
     TENSOR(data1_gpu0, 4, 512);
     LINKUPPER(data1_gpu0, matmul0_gpu0);
-    
+
     OP(tanh0_gpu0, MatrixTanhOp);
     LINKUPPER(tanh0_gpu0, data1_gpu0);
     TENSOR(data2_gpu0, 4, 512);
@@ -122,49 +125,45 @@ int main() {
 
     OP(gather0, GatherOp);
     LINKUPPER(gather0, data2_gpu0);
-    
-    TensorNode* data2_rep0 = new TensorNode("data2");
+
+    TensorNode *data2_rep0 = new TensorNode("data2");
     data2_rep0->setTensor(data2->getTensor());
     LINKUPPER(data2_rep0, gather0);
 
-    IRGraph* subGraph0 = new IRGraph();
-    subGraph0->pushTensorNode(data0_rep0, weight0_rep0, bias0_rep0,
-        data0_gpu0, weight0_gpu0, bias0_gpu0,
-        data1_gpu0, data2_gpu0,
-        data2_rep0);
-    subGraph0->pushOpNode(scatter00, scatter01, scatter02,
-        matmul0_gpu0,
-        tanh0_gpu0,
-        gather0);
+    IRGraph *subGraph0 = new IRGraph();
+    subGraph0->pushTensorNode(data0_rep0, weight0_rep0, bias0_rep0, data0_gpu0,
+                              weight0_gpu0, bias0_gpu0, data1_gpu0, data2_gpu0,
+                              data2_rep0);
+    subGraph0->pushOpNode(scatter00, scatter01, scatter02, matmul0_gpu0,
+                          tanh0_gpu0, gather0);
 
     subGraph0->setDeviceLabel(dev_gpu0);
     data0_rep0->getLabel()->setDeviceLabel(cpu0.type, cpu0.id);
     weight0_rep0->getLabel()->setDeviceLabel(cpu0.type, cpu0.id);
     bias0_rep0->getLabel()->setDeviceLabel(cpu0.type, cpu0.id);
     data2_rep0->getLabel()->setDeviceLabel(cpu0.type, cpu0.id);
-//-----------GPU1-------------------------------------
-    TensorNode* data0_rep1 = new TensorNode("data0");
+    //-----------GPU1-------------------------------------
+    TensorNode *data0_rep1 = new TensorNode("data0");
     data0_rep1->setTensor(data0->getTensor());
-    TensorNode* weight0_rep1 = new TensorNode("weight0");
+    TensorNode *weight0_rep1 = new TensorNode("weight0");
     weight0_rep1->setTensor(weight0->getTensor());
-    TensorNode* bias0_rep1 = new TensorNode("bias0");
+    TensorNode *bias0_rep1 = new TensorNode("bias0");
     bias0_rep1->setTensor(bias0->getTensor());
-    
-    
+
     OP(scatter10, ScatterOp);
     OP(scatter11, ScatterOp);
     OP(scatter12, ScatterOp);
-    auto *sop = (ScatterOp*) scatter10->getOp();
-    sop->setOffset(4*784);
+    auto *sop = (ScatterOp *)scatter10->getOp();
+    sop->setOffset(4 * 784);
     scatter11->setRunOnce();
     scatter12->setRunOnce();
     LINKUPPER(scatter10, data0_rep1);
     LINKUPPER(scatter11, weight0_rep1);
     LINKUPPER(scatter12, bias0_rep1);
 
-    TENSOR(data0_gpu1, 4 , 784);
-	  TENSOR(weight0_gpu1, 784, 512);
-	  TENSOR(bias0_gpu1, 512);
+    TENSOR(data0_gpu1, 4, 784);
+    TENSOR(weight0_gpu1, 784, 512);
+    TENSOR(bias0_gpu1, 512);
     weight0_gpu1_Tensor->setTensorInit(TensorInitType::PARENTOP, 0);
     bias0_gpu1_Tensor->setTensorInit(TensorInitType::PARENTOP, 0);
     LINKUPPER(data0_gpu1, scatter10);
@@ -175,30 +174,27 @@ int main() {
     LINKUPPER(matmul0_gpu1, data0_gpu1, weight0_gpu1, bias0_gpu1);
     TENSOR(data1_gpu1, 4, 512);
     LINKUPPER(data1_gpu1, matmul0_gpu1);
-    
+
     OP(tanh0_gpu1, MatrixTanhOp);
     LINKUPPER(tanh0_gpu1, data1_gpu1);
     TENSOR(data2_gpu1, 4, 512);
     LINKUPPER(data2_gpu1, tanh0_gpu1);
 
     OP(gather1, GatherOp);
-    auto *gop = (ScatterOp*) gather1->getOp();
-    gop->setOffset(4*512);
+    auto *gop = (ScatterOp *)gather1->getOp();
+    gop->setOffset(4 * 512);
     LINKUPPER(gather1, data2_gpu1);
-    
-    TensorNode* data2_rep1 = new TensorNode("data2");
+
+    TensorNode *data2_rep1 = new TensorNode("data2");
     data2_rep1->setTensor(data2->getTensor());
     LINKUPPER(data2_rep1, gather1);
 
-    IRGraph* subGraph1 = new IRGraph();
-    subGraph1->pushTensorNode(data0_rep1, weight0_rep1, bias0_rep1,
-        data0_gpu1, weight0_gpu1, bias0_gpu1,
-        data1_gpu1, data2_gpu1,
-        data2_rep1);
-    subGraph1->pushOpNode(scatter10, scatter11, scatter12,
-        matmul0_gpu1,
-        tanh0_gpu1,
-        gather1);
+    IRGraph *subGraph1 = new IRGraph();
+    subGraph1->pushTensorNode(data0_rep1, weight0_rep1, bias0_rep1, data0_gpu1,
+                              weight0_gpu1, bias0_gpu1, data1_gpu1, data2_gpu1,
+                              data2_rep1);
+    subGraph1->pushOpNode(scatter10, scatter11, scatter12, matmul0_gpu1,
+                          tanh0_gpu1, gather1);
 
     subGraph1->setDeviceLabel(dev_gpu1);
     data0_rep1->getLabel()->setDeviceLabel(cpu0.type, cpu0.id);
@@ -210,7 +206,7 @@ int main() {
     gpu1_Op->setGraph(subGraph1);
 
     subGraph1->updateTopology();
-    Optimizer* opt = new Optimizer(subGraph1);
+    Optimizer *opt = new Optimizer(subGraph1);
     opt->runOptimizer();
 
     subGraph0->updateTopology();

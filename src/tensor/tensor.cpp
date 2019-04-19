@@ -45,8 +45,9 @@ void Tensor::setTensorInit(TensorInitType type, float value) {
     }
 }
 
-void Tensor::setTensorInit(TensorInitType type, std::string file, size_t offset) {
-    assert((type==TensorInitType::FILE) && "init type does not match value");
+void Tensor::setTensorInit(TensorInitType type, std::string file,
+                           size_t offset) {
+    assert((type == TensorInitType::FILE) && "init type does not match value");
     initType_ = type;
     initInfo_.setFilePath(file);
     initInfo_.setOffset(offset);
@@ -68,7 +69,8 @@ size_t Tensor::getSizeInBytes() const {
     }
 }
 
-TensorShape* Tensor::getShuffledTensorShape(const std::vector<size_t> &shuffle) const{
+TensorShape *
+Tensor::getShuffledTensorShape(const std::vector<size_t> &shuffle) const {
     std::vector<unsigned long> *shape = new std::vector<unsigned long>();
     for (auto idx : shuffle) {
         if ((int)idx < shape_->getNDim())
