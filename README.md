@@ -1,12 +1,12 @@
 # SWCompiler
 
-##Definition
+## Definition
 
 SWCompiler is a end-to-end multi-domain application specific compiler targeting HPC platforms. 
 
 SW~ represents the original purpose of SWCompiler is to support automatic parallelization targeting Sunway-series supercomputers, among which is the currently worlds leading Sunway TaihuLight supercomputer.
 
-##Major Features
+## Major Features
 
 Front-end Features:
 
