@@ -25,6 +25,13 @@ size_t TensorShape::size() const {
     return size;
 }
 
+Tensor* Tensor::clone() const {
+    Tensor *t = new Tensor(shape_, dataType_);
+    t->setTraining(train_);
+    t->setTensorInit(initType_, initInfo_);
+    return t;
+}
+
 void Tensor::setTensorInit(TensorInitType type, float value) {
     initType_ = type;
     switch (type) {
@@ -51,6 +58,11 @@ void Tensor::setTensorInit(TensorInitType type, std::string file,
     initType_ = type;
     initInfo_.setFilePath(file);
     initInfo_.setOffset(offset);
+}
+
+void Tensor::setTensorInit(TensorInitType type, TensorInitInfo info) {
+    initType_ = type;
+    initInfo_ = info;
 }
 
 size_t Tensor::getSizeInBytes() const {

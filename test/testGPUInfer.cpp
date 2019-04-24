@@ -215,10 +215,12 @@ int main() {
     opt->runOptimizer();
 
     mlp->updateTopology();
-    opt->setGraph(mlp);
+    opt->setGraph(subGraph1);
     opt->runOptimizer();
 
     dotGen(mlp);
+    dotGen(subGraph0, "subGraph0.dot");
+    dotGen(subGraph1, "subGraph1.dot");
 
     codegen::Codegen *cg = new codegen::Codegen(mlp);
     string code = cg->generate();

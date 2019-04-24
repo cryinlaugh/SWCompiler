@@ -38,7 +38,7 @@ class TensorNode : public IRNode {
     Tensor *getTensor() { return tensor_; }
 
     void setTraining(int train) { tensor_->setTraining(train); }
-    int getTraining() { return tensor_->getTraining(); }
+    int getTraining() const { return tensor_->getTraining(); }
 
     DataType getDataType() { return tensor_->getDataType(); }
     std::vector<unsigned long> getDims() { return tensor_->getDims(); }

@@ -200,7 +200,7 @@ std::string Codegen::generate() {
 }
 
 void Codegen::emitMemAllocs() {
-    SWLOG_INFO << "genMemAllocs \n";
+    SWLOG_DEBUG(4) << "genMemAllocs \n";
 
     allocateMemAddr();
 
@@ -211,19 +211,19 @@ void Codegen::emitMemAllocs() {
     emitTensorInitializations();
 }
 void Codegen::allocateMemAddr() {
-    SWLOG_INFO << "begin allocateMemAddr...\n";
+    SWLOG_DEBUG(4) << "begin allocateMemAddr...\n";
 
     allocateMemAddr(graph_);
     for (int i = 0; i < graph_->opNodeNum(); i++) {
         OpNode *opnode = graph_->getOpNode(i);
         if (auto graphOp = dynamic_cast<SubGraphOp *>(opnode->getOp())) {
             if (graphOp->getGraph())
-                SWLOG_INFO << "allocateMemAddr on subG: " << opnode->name()
+                SWLOG_DEBUG(4) << "allocateMemAddr on subG: " << opnode->name()
                            << "\n";
             allocateMemAddr(graphOp->getGraph());
         }
     }
-    SWLOG_INFO << "end allocateMemAddr...\n";
+    SWLOG_DEBUG(4) << "end allocateMemAddr...\n";
 }
 void Codegen::allocateMemAddr(IRGraph *graph_) {
 
@@ -241,7 +241,7 @@ void Codegen::allocateMemAddr(IRGraph *graph_) {
         Label *label = tnode->getLabel();
         Device dev = label->getDeviceLabel();
 
-        SWLOG_INFO << "allocateMemAddr " << tnode->name() << " " << size
+        SWLOG_DEBUG(1) << "allocateMemAddr " << tnode->name() << " " << size
                    << " on dev(" << static_cast<int>(dev.type) << ", " << dev.id
                    << ")."
                    << "\n";
@@ -264,7 +264,7 @@ void Codegen::allocateMemAddr(IRGraph *graph_) {
 }
 
 void Codegen::emitVarDeclarations() {
-    SWLOG_INFO << "begin emitVarDeclarations...\n";
+    SWLOG_DEBUG(4) << "begin emitVarDeclarations...\n";
 
     // std::string dtype = this->dtype();
     for (auto m : mem_allocators_) {
@@ -287,7 +287,7 @@ void Codegen::emitVarDeclarations() {
 
     stream << "\n";
 
-    SWLOG_INFO << "end emitVarDeclarations...\n";
+    SWLOG_DEBUG(4) << "end emitVarDeclarations...\n";
 }
 
 void Codegen::emitMemAllocations() {
@@ -319,7 +319,7 @@ void Codegen::emitMemAllocations() {
 }
 
 void Codegen::emitTensorInitializations() {
-    SWLOG_INFO << "begin emitTensorInitializations...\n";
+    SWLOG_DEBUG(4) << "begin emitTensorInitializations...\n";
 
     std::set<Tensor *> visited_tensors;
 
@@ -335,7 +335,7 @@ void Codegen::emitTensorInitializations() {
         }
     }
 
-    SWLOG_INFO << "end emitTensorInitializations...\n";
+    SWLOG_DEBUG(4) << "end emitTensorInitializations...\n";
 }
 
 void Codegen::emitTensorInitializations(IRGraph *graph_,
@@ -402,7 +402,7 @@ void Codegen::emitTensorInitializations(IRGraph *graph_,
             break;
         }
         default:
-            SWLOG_INFO << name << " TensorInitType= NONE\n";
+            SWLOG_DEBUG(1) << name << " TensorInitType= NONE\n";
             break;
 
         } // switch
@@ -590,7 +590,7 @@ void Codegen::emitFuncCall(OpNode *op) {
     }
 
     Label *oplabel = op->getLabel();
-    SWLOG_INFO << "genKernelCall for " << oplabel->getTypeNameLabel()
+    SWLOG_DEBUG(2) << "genKernelCall for " << oplabel->getTypeNameLabel()
                << std::endl;
 
     // TODO assert legal dimensions
@@ -864,7 +864,7 @@ void Codegen::emitFuncCall(OpNode *op) {
 std::string Codegen::dtype() { return "float"; }
 
 void Codegen::emitMemFree() {
-    SWLOG_INFO << "genMemoryFree\n";
+    SWLOG_DEBUG(4) << "genMemoryFree\n";
 
     std::string dtype = this->dtype();
     for (auto m : mem_allocators_) {
@@ -896,7 +896,7 @@ void Codegen::emitFuncCallCUDA(OpNode *op) {
     std::string dtype_flag = dtype();
 
     Label *oplabel = op->getLabel();
-    SWLOG_INFO << "genKernelCall for " << oplabel->getTypeNameLabel()
+    SWLOG_DEBUG(2) << "genKernelCall for " << oplabel->getTypeNameLabel()
                << std::endl;
 
     // TODO assert legal dimensions

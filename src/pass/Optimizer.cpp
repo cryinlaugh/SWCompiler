@@ -22,7 +22,7 @@ void pass::Optimizer::runOptimizer() {
     // runLoweringPass();
     // runLabelingPass(0);
 
-    SWLOG_INFO << "Start doing optimization." << std::endl;
+    SWLOG_DEBUG(4) << "Start doing optimization." << std::endl;
     PassManager passManager;
     RenamingNodePass renamingpass(_graph);
     passManager.add((OptimizePass *)&renamingpass);
@@ -32,6 +32,6 @@ void pass::Optimizer::runOptimizer() {
     passManager.add((OptimizePass *)&loweringpass);
     passManager.add((OptimizePass *)&labelingpass); // run labeling again
     passManager.run();
-    SWLOG_INFO << "Optimization done." << std::endl;
+    SWLOG_DEBUG(4) << "Optimization done." << std::endl;
 }
 } // namespace swc

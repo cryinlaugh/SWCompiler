@@ -87,6 +87,7 @@ class Tensor {
         shape_ = shape;
         dataType_ = dtype;
     }
+    Tensor* clone() const;
     TensorShape *
     getShuffledTensorShape(const std::vector<size_t> &shuffle) const;
 
@@ -105,11 +106,13 @@ class Tensor {
     void setTensorInit(TensorInitType type, std::string file,
                        size_t offset = 0);
 
+    void setTensorInit(TensorInitType type, TensorInitInfo info);
+
     TensorInitType getTensorInitType() { return initType_; }
     TensorInitInfo getTensorInitInfo() const { return initInfo_; }
 
     void setTraining(int train) { train_ = train; }
-    int getTraining() { return train_; }
+    int getTraining() const { return train_; }
 
     TensorShape *getTensorShape() const { return shape_; }
     size_t size() const { return shape_->size(); }
