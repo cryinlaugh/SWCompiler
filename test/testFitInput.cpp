@@ -6,6 +6,7 @@
 #define Dtype float
 
 using namespace swc;
+using namespace swc::op;
 using namespace std;
 
 int main() {
@@ -79,7 +80,7 @@ int main() {
 
     mlp->initTensorNodes();
 
-    Optimizer *opt = new Optimizer(mlp);
+    pass::Optimizer *opt = new pass::Optimizer(mlp);
     opt->runOptimizer();
     dotGen(mlp);
 

@@ -6,6 +6,7 @@
 #define Dtype float
 
 using namespace swc;
+using namespace swc::op;
 using namespace std;
 
 int main() {
@@ -206,7 +207,7 @@ int main() {
     gpu1_Op->setGraph(subGraph1);
 
     subGraph1->updateTopology();
-    Optimizer *opt = new Optimizer(subGraph1);
+    pass::Optimizer *opt = new pass::Optimizer(mlp);
     opt->runOptimizer();
 
     subGraph0->updateTopology();

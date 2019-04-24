@@ -81,6 +81,7 @@ bool IRGraph::buildSubGraphs(TensorNode *in, TensorNode *out,
 
         this->pushOpNode(subGNode_cp);
     }
+    return true;
 }
 
 OpNode *IRGraph::extractSubGraph(TensorNode *in, TensorNode *out) {

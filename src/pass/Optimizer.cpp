@@ -16,7 +16,7 @@
 
 namespace swc {
 
-void Optimizer::runOptimizer() {
+void pass::Optimizer::runOptimizer() {
     // SWLOG_INFO << "Start doing optimization." << std::endl;
     // runLabelingPass(0);
     // runLoweringPass();

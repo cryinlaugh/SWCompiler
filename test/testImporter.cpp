@@ -27,7 +27,7 @@ int main() {
     graph->updateTopoNodeList();
 
     // Optimizer is a must because Codegen need label
-    Optimizer *opt = new Optimizer(graph);
+    pass::Optimizer *opt = new pass::Optimizer(graph);
     opt->runOptimizer();
 
     dotGen(graph);

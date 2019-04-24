@@ -4,6 +4,8 @@
 #include "diff/AutoDiff.h"
 
 using namespace swc;
+using namespace swc::op;
+using namespace swc::pass;
 using namespace std;
 
 int main() {

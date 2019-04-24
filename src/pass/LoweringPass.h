@@ -19,8 +19,12 @@
 #include "graphIR/TensorNode.h"
 
 namespace swc {
+    namespace pass{
+        class LoweringPass;
+    }
+}
 
-class LoweringPass : public OptimizePass {
+class swc::pass::LoweringPass : public OptimizePass {
     using OptimizePass::_graph;
 
   public:
@@ -223,5 +227,4 @@ class LoweringPass : public OptimizePass {
         // SWLOG_INFO << "Finish Lowering Pass." << std::endl;
     }
 };
-} // namespace swc
 #endif

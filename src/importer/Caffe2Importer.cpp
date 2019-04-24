@@ -27,6 +27,8 @@
 #include "op/dlOp/dlOp.h"
 #include "tensor/tensor.h"
 
+using namespace swc::op;
+
 namespace swc {
 
 using ArgumentMap = std::unordered_map<std::string, const caffe2::Argument *>;

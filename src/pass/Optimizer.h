@@ -14,6 +14,7 @@
 #include "RenamingNodePass.h"
 #include <queue>
 namespace swc {
+namespace pass {
 
 class PassManager {
   private:
@@ -44,5 +45,6 @@ class Optimizer {
     IRGraph *_graph;
 };
 
+} // namespace pass
 } // namespace swc
 #endif

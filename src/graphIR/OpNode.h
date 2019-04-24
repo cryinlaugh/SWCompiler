@@ -13,6 +13,8 @@
 #include "op/Op.h"
 #include <sstream>
 
+using namespace swc::op;
+
 namespace swc {
 
 class OpNode : public IRNode {

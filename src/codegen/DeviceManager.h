@@ -9,6 +9,9 @@
 #include "common.h"
 #include <string>
 
+/**
+ *  \brief A class as API for hardware device
+ */
 class DeviceManager {
   protected:
     DeviceType type_;

@@ -17,9 +17,14 @@
 
 #include "graphIR/OpNode.h"
 #include "graphIR/TensorNode.h"
-namespace swc {
 
-class LabelingPass : public OptimizePass {
+namespace swc {
+    namespace pass{
+        class LabelingPass;
+    }
+}
+
+class swc::pass::LabelingPass : public swc::pass::OptimizePass {
     // private:
     // IRGraph* _graph;
     using OptimizePass::_graph;
@@ -98,5 +103,4 @@ class LabelingPass : public OptimizePass {
         SWLOG_INFO << "Finish Labeling Pass." << std::endl;
     }
 };
-} // namespace swc
 #endif

@@ -20,6 +20,8 @@
 #include <unordered_map>
 #include <vector>
 
+using namespace swc::op;
+
 namespace swc {
 
 IRGraph *getTrainNet(IRGraph *graph, TrainingProfile &profile) {

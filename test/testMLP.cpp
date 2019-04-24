@@ -9,6 +9,7 @@
 #include <iostream>
 
 using namespace swc;
+using namespace swc::op;
 using namespace std;
 
 #define Dtype float
@@ -89,7 +90,7 @@ int main() {
     printf("Generate MLP layer done!\n");
 
     MLPLayer->updateTopoNodeList();
-    Optimizer *opt = new Optimizer(MLPLayer);
+    pass::Optimizer *opt = new pass::Optimizer(MLPLayer);
     opt->runOptimizer();
     dotGen(MLPLayer);
 

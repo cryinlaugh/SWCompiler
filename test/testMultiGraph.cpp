@@ -9,6 +9,7 @@
 #include <iostream>
 
 using namespace swc;
+using namespace swc::op;
 using namespace std;
 
 int main() {
@@ -163,7 +164,7 @@ int main() {
     // opt->runOptimizer();
 
     subGraph1->updateTopology();
-    Optimizer *opt = new Optimizer(subGraph1);
+    pass::Optimizer *opt = new pass::Optimizer(subGraph1);
     opt->runOptimizer();
     // dotGen(subGraph1);
 

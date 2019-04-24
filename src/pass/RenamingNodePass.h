@@ -18,6 +18,7 @@
 #include <unordered_map>
 
 namespace swc {
+namespace pass {
 
 class UniqueName {
     std::unordered_map<std::string, int> names_map_;
@@ -81,5 +82,6 @@ class RenamingNodePass : public OptimizePass {
     }
 };
 
+} // namespace pass
 } // namespace swc
 #endif

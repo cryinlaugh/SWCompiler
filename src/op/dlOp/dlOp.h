@@ -11,6 +11,7 @@
 #include "op/basicOp/basicOps.h"
 
 namespace swc {
+namespace op {
 
 //=====================================================
 // Definition of 2-D deep learning specific operations.
@@ -430,6 +431,7 @@ class ScalarTanhOp : public Op {
     ~ScalarTanhOp();
     void destroy(){};
 };
+} // namespace op
 } // namespace swc
 
 #endif

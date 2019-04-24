@@ -15,7 +15,7 @@
 #include "graphIR/OpNode.h"
 #include "graphIR/TensorNode.h"
 
-namespace swc {
+using namespace swc::op;
 
 void MatrixMatrixFCOp::lowering(IRGraph *graph, IRNode *node) {
     SWLOG_INFO << "Lowering MatrixMatrixFCOp ..." << std::endl;
@@ -145,5 +145,3 @@ void MatrixMatrixFCGradOp::lowering(IRGraph *graph, IRNode *node) {
     graph->updateTopology();
     SWLOG_INFO << "Finish lowering MatrixMatrixFCGradOp." << std::endl;
 }
-
-} // namespace swc

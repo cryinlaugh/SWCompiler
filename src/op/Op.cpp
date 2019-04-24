@@ -9,7 +9,8 @@
 
 #include "tensor/tensor.h"
 
-namespace swc {
+using namespace swc::op;
+
 bool Op::check() {
     if (_nInputTensor != _nInput)
         return false;
@@ -25,4 +26,3 @@ bool Op::check() {
     }
     return true;
 }
-} // namespace swc

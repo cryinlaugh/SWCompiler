@@ -10,6 +10,7 @@
 
 #include "op/Op.h"
 namespace swc {
+namespace op {
 
 //=====================================================
 // Definition of 2-D tensor operations.
@@ -186,6 +187,7 @@ class ScalarAscendOp : public Op {
     ~ScalarAscendOp() {}
     void destroy(){};
 };
+} // namespace op
 } // namespace swc
 
 #endif

@@ -10,6 +10,7 @@
 
 #include "op/Op.h"
 namespace swc {
+namespace op {
 
 //=====================================================
 // Definition of 2-D basic operations.
@@ -160,6 +161,7 @@ class ScalarLogOp : public Op {
     ~ScalarLogOp() {}
     void destroy(){};
 };
+} // namespace op
 } // namespace swc
 
 #endif

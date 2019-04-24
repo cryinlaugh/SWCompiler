@@ -12,6 +12,8 @@
 #include <iomanip>
 #include <string>
 
+using namespace swc::op;
+
 namespace swc {
 namespace codegen {
 

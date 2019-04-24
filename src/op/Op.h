@@ -20,6 +20,8 @@ class Tensor;
 class IRGraph;
 class IRNode;
 
+namespace op {
+
 class Op {
   public:
     Op(OpType opType = BASIC_OP, int nInput = 0, int nOutput = 0,
@@ -86,6 +88,7 @@ class Op {
     std::vector<Tensor *> _outputTensors;
 };
 
+} // namespace op
 } // namespace swc
 
 #endif

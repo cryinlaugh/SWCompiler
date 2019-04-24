@@ -22,69 +22,89 @@ class Tensor;
 
 namespace swc {
 namespace codegen {
-
+/** 
+*   \brief generate C++/CUDA C source form IRGraph
+*/
 class Codegen {
   public:
     Codegen() {}
     Codegen(IRGraph *graph) : graph_(graph) {}
     ~Codegen() { destroy(); }
 
+    /// ensure each Variable (Tensor) has unique name
+    /// \param name name of TensorNode, variable, whatever
     std::string UniqueName(std::string name);
 
+    /// initialization before code emitting
     void codeGenInit();
 
+    /// emit CUDA related code. e.g. cuBlas handle, cudaStream creating
     void emitCUDAInit();
 
-    // creaet allocators for devices according to config
-    // and set baseptr name
-    // build device-allocator map
+    /// create allocators for devices according to config
+    /// and set baseptr name
+    /// build device-allocator map
     void initMemoryAllocators();
 
-    // generate code for IRGraph
+    /// generate code for IRGraph
     std::string generate();
 
     //----------------------------------------------------------
-    // generate malloc for tensor data
+    /** \brief generate malloc for tensor data
+    *
+    *   step1: collect overrall dev mem requirements and variable offsets\n
+    *   step2: emit mem allocation statements\n
+    *   step3: emit tensor variable declarations and initializations
+    */
     void emitMemAllocs();
+    /// emit free memory codes
     void emitMemFree();
 
-    // build tensor*-<base, offset> map
+    /// build Tensor* -> <base, offset> map for L1 Graph
     void allocateMemAddr();
+    /// build Tensor* -> <base, offset> map for L2(Device) subGraph
     void allocateMemAddr(IRGraph *graph_);
 
-    // declare var before alloc for mpi (if needed)
+    /// declare var before alloc for mpi (if needed)
     void emitVarDeclarations();
-    // allocate statement of cpu/gpu mem
+    /// allocate statement of cpu/gpu mem
     void emitMemAllocations();
 
-    // initialize tensors
-    // data0 = cpu0_baseptr + addr;
-    // load(data0, 6272, 0, "mnist_images_8.bin");
+    /// initialize tensors for L1 IRGraph
+
+    /// data0 = cpu0_baseptr + addr;
+    /// load(data0, 6272, 0, "mnist_images_8.bin");
     void emitTensorInitializations();
+    /// initialize tensors for L2(Device) subGraph
     void emitTensorInitializations(IRGraph *graph_,
                                    std::set<Tensor *> *visited);
 
-    // may need to allocate for specific tensornode (e.g. different data type)
+    /// may need to allocate for specific tensornode (e.g. different data type)
     std::string emitTensorMemAlloc(TensorNode *tnode);
     //----------------------------------------------------------
-    // generate function calls for opNodes
+    /// generate function calls for opNodes
     void emitFuncCalls();
+    /// generate function calls for opNodes of L2(Device) subGraph
     void emitFuncCalls(IRGraph *graph_);
 
+    /// generate function call for opNode
     void emitFuncCall(OpNode *op);
+    /// generate CUDA kernel function call for opNode
     void emitFuncCallCUDA(OpNode *op);
 
+    /// context swith to device e.g. cudaSetDevice()
     void switchTo(IRGraph *subGraph);
+    /// context Swith back to L1 IRGraph
     void switchFrom(IRGraph *subGraph);
 
+    /// dispatch OpNode for memcpy or kernel func call
     void dispathOpNode(OpNode *op);
     void emitMemcpyFromTo(Tensor *from, Device from_dev, size_t offset,
                           size_t size, Tensor *to, Device to_dev);
-
-    // specialize template< typename Dtype>
+    /// to be depreciated
     std::string dtype();
 
-    // finish codegen
+    /// finish codegen
     void Finish();
 
   private:

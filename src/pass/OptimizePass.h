@@ -10,6 +10,7 @@
 #include "graphIR/IRGraph.h"
 #include <queue>
 namespace swc {
+namespace pass {
 
 class OptimizePass {
   protected:
@@ -22,5 +23,6 @@ class OptimizePass {
     virtual void run() { std::cout << "father run " << std::endl; }
 };
 
+} // namespace pass
 } // namespace swc
 #endif
