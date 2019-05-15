@@ -83,13 +83,10 @@ int main() {
                              dataTensorNode_2);
     MLPLayer->pushOpNode(fcOpNode_0, tanhOpNode_1);
 
-    MLPLayer->findInOut();
     MLPLayer->updateTopology();
-    MLPLayer->updateTopoNodeList();
 
     printf("Generate MLP layer done!\n");
 
-    MLPLayer->updateTopoNodeList();
     pass::Optimizer *opt = new pass::Optimizer(MLPLayer);
     opt->runOptimizer();
     dotGen(MLPLayer);

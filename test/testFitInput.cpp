@@ -1,9 +1,6 @@
 #include <iostream>
 
 #include "SWC.h"
-#include "diff/AutoDiff.h"
-
-#define Dtype float
 
 using namespace swc;
 using namespace swc::op;
@@ -11,7 +8,8 @@ using namespace std;
 
 int main() {
     //============================
-    // Example of 2 FC layer:
+    // Example of 2-layer
+    // fully connected network:
     //  T:data_0   T:weight_0
     //     \       /
     //      \     /
@@ -78,6 +76,7 @@ int main() {
                         data3, data4);
     mlp->pushOpNode(fc0, tanh0, fc1, softmax);
 
+    // initialize tensor dimensions
     mlp->initTensorNodes();
 
     pass::Optimizer *opt = new pass::Optimizer(mlp);

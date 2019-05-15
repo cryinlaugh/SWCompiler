@@ -7,6 +7,7 @@
 #ifndef _CODEGEN_H_
 #define _CODEGEN_H_
 
+#include "CodeWriter.h"
 #include "MemoryAllocator.h"
 #include "common.h"
 #include <set>
@@ -22,13 +23,20 @@ class Tensor;
 
 namespace swc {
 namespace codegen {
-/** 
-*   \brief generate C++/CUDA C source form IRGraph
-*/
+/**
+ *   \brief generate C++/CUDA C source form IRGraph
+ */
 class Codegen {
   public:
     Codegen() {}
     Codegen(IRGraph *graph) : graph_(graph) {}
+    /// to be depreciated
+    Codegen(IRGraph *graph, CodegenConfig &config) : graph_(graph) {
+        flag_multiGPU = config.flag_multiGPU;
+        flag_multiStream = config.flag_multiStream;
+        flag_MPI = config.flag_MPI;
+        flag_use_cublas = config.flag_use_cublas;
+    }
     ~Codegen() { destroy(); }
 
     /// ensure each Variable (Tensor) has unique name
@@ -51,11 +59,11 @@ class Codegen {
 
     //----------------------------------------------------------
     /** \brief generate malloc for tensor data
-    *
-    *   step1: collect overrall dev mem requirements and variable offsets\n
-    *   step2: emit mem allocation statements\n
-    *   step3: emit tensor variable declarations and initializations
-    */
+     *
+     *   step1: collect overrall dev mem requirements and variable offsets\n
+     *   step2: emit mem allocation statements\n
+     *   step3: emit tensor variable declarations and initializations
+     */
     void emitMemAllocs();
     /// emit free memory codes
     void emitMemFree();
@@ -71,6 +79,10 @@ class Codegen {
     void emitMemAllocations();
 
     /// initialize tensors for L1 IRGraph
+
+    void emitTensorAddresses();
+    /// initialize tensors for L2(Device) subGraph
+    void emitTensorAddresses(IRGraph *graph_, std::set<Tensor *> *visited);
 
     /// data0 = cpu0_baseptr + addr;
     /// load(data0, 6272, 0, "mnist_images_8.bin");
@@ -99,13 +111,20 @@ class Codegen {
 
     /// dispatch OpNode for memcpy or kernel func call
     void dispathOpNode(OpNode *op);
-    void emitMemcpyFromTo(Tensor *from, Device from_dev, size_t offset,
-                          size_t size, Tensor *to, Device to_dev);
+    void emitMemcpyFromTo(Tensor *from, Device from_dev, size_t from_offset,
+                          size_t size, Tensor *to, Device to_dev,
+                          size_t to_offset);
     /// to be depreciated
     std::string dtype();
 
     /// finish codegen
-    void Finish();
+    void finish() {}
+
+    void emitMPIInit();
+    void emitMPIFinalize();
+
+    int getMPISendRecvTag(Tensor *);
+    bool delMPISendRecvTag(Tensor *);
 
   private:
     void destroy();
@@ -114,14 +133,19 @@ class Codegen {
             stream_ << "    ";
     }
 
+    std::string getTypeString(Tensor *);
+
     std::ostringstream stream_;
     int indent_;
+    CodeWriter writer_;
     IRGraph *graph_;
     IRGraph *active_graph_;
-    bool flag_multiGPU{true};
-    bool flag_multiStream{true};
-    bool flag_MPI{false};
-    bool flag_use_cublas{true};
+
+    bool flag_multiGPU{false};
+    bool flag_multiStream{false};
+    bool flag_MPI{true};
+    bool flag_use_cublas{false};
+
     std::unordered_map<std::string, int> names_map_;
     std::vector<std::shared_ptr<MemoryAllocator>> mem_allocators_;
 
@@ -129,6 +153,7 @@ class Codegen {
     std::unordered_map<Tensor *, std::pair<std::string, uint64_t>>
         tensors_offset_map_;
     // std::unordered_map<Tensor*, std::string> tensors_base_map_;
+    std::vector<Tensor *> mpi_sendRecv_tags_;
 
     std::unordered_map<Device, MemoryAllocator *> dev_allocator_map_;
     std::unordered_map<MemoryAllocator *, std::string> allocator_membase_map_;

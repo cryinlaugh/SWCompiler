@@ -19,10 +19,10 @@
 #include "graphIR/TensorNode.h"
 
 namespace swc {
-    namespace pass{
-        class LabelingPass;
-    }
+namespace pass {
+class LabelingPass;
 }
+} // namespace swc
 
 class swc::pass::LabelingPass : public swc::pass::OptimizePass {
     // private:
@@ -67,15 +67,17 @@ class swc::pass::LabelingPass : public swc::pass::OptimizePass {
             OpNode *node = _graph->getOpNode(i);
             Label *label = node->getLabel();
             if ((label->getTypeNameLabel()).compare("MatrixMatrixFC") == 0) {
-                SWLOG_DEBUG(2) << label->getTypeNameLabel() << " "
-                           << label->getNodeNameLabel()
-                           << " operator is marked to be lowered." << std::endl;
+                SWLOG_DEBUG(2)
+                    << label->getTypeNameLabel() << " "
+                    << label->getNodeNameLabel()
+                    << " operator is marked to be lowered." << std::endl;
                 label->setLowerMark();
             } else if ((label->getTypeNameLabel())
                            .compare("MatrixMatrixFCGrad") == 0) {
-                SWLOG_DEBUG(2) << label->getTypeNameLabel() << " "
-                           << label->getNodeNameLabel()
-                           << " operator is marked to be lowered." << std::endl;
+                SWLOG_DEBUG(2)
+                    << label->getTypeNameLabel() << " "
+                    << label->getNodeNameLabel()
+                    << " operator is marked to be lowered." << std::endl;
                 label->setLowerMark();
             } else {
             }
@@ -90,8 +92,8 @@ class swc::pass::LabelingPass : public swc::pass::OptimizePass {
             label->setTraining(tnode->getTraining());
 
             SWLOG_DEBUG(2) << label->getTypeNameLabel() << " "
-                       << label->getNodeNameLabel()
-                       << " train: " << tnode->getTraining() << std::endl;
+                           << label->getNodeNameLabel()
+                           << " train: " << tnode->getTraining() << std::endl;
         }
     }
 

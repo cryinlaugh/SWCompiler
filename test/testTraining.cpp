@@ -1,7 +1,6 @@
 #include <iostream>
 
 #include "SWC.h"
-#include "diff/AutoDiff.h"
 
 using namespace swc;
 using namespace swc::op;
@@ -87,7 +86,6 @@ int main() {
     GpT(mlp, data_3, data_4, weight_1, bias_1, labeln);
     GpO(mlp, fc_1, softmax);
 
-
     mlp->updateTopology();
 
     SWLOG_INFO << "Start doing optimization on mlp." << std::endl;
@@ -124,9 +122,10 @@ int main() {
 
     dotGen(net);
 
-    codegen::Codegen *cg = new codegen::Codegen(net);
+    CodegenConfig config;
+    codegen::Codegen *cg = new codegen::Codegen(net, config);
     string code = cg->generate();
-    //cout << code;
+    // cout << code;
 
     return 0;
 }

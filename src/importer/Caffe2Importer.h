@@ -48,11 +48,11 @@ class Caffe2Importer {
 
   public:
     /** \brief build network IRGraph by loading caffe2 protofile
-    *   \param g IRGraph to be constructed
-    *   \param netProtoFile net proto
-    *   \param tensorProtoFile weights proto 
-    *   \param udef_nodes typically input data definition
-    */
+     *   \param g IRGraph to be constructed
+     *   \param netProtoFile net proto
+     *   \param tensorProtoFile weights proto
+     *   \param udef_nodes typically input data definition
+     */
     Caffe2Importer(IRGraph *g, const std::string &netProtoFile,
                    const std::string &tensorProtoFile,
                    std::vector<TensorNode *> &udef_nodes);

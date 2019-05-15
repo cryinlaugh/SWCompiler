@@ -91,16 +91,17 @@ static std::vector<size_t> inferConvOutDims(size_t ih, size_t iw,
     return {oh, ow};
 }
 
-static std::vector<size_t> inferTransOutDims(std::vector<size_t> &idims,
-                                             std::vector<size_t> &shuffle) {
-    // TODO check illegal shuffle index
-    std::vector<size_t> odims;
-    for (auto idx : shuffle) {
-        if (idx < idims.size())
-            odims.push_back(idims.at(idx));
-    }
-    return odims;
-}
+// replaced by Tensor::getShuffledTensorShape(...)
+// static std::vector<size_t> inferTransOutDims(std::vector<size_t> &idims,
+//                                              std::vector<size_t> &shuffle) {
+//     // TODO check illegal shuffle index
+//     std::vector<size_t> odims;
+//     for (auto idx : shuffle) {
+//         if (idx < idims.size())
+//             odims.push_back(idims.at(idx));
+//     }
+//     return odims;
+// }
 
 static std::string getNodeName(std::string oldName) {
     assert(!oldName.empty() && "inputName empty");
@@ -347,7 +348,7 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
             inferConvOutDims(inDims[1], inDims[2], kernels, strides, pads);
 
         SWLOG_DEBUG(2) << "AveragePool " << n << " " << ohw[0] << " " << ohw[1]
-                  << " " << c << "\n";
+                       << " " << c << "\n";
 
         std::string res_name = op.output(0);
         auto *out_tnode =
@@ -402,8 +403,8 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
         for (size_t i = 1; i < inDims.size(); i++)
             flatdim *= inDims[i];
 
-        SWLOG_DEBUG(2) << "FC, flatdim=" << flatdim << " weightDims[0]=" << weightDims[0]
-                  << "\n";
+        SWLOG_DEBUG(2) << "FC, flatdim=" << flatdim
+                       << " weightDims[0]=" << weightDims[0] << "\n";
         assert((flatdim == weightDims[0]) &&
                "input flattenedDim not equal with weight\n");
 

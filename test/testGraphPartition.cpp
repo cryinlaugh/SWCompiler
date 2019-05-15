@@ -1,9 +1,6 @@
 #include <iostream>
 
 #include "SWC.h"
-#include "diff/AutoDiff.h"
-
-#define Dtype float
 
 using namespace swc;
 using namespace swc::op;
@@ -11,7 +8,12 @@ using namespace std;
 
 int main() {
     //============================
-    // Example of 2 FC layer:
+    // Example of 2-layer
+    // fully connected network:
+    // data parallel, fc0 and tanh0
+    // run on GPU0 and GPU1
+    // build subGraphs automatically
+    //
     //  T:data_0   T:weight_0
     //     \       /
     //      \     /
@@ -82,13 +84,15 @@ int main() {
     GpT(mlp, data_3, data_4, weight_1, bias_1, labeln);
     GpO(mlp, fc_1, softmax);
 
-    CHECKT(data_0);
-    CHECKT(weight_0);
-    CHECKO(fc_0);
-    CHECKT(data_1);
-    CHECKO(tanh_0);
-    CHECKT(data_2);
-    CHECKG(mlp);
+    auto *argmax_o = new OpNode("argmax", new ArgMaxOp(3));
+    argmax_o->exlinkUpperNode(data_4);
+    auto *top3_t =
+        new TensorNode("top3", new Tensor({8, 3}, DataType::Int32_t), argmax_o);
+    auto *print_o = new OpNode("print", new DebugOp());
+    print_o->exlinkUpperNode(top3_t);
+
+    mlp->pushOpNode(argmax_o, print_o);
+    mlp->pushTensorNode(top3_t);
 
     bool res =
         mlp->buildSubGraphs(data_0, data_2, ParallelStrategy::SLICE, 0, 2);
@@ -119,6 +123,8 @@ int main() {
             // external TensorNodes will not be labeled
             // since they are mirror of cpu Main IRGraph nodes.
 
+            // we only have one GPU device for test
+            // so remove cudaSetDevice(id) in generated code
             subG->setDeviceLabel(dev_gpu[dev_id++]);
 
             subG->updateTopology();
@@ -128,11 +134,13 @@ int main() {
         }
     }
 
-    codegen::Codegen *cg = new codegen::Codegen(mlp);
+    CodegenConfig config;
+    config.flag_multiGPU = true;
+    config.flag_multiStream = true;
+    config.flag_use_cublas = true;
+    codegen::Codegen *cg = new codegen::Codegen(mlp, config);
     string code = cg->generate();
     cout << code;
-
-    SWLOG_DEBUG(10) << "debug test 10\n";
 
     return 0;
 }

@@ -375,6 +375,29 @@ class TransposeOp : public Op {
     std::vector<size_t> getShuffle() { return shuffle_; }
     void destroy() {}
 };
+
+class ArgMaxOp : public Op {
+    int topK_;
+
+  public:
+    ArgMaxOp(int topK) : Op(DL_OP, 1, 1, std::string("ArgMax")) {
+        topK_ = topK;
+    }
+    ~ArgMaxOp() {}
+    int getTopK() { return topK_; }
+    void destroy() {}
+};
+
+/**
+ *  \brief currently deubg means print 2D Tensor
+ */
+class DebugOp : public Op {
+  public:
+    DebugOp() : Op(DL_OP, 1, 1, std::string("Debug")) {}
+    ~DebugOp() {}
+    void destroy() {}
+};
+
 //=====================================================
 // Definition of 1-D deep learning specific operations.
 // Version v0.1: ops for simple-MLP-nobias-fw listed below

@@ -21,13 +21,16 @@
 class MemoryAllocator {
     Device dev_; ///< abstract of Device
     std::string name_;
-    uint64_t capacity_; ///< max memory (bytes)
+    uint64_t capacity_;     ///< max memory (bytes)
     uint64_t allocated_{0}; ///< allocated memory (bytes)
 
-    std::string baseptr_name_; ///< baseptr_name_ memory allocation code emitting
+    std::string
+        baseptr_name_; ///< baseptr_name_ memory allocation code emitting
 
-    std::unordered_map<const void *, uint64_t> mem_addr_map_; ///< Tensor* -> offset map
-    std::unordered_map<uint64_t, const void *> addr_mem_map_; ///< offset -> Tensor* map
+    std::unordered_map<const void *, uint64_t>
+        mem_addr_map_; ///< Tensor* -> offset map
+    std::unordered_map<uint64_t, const void *>
+        addr_mem_map_; ///< offset -> Tensor* map
 
     void clear();
 
@@ -42,5 +45,6 @@ class MemoryAllocator {
     void setBasePtrName(std::string name) { baseptr_name_ = name; }
     std::string getBasePtrName() { return baseptr_name_; }
     Device &getDevice() { return dev_; }
+    uint64_t getCapacity() { return capacity_; }
 };
 #endif
