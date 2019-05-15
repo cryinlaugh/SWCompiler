@@ -5,35 +5,56 @@
  * Distributed under terms of the MIT license.
  */
 
-#ifndef OPNODE_H
-#define OPNODE_H
+#ifndef OPNODE_H_
+#define OPNODE_H_
 
 #include "IRNode.h"
-#include "../basicOp/Op.h"
+
+#include "op/Op.h"
+#include <sstream>
+
+using namespace swc::op;
 
 namespace swc {
 
-template <typename Dtype>
-class OpNode : public IRNode
-{
-  
+class OpNode : public IRNode {
   public:
-    OpNode() :  _op(NULL) {};
-    OpNode(const char name[]) : IRNode(OP_NODE, name) {};
+    OpNode() : op_(NULL){};
+    explicit OpNode(std::string name) : IRNode(OP_NODE, name){};
+    explicit OpNode(std::string name, Op *op)
+        : IRNode(OP_NODE, name), op_(op){};
     ~OpNode(){};
 
-    void setOp(Op<Dtype>* op) {
-      _op = op;
-    }
+    void destroy() {
+        // printf("free OpNode:%s\n", name().c_str());
 
-    Op<Dtype>* getOp() {
-      return _op;
+        getOp()->destroy();
+        getLabel()->destroy();
+        // this->~OpNode();
+    };
+
+    void setOp(Op *op) { op_ = op; }
+
+    Op *getOp() { return op_; }
+
+    const std::string getOpName() { return op_->getOpName(); }
+
+    OpNode *clone() const;
+    OpNode *deepClone() const;
+    std::string toString() const;
+    void setRunOnce() { run_once_ = true; }
+    bool runable() {
+        bool run = run_;
+        if (run_once_)
+            run_ = false;
+        return run;
     }
 
   private:
-    Op<Dtype>* _op; 
+    Op *op_;
+    bool run_{true};
+    bool run_once_{false};
 };
 
-} //namespace swc
-
-#endif /* !OPNODE_H */
+} // namespace swc
+#endif /* !OPNODE_H_ */

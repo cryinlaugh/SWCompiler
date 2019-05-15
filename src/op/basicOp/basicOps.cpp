@@ -7,6 +7,4 @@
 
 #include "basicOps.h"
 
-namespace swc{
-
-}
+namespace swc {}

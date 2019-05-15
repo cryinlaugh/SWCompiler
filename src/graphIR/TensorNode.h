@@ -5,60 +5,50 @@
  * Distributed under terms of the MIT license.
  */
 
-#ifndef TENSORNODE_H
-#define TENSORNODE_H
+#ifndef TENSORNODE_H_
+#define TENSORNODE_H_
 
 #include "IRNode.h"
-#include "../tensor/tensor.h"
+#include "tensor/tensor.h"
+//#include "SWDSL.h"
+#include <sstream>
 
 namespace swc {
 
-template <typename Dtype>
-class TensorNode : public IRNode
-{
-  
+class TensorNode : public IRNode {
   public:
-    TensorNode() : _tensor(NULL) {};
-    TensorNode(const char name[]) : IRNode(TENSOR_NODE, name) {};
+    TensorNode() : tensor_(NULL){};
+    explicit TensorNode(std::string name, IRNode *parent = nullptr)
+        : IRNode(TENSOR_NODE, name, parent){};
+    explicit TensorNode(std::string name, Tensor *tensor,
+                        IRNode *parent = nullptr)
+        : IRNode(TENSOR_NODE, name, parent), tensor_(tensor){};
+    explicit TensorNode(std::string name,
+                        const std::initializer_list<size_t> &shape,
+                        IRNode *parent = nullptr)
+        : IRNode(TENSOR_NODE, name, parent) {
+        tensor_ = new Tensor(shape);
+    }
+
     ~TensorNode(){};
 
-    void setTensor(Tensor<Dtype>* tensor) {
-      _tensor = tensor; 
-    }
+    void destroy() { printf("free TensorNode:%s\n", name().c_str()); };
 
-    Tensor<Dtype>* getTensor() {
-      return _tensor;
-    }
+    void setTensor(Tensor *tensor) { tensor_ = tensor; }
+    Tensor *getTensor() { return tensor_; }
 
-    std::string dotGen();
+    void setTraining(int train) { tensor_->setTraining(train); }
+    int getTraining() const { return tensor_->getTraining(); }
+
+    DataType getDataType() { return tensor_->getDataType(); }
+    std::vector<unsigned long> getDims() { return tensor_->getDims(); }
+    TensorNode *clone() const;
+    TensorNode *deepClone() const;
+    std::string toString() const;
 
   private:
-    Tensor<Dtype>* _tensor; 
+    Tensor *tensor_{nullptr};
 };
 
-template <typename Dtype>
-std::string TensorNode<Dtype>::dotGen() {
-
-  std::string tensorInfo = " [shape = record, ";
-
-  std::string tensorName = name();
-  int NDim = getTensor()->getNDim();  // get NDim through "getTensor()->getNDim()"
-
-  // generate the tensorInfo
-  tensorInfo = tensorInfo + "label = \"{Name: " + tensorName + " |" ;
-  tensorInfo = tensorInfo + "NDim: " + std::to_string(NDim) + " |"; 
-  
-  for (int i = 0; i < NDim; ++i) {
-    if (i < NDim-1) 
-      tensorInfo = tensorInfo + "Dim[" + std::to_string(i) + "]:" + std::to_string(getTensor()->getDim(i)) + " |";
-    else         
-      tensorInfo = tensorInfo + "Dim[" + std::to_string(i) + "]:" + std::to_string(getTensor()->getDim(i)) + " }\"];";
-  }
-
-  return IRNode::dotGen(tensorInfo, ";\n");
-}
-
-} //namespace swc
-
-
-#endif /* !TENSORNODE_H */
+} // namespace swc
+#endif /* !TENSORNODE_H_ */

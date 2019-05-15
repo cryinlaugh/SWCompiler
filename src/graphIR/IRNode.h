@@ -5,82 +5,142 @@
  * Distributed under terms of the MIT license.
  */
 
-#ifndef IRNODE_H
-#define IRNODE_H
+#ifndef IRNODE_H_
+#define IRNODE_H_
 
+#include "common.h"
+#include <iostream>
 #include <string>
-#include "../common.h"
+
+#include "pass/Label.h"
 
 namespace swc {
 
-class IRNode
-{
+class IRNode {
   public:
-    
     IRNode();
-    IRNode(const NodeType nodeType, const char name[]) : 
-      _name(std::string(name)), _nodeType(nodeType) {};
-    ~IRNode() { printf("free:%s\n", _name.c_str()); };
-    
-    void pushParentNode() {};
-    template<typename T, typename... Types> 
-    void pushParentNode(const T& firstArg, const Types&... args) {
-      _parentNodes.push_back(firstArg);
-      pushParentNode(args...);
+    IRNode(const NodeType nodeType, std::string name, IRNode *parent = nullptr)
+        : _name(name), _nodeType(nodeType), _label(new Label()) {
+        _topologyId = 0;
+        if (parent)
+            exlinkUpperNode(parent);
     }
-    
-    void pushChildNode() {};
-    template<typename T, typename... Types> 
-    void pushChildNode(const T& firstArg, const Types&... args) {
-      _childNodes.push_back(firstArg);
-      pushChildNode(args...);
-    }
-    
-    void exlinkUpperNode() {};
-    template<typename T, typename... Types> 
-    void exlinkUpperNode(T& firstArg, Types&... args) {
-      _parentNodes.push_back(firstArg);
-      firstArg->pushChildNode(this);
-      exlinkUpperNode(args...);
+    ~IRNode() { printf("free:%s\n", _name.c_str()); }
+
+    virtual void destroy(){};
+
+    void pushParentNode(){};
+    template <typename T, typename... Types>
+    void pushParentNode(const T &firstArg, const Types &... args) {
+        _parentNodes.push_back(firstArg);
+        pushParentNode(args...);
     }
 
-    const std::vector<IRNode*>* getParentNodes() const {
-      return &_parentNodes;
-    }
-    const std::vector<IRNode*>* getChildNode() const {
-      return &_childNodes;
-    }
-
-    const IRNode* const getParentNode(int i) const{
-      return _parentNodes[i];
-    }
-    const IRNode* const getChildNode(int i) const{
-      return _childNodes[i];
+    void delParentNode(){};
+    template <typename T, typename... Types>
+    void delParentNode(const T &firstArg, const Types &... args) {
+        if (!delVecMember(_parentNodes, firstArg)) {
+            std::cout << "Del Parent Failed" << firstArg->name() << std::endl;
+        }
+        delParentNode(args...);
     }
 
-    const std::string name() const { return _name; };
-    void setName(std::string name) { _name = name; };
-
-    inline const int parentNum() const {
-      return _parentNodes.size();
-    }
-    inline const int childNum() const {
-      return _childNodes.size();
+    void pushChildNode(){};
+    template <typename T, typename... Types>
+    void pushChildNode(const T &firstArg, const Types &... args) {
+        _childNodes.push_back(firstArg);
+        pushChildNode(args...);
     }
 
-	  // dot generation
-    std::string dotGen(std::string tensorInfo, std::string opInfo);
-    std::string dotGen();
+    void delChildNode(){};
+    template <typename T, typename... Types>
+    void delChildNode(const T &firstArg, const Types &... args) {
+        if (!delVecMember(_childNodes, firstArg)) {
+            std::cout << "Del Parent Failed" << firstArg->name() << std::endl;
+        }
+        delChildNode(args...);
+    }
+
+    void exlinkUpperNode(){};
+    template <typename T, typename... Types>
+    void exlinkUpperNode(const T &firstArg, const Types &... args) {
+        pushParentNode(firstArg);
+        firstArg->pushChildNode(this);
+        exlinkUpperNode(args...);
+    }
+
+    void destroyUpperNode(){};
+    template <typename T, typename... Types>
+    void destroyUpperNode(const T &firstArg, const Types &... args) {
+        delParentNode(firstArg);
+        firstArg->delChildNode(this);
+        destroyUpperNode(args...);
+    }
+
+    const std::vector<IRNode *> &getParentNodes() const { return _parentNodes; }
+    const std::vector<IRNode *> &getChildNodes() const { return _childNodes; }
+
+    std::vector<IRNode *> &getParentNodes() { return _parentNodes; }
+    std::vector<IRNode *> &getChildNodes() { return _childNodes; }
+
+    IRNode *getParentNode(int i) const { return _parentNodes[i]; }
+    IRNode *getChildNode(int i) const { return _childNodes[i]; }
+
+    inline const std::string name() const { return _name; };
+    inline void setName(std::string name) { _name = name; };
+
+    inline int parentNum() const { return _parentNodes.size(); }
+    inline int childNum() const { return _childNodes.size(); }
+
+    inline int topologyId() const { return _topologyId; }
+    inline void setTopologyId(int topologyId) { _topologyId = topologyId; }
+
+    inline NodeType nodeType() const { return _nodeType; }
+    inline void setNodeType(NodeType nodeType) { _nodeType = nodeType; }
+
+    void replaceUseKeepOrder(IRNode *node) {
+        /*
+        for(auto p : _parentNodes){
+            for(auto &pc : p->getChildNodes()){
+                if(pc == this){
+                    pc = node;
+                    node->pushParentNode(p);
+                }
+            }
+        }
+        */
+
+        for (auto c : _childNodes) {
+            for (auto &cp : c->getParentNodes()) {
+                if (cp == this) {
+                    cp = node;
+                    this->delChildNode(c);
+                    node->pushChildNode(c);
+                }
+            }
+        }
+    }
+
+    void setLabel(Label *label) { _label = label; }
+    Label *getLabel() const { return _label; }
+
+    void setExternal(bool flag) { _isExternal = flag; }
+    bool isExternal() const { return _isExternal; }
+
+    virtual IRNode *clone() const = 0;
+    virtual IRNode *deepClone() const = 0;
 
   private:
-    std::vector<IRNode*> _parentNodes;
-    std::vector<IRNode*> _childNodes;
+    std::vector<IRNode *> _parentNodes;
+    std::vector<IRNode *> _childNodes;
     std::string _name;
 
     NodeType _nodeType;
+    int _topologyId;
+    Label *_label;
+    bool _isExternal{false};
 };
 
-} //namespace swc
+} // namespace swc
 
-
-#endif /* !IRNODE_H */
+#endif /* !IRNODE_H_ */
