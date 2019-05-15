@@ -67,13 +67,13 @@ class swc::pass::LabelingPass : public swc::pass::OptimizePass {
             OpNode *node = _graph->getOpNode(i);
             Label *label = node->getLabel();
             if ((label->getTypeNameLabel()).compare("MatrixMatrixFC") == 0) {
-                SWLOG_INFO << label->getTypeNameLabel() << " "
+                SWLOG_DEBUG(2) << label->getTypeNameLabel() << " "
                            << label->getNodeNameLabel()
                            << " operator is marked to be lowered." << std::endl;
                 label->setLowerMark();
             } else if ((label->getTypeNameLabel())
                            .compare("MatrixMatrixFCGrad") == 0) {
-                SWLOG_INFO << label->getTypeNameLabel() << " "
+                SWLOG_DEBUG(2) << label->getTypeNameLabel() << " "
                            << label->getNodeNameLabel()
                            << " operator is marked to be lowered." << std::endl;
                 label->setLowerMark();
@@ -89,18 +89,18 @@ class swc::pass::LabelingPass : public swc::pass::OptimizePass {
             Label *label = tnode->getLabel();
             label->setTraining(tnode->getTraining());
 
-            SWLOG_INFO << label->getTypeNameLabel() << " "
+            SWLOG_DEBUG(2) << label->getTypeNameLabel() << " "
                        << label->getNodeNameLabel()
                        << " train: " << tnode->getTraining() << std::endl;
         }
     }
 
     void run() {
-        SWLOG_INFO << "Start Labeling Pass." << std::endl;
+        SWLOG_DEBUG(4) << "Start Labeling Pass." << std::endl;
         initLabelingPass();
         setLoweringMark();
         setTraining();
-        SWLOG_INFO << "Finish Labeling Pass." << std::endl;
+        SWLOG_DEBUG(4) << "Finish Labeling Pass." << std::endl;
     }
 };
 #endif

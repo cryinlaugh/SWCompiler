@@ -195,7 +195,6 @@ class swc::pass::LoweringPass : public OptimizePass {
     }
 
     void runLowering() {
-        SWLOG_INFO << "Start lowering pass: " << std::endl;
 
         int nTensorNodes = _graph->tensorNodeNum();
         int nOpNodes = _graph->opNodeNum();
@@ -215,14 +214,14 @@ class swc::pass::LoweringPass : public OptimizePass {
             }
         }
 
-        SWLOG_INFO << "Finish lowering pass. " << std::endl;
     }
 
     void run() {
+        SWLOG_DEBUG(4) << "Start Lowering Pass." << std::endl;
         runLowering();
+        SWLOG_DEBUG(4) << "Finish lowering pass. " << std::endl;
 
         // //std::cout<<"test"<<std::endl;
-        SWLOG_INFO << "Start Lowering Pass." << std::endl;
         // runTileLowering();
         // SWLOG_INFO << "Finish Lowering Pass." << std::endl;
     }

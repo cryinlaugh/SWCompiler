@@ -18,7 +18,7 @@
 using namespace swc::op;
 
 void MatrixMatrixFCOp::lowering(IRGraph *graph, IRNode *node) {
-    SWLOG_INFO << "Lowering MatrixMatrixFCOp ..." << std::endl;
+    SWLOG_DEBUG(4) << "Lowering MatrixMatrixFCOp ..." << std::endl;
 
     // define lowered subgraph
     // substitute MatrixMatrixFCOp with MatrixMatrixMulOp
@@ -77,10 +77,10 @@ void MatrixMatrixFCOp::lowering(IRGraph *graph, IRNode *node) {
 
     // Update graph info
     graph->updateTopology();
-    SWLOG_INFO << "Finish lowering MatrixMatrixFCOp." << std::endl;
 }
+
 void MatrixMatrixFCGradOp::lowering(IRGraph *graph, IRNode *node) {
-    SWLOG_INFO << "Lowering MatrixMatrixFCGradOp ..." << std::endl;
+    SWLOG_DEBUG(4) << "Lowering MatrixMatrixFCGradOp ..." << std::endl;
     for (int i = 0; i < node->parentNum(); i++) {
         std::cout << node->getParentNode(i)->name() << std::endl;
     }
@@ -143,5 +143,4 @@ void MatrixMatrixFCGradOp::lowering(IRGraph *graph, IRNode *node) {
     graph->pushTensorNode(w_trans, x_trans);
 
     graph->updateTopology();
-    SWLOG_INFO << "Finish lowering MatrixMatrixFCGradOp." << std::endl;
 }

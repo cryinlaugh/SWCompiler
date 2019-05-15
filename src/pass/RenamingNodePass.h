@@ -25,7 +25,7 @@ class UniqueName {
 
   public:
     std::string operator()(const std::string &inputName) {
-        SWLOG_INFO << "originalName " << inputName << "\n";
+        SWLOG_DEBUG(1) << "originalName " << inputName << "\n";
         assert(!inputName.empty() && "inputName empty");
         std::string name;
         for (const char c : inputName) {
@@ -45,7 +45,7 @@ class UniqueName {
             }
             name = uname;
         }
-        SWLOG_INFO << "uniqueName " << name << "\n\n";
+        SWLOG_DEBUG(1) << "uniqueName " << name << "\n\n";
         names_map_[name] = 0;
         return name;
     }
@@ -66,6 +66,7 @@ class RenamingNodePass : public OptimizePass {
     }
 
     void run() {
+        SWLOG_DEBUG(4) << "start RenamingNodePass ...\n";
         int nTensorNodes = _graph->tensorNodeNum();
         int nOpNodes = _graph->opNodeNum();
         for (int i = 0; i < nTensorNodes; i++) {
@@ -79,6 +80,7 @@ class RenamingNodePass : public OptimizePass {
             std::string uname = uniqueName(node->name());
             node->setName(uname);
         }
+        SWLOG_DEBUG(4) << "end RenamingNodePass ...\n";
     }
 };
 

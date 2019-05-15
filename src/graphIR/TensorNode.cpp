@@ -24,7 +24,10 @@ TensorNode *TensorNode::clone() const {
 // but point to the same tenorshape
 TensorNode *TensorNode::deepClone() const {
     TensorNode *tn = new TensorNode(name());
-    tn->setTensor(new Tensor(tensor_->getTensorShape()));
+    //tn->setTensor(new Tensor(tensor_->getTensorShape()));
+    Tensor *tensor = tensor_->clone();
+    tn->setTensor(tensor);
+    tn->setLabel(getLabel()); // mainly for training flag
     tn->setExternal(isExternal());
     return tn;
 }

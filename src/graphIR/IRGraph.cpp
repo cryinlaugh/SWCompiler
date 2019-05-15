@@ -86,7 +86,7 @@ bool IRGraph::buildSubGraphs(TensorNode *in, TensorNode *out,
 
 OpNode *IRGraph::extractSubGraph(TensorNode *in, TensorNode *out) {
 
-    std::cout << "extract SubGraph from " << in->name() << " to " << out->name()
+    SWLOG_DEBUG(4) << "extract SubGraph from " << in->name() << " to " << out->name()
               << "\n";
 
     std::unordered_set<IRNode *> found;
@@ -119,7 +119,7 @@ OpNode *IRGraph::extractSubGraph(TensorNode *in, TensorNode *out) {
     OpNode *subGNode = new OpNode("subG", subG_Op);
 
     for (auto irNode : found) {
-        std::cout << "process node " << irNode->name() << "\n";
+        SWLOG_DEBUG(4) << "process node " << irNode->name() << "\n";
         if (irNode->nodeType() == OP_NODE) {
             auto *node = (OpNode *)irNode;
             subG->pushOpNode(node);
@@ -196,7 +196,7 @@ OpNode *IRGraph::extractSubGraph(TensorNode *in, TensorNode *out) {
     }
 
     for (auto p : out->getParentNodes()) {
-        std::cout << "destroy " << out->name() << "->" << p->name() << "\n";
+        SWLOG_DEBUG(4) << "destroy " << out->name() << "->" << p->name() << "\n";
         if (found.count(p))
             out->destroyUpperNode(p);
     }
@@ -204,7 +204,7 @@ OpNode *IRGraph::extractSubGraph(TensorNode *in, TensorNode *out) {
     out->exlinkUpperNode(subGNode);
 
     this->pushOpNode(subGNode);
-    std::cout << "extract subGraph successfully\n";
+    SWLOG_DEBUG(4) << "extract subGraph successfully\n";
 
     return subGNode;
 }
@@ -394,12 +394,13 @@ IRGraph *IRGraph::clone() const {
 }
 
 void IRGraph::setDeviceLabel(Device dev) {
+    SWLOG_DEBUG(4) << "set Graph Device Label (Skip external node)\n";
     _dev = dev;
     for (auto tnode : _tensors) {
         // suppose Device Graph, all TensorNodes(in degree=0)
         // should be mirror of cpu TensorNodes
         if (tnode->isExternal())
-            std::cout << tnode->name() << " External skip\n";
+            SWLOG_DEBUG(4) << tnode->name() << " External skip\n";
         if (!tnode->isExternal())
             tnode->getLabel()->setDeviceLabel(dev.type, dev.id);
     }

@@ -41,6 +41,8 @@ int main() {
     bias_0_Tensor->setTensorInit(TensorInitType::CONSTANT, 0);
     weight_0->setTraining(1);
     bias_0->setTraining(1);
+    weight_0->setExternal(true);
+    bias_0->setExternal(true);
 
     OP(fc_0, MatrixMatrixFCOp);
     LINKUPPER(fc_0, data_0, weight_0, bias_0);
@@ -85,13 +87,6 @@ int main() {
     GpT(mlp, data_3, data_4, weight_1, bias_1, labeln);
     GpO(mlp, fc_1, softmax);
 
-    CHECKT(data_0);
-    CHECKT(weight_0);
-    CHECKO(fc_0);
-    CHECKT(data_1);
-    CHECKO(tanh_0);
-    CHECKT(data_2);
-    CHECKG(mlp);
 
     mlp->updateTopology();
 
@@ -131,7 +126,7 @@ int main() {
 
     codegen::Codegen *cg = new codegen::Codegen(net);
     string code = cg->generate();
-    cout << code;
+    //cout << code;
 
     return 0;
 }

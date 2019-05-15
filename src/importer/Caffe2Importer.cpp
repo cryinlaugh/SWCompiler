@@ -134,7 +134,6 @@ Caffe2Importer::Caffe2Importer(IRGraph *g, const std::string &netProtoFile,
 
     loadTensors(tensors);
     loadNetwork(network);
-    std::cout << "ctor of Caffe2Importer\n";
 }
 
 void Caffe2Importer::loadProto(caffe2::NetDef &net,
@@ -160,7 +159,7 @@ void Caffe2Importer::loadProto(caffe2::NetDef &net,
 }
 void Caffe2Importer::loadNetwork(caffe2::NetDef &net) {
     if (net.has_name()) {
-        std::cout << "loading network " << net.name() << std::endl;
+        SWLOG_INFO << "loading network " << net.name() << std::endl;
     }
     for (auto &op : net.op()) {
         loadOp(op);
@@ -275,11 +274,9 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
         std::string res_name = op.output(0);
         TensorNode *out_tnode;
         if (name_tNode_map_.count(res_name)) {
-            std::cout << res_name << " exist\n";
             auto *tensor = name_tNode_map_[res_name]->getTensor();
             out_tnode = new TensorNode(res_name, tensor, opNode);
         } else {
-            std::cout << res_name << " non exist\n";
             auto *tshape = in->getTensor()->getTensorShape();
             out_tnode = new TensorNode(res_name, new Tensor(tshape), opNode);
         }
@@ -348,7 +345,8 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
         size_t c = inDims[3];
         std::vector<size_t> ohw =
             inferConvOutDims(inDims[1], inDims[2], kernels, strides, pads);
-        std::cout << "AveragePool " << n << " " << ohw[0] << " " << ohw[1]
+
+        SWLOG_DEBUG(2) << "AveragePool " << n << " " << ohw[0] << " " << ohw[1]
                   << " " << c << "\n";
 
         std::string res_name = op.output(0);
@@ -404,7 +402,7 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
         for (size_t i = 1; i < inDims.size(); i++)
             flatdim *= inDims[i];
 
-        std::cout << "flatdim=" << flatdim << " weightDims[0]=" << weightDims[0]
+        SWLOG_DEBUG(2) << "FC, flatdim=" << flatdim << " weightDims[0]=" << weightDims[0]
                   << "\n";
         assert((flatdim == weightDims[0]) &&
                "input flattenedDim not equal with weight\n");

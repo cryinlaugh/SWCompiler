@@ -57,7 +57,7 @@ class Op {
 
     // for lowering
     virtual void lowering(IRGraph *graph, IRNode *node) {
-        SWLOG_INFO << "Unimplemented in base Op class" << std::endl;
+        SWLOG_DEBUG(100) << "Unimplemented in base Op class" << std::endl;
     }
 
     /*
