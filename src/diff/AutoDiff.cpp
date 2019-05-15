@@ -29,7 +29,6 @@ IRGraph *getTrainNet(IRGraph *graph, TrainingProfile &profile) {
     // , TrainingProfile profile){
     IRGraph *net = graph->clone();
 
-
     net->updateTopology();
     std::unordered_map<IRNode *, IRNode *> gradNodeMap;
 
@@ -46,12 +45,14 @@ IRGraph *getTrainNet(IRGraph *graph, TrainingProfile &profile) {
             auto *node = (TensorNode *)irnode;
             Label *label = node->getLabel();
 
-            SWLOG_DEBUG(2) << "reverse order tenosr " << node->name() << " label training flag " << label->needTraining() << "\n";
+            SWLOG_DEBUG(2) << "reverse order tenosr " << node->name()
+                           << " label training flag " << label->needTraining()
+                           << "\n";
 
             if (gradNodeMap.count(node)) {
                 auto *N = gradNodeMap[node];
 
-                // label::needTraining not set yet 
+                // label::needTraining not set yet
                 // if (!label->needTraining())
                 if (!node->getTraining())
                     continue;
@@ -114,8 +115,8 @@ IRGraph *getTrainNet(IRGraph *graph, TrainingProfile &profile) {
                 gradNodeMap[node] = N;
                 net->pushOpNode(N);
             } else if (auto op = dynamic_cast<MatrixTanhOp *>(node->getOp())) {
-                SWLOG_DEBUG(2) << "get Gradient node for op " << node->name()
-                           << "\n";
+                SWLOG_DEBUG(2)
+                    << "get Gradient node for op " << node->name() << "\n";
                 auto *input = node->getParentNode(0);
                 auto *output = node->getChildNode(0);
                 assert(gradNodeMap.count(output) &&
@@ -130,8 +131,8 @@ IRGraph *getTrainNet(IRGraph *graph, TrainingProfile &profile) {
                 net->pushOpNode(N);
             } else if (auto op =
                            dynamic_cast<MatrixSoftmaxOp *>(node->getOp())) {
-                SWLOG_DEBUG(2) << "get Gradient node for op " << node->name()
-                           << "\n";
+                SWLOG_DEBUG(2)
+                    << "get Gradient node for op " << node->name() << "\n";
                 auto *input = node->getParentNode(0);
                 auto *label = node->getParentNode(1);
                 auto *output = node->getChildNode(0);
@@ -155,7 +156,7 @@ IRGraph *getTrainNet(IRGraph *graph, TrainingProfile &profile) {
                                          gradNodeMap[node]);
 
                 SWLOG_DEBUG(2) << "get Gradient node for " << node->name()
-                           << " input " << tnode->name() << "\n";
+                               << " input " << tnode->name() << "\n";
 
                 gradNodeMap[tnode] = N;
                 net->pushTensorNode(N);

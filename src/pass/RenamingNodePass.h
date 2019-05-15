@@ -29,10 +29,11 @@ class UniqueName {
         assert(!inputName.empty() && "inputName empty");
         std::string name;
         for (const char c : inputName) {
-            if (c == '/' || c == '.' || c == '-')
+            if (c == '/' || c == '.' || c == '-') {
                 name.push_back('_');
-            else
+            } else {
                 name.push_back(c);
+            }
         }
 
         auto iter = names_map_.find(name);

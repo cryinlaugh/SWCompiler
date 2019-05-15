@@ -406,12 +406,30 @@ void vecAdd_f(int size, float *a, float *b, float *c) {
     }
 }
 
-void printMatrix_f(int m, int n, const float *a, int lda) {
+/**
+* reference: Caffe
+*/
+void argMax_f(const float *input, int *idx, int m, int n, int top_k) {
+    for(int i=0; i<m; i++) {
+        std::vector<std::pair<float, int>> value_idx(n);
+        for(int j=0; j<n; j++) {
+            value_idx[j] = std::make_pair(input[i*n+j], j);
+        }
+        std::partial_sort(value_idx.begin(), value_idx.begin()+top_k, value_idx.end(), std::greater<std::pair<float, int>>());
+
+        for(int j=0; j<top_k; j++) {
+            idx[i*top_k+j] = value_idx[j].second;
+        }
+    }
+}
+
+template <typename T>
+void printMatrix(const T *a, int m, int n) {
     std::cout.flags(std::ios::fixed);
     std::cout.precision(3);
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < n; j++) {
-            std::cout << A(i, j) << " ";
+            std::cout << a[i*n+j] << " ";
         }
         std::cout << std::endl;
     }

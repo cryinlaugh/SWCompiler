@@ -86,8 +86,8 @@ bool IRGraph::buildSubGraphs(TensorNode *in, TensorNode *out,
 
 OpNode *IRGraph::extractSubGraph(TensorNode *in, TensorNode *out) {
 
-    SWLOG_DEBUG(4) << "extract SubGraph from " << in->name() << " to " << out->name()
-              << "\n";
+    SWLOG_DEBUG(4) << "extract SubGraph from " << in->name() << " to "
+                   << out->name() << "\n";
 
     std::unordered_set<IRNode *> found;
     std::queue<IRNode *> toVisit;
@@ -196,7 +196,8 @@ OpNode *IRGraph::extractSubGraph(TensorNode *in, TensorNode *out) {
     }
 
     for (auto p : out->getParentNodes()) {
-        SWLOG_DEBUG(4) << "destroy " << out->name() << "->" << p->name() << "\n";
+        SWLOG_DEBUG(4) << "destroy " << out->name() << "->" << p->name()
+                       << "\n";
         if (found.count(p))
             out->destroyUpperNode(p);
     }

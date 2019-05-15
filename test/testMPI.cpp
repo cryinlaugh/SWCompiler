@@ -9,9 +9,9 @@ using namespace std;
 int main() {
     //============================
     // Example of 2-layer
-    // fully connected network:
+    // Fully Connected network:
     // data parallel, fc0 and tanh0
-    // run on GPU0 and GPU1
+    // run on different MPI processes.
     //
     //  T:data0   T:weight0
     //     \       /
@@ -42,21 +42,20 @@ int main() {
     weight0_Tensor->setTensorInit(TensorInitType::FILE, "mlp_weight0.bin");
     bias0_Tensor->setTensorInit(TensorInitType::FILE, "mlp_bias0.bin");
 
-    //=======================================
-    // run fc0 and tanh0 on gpu
-    OP(gpu0, SubGraphOp);
-    OP(gpu1, SubGraphOp);
+    //====================================================
+    OP(cpu1, SubGraphOp);
+    OP(cpu2, SubGraphOp);
 
-    LINKUPPER(gpu0, data0, weight0, bias0);
-    LINKUPPER(gpu1, data0, weight0, bias0);
+    LINKUPPER(cpu1, data0, weight0, bias0);
+    LINKUPPER(cpu2, data0, weight0, bias0);
 
     TENSOR(data2, 8, 512);
-    LINKUPPER(data2, gpu0, gpu1);
+    LINKUPPER(data2, cpu1, cpu2);
 
     // define IR graph
     G(mlp);
     GpT(mlp, data0, data2, weight0, bias0);
-    GpO(mlp, gpu0, gpu1);
+    GpO(mlp, cpu1, cpu2);
 
     TENSOR(weight_1, 512, 10);
     TENSOR(bias_1, 10);
@@ -78,27 +77,29 @@ int main() {
     TENSOR(data_4, 8, 10);
     LINKUPPER(data_4, softmax);
 
+    OpNode *argmax = new OpNode("argmax", new ArgMaxOp(3));
+    argmax->exlinkUpperNode(data_4);
+
+    TensorNode *top3_idx =
+        new TensorNode("top3", new Tensor({8, 3}, DataType::Int32_t), argmax);
+
+    OpNode *print_top3 = new OpNode("print_top3", new DebugOp());
+    print_top3->exlinkUpperNode(top3_idx);
+
     GpT(mlp, data_3, data_4, weight_1, bias_1, labeln);
     GpO(mlp, fc_1, softmax);
 
-    auto *argmax_o = new OpNode("argmax", new ArgMaxOp(3));
-    argmax_o->exlinkUpperNode(data_4);
-    auto *top3_t =
-        new TensorNode("top3", new Tensor({8, 3}, DataType::Int32_t), argmax_o);
-    auto *print_o = new OpNode("print", new DebugOp());
-    print_o->exlinkUpperNode(top3_t);
+    mlp->pushOpNode(argmax, print_top3);
+    mlp->pushTensorNode(top3_idx);
 
-    mlp->pushOpNode(argmax_o, print_o);
-    mlp->pushTensorNode(top3_t);
-    //==================================
-    Device cpu0;
-    Device dev_gpu0;
-    dev_gpu0.type = DeviceType::GPU;
-    dev_gpu0.id = 0;
-    Device dev_gpu1;
-    dev_gpu1.type = DeviceType::GPU;
-    dev_gpu1.id = 1;
-    //-----------GPU0-------------------------------------
+    //====================================================
+    Device dev_cpu0;
+    Device dev_cpu1;
+    dev_cpu1.id = 1;
+    Device dev_cpu2;
+    dev_cpu2.id = 2;
+
+    //-----------CPU1-------------------------------------
     TensorNode *data0_rep0 = new TensorNode("data0");
     data0_rep0->setTensor(data0->getTensor());
     TensorNode *weight0_rep0 = new TensorNode("weight0");
@@ -115,52 +116,45 @@ int main() {
     LINKUPPER(scatter01, weight0_rep0);
     LINKUPPER(scatter02, bias0_rep0);
 
-    TENSOR(data0_gpu0, 4, 784);
-    TENSOR(weight0_gpu0, 784, 512);
-    TENSOR(bias0_gpu0, 512);
-    weight0_gpu0_Tensor->setTensorInit(TensorInitType::PARENTOP, 0);
-    bias0_gpu0_Tensor->setTensorInit(TensorInitType::PARENTOP, 0);
-    LINKUPPER(data0_gpu0, scatter00);
-    LINKUPPER(weight0_gpu0, scatter01);
-    LINKUPPER(bias0_gpu0, scatter02);
+    TENSOR(data0_cpu1, 4, 784);
+    TENSOR(weight0_cpu1, 784, 512);
+    TENSOR(bias0_cpu1, 512);
+    weight0_cpu1_Tensor->setTensorInit(TensorInitType::PARENTOP, 0);
+    bias0_cpu1_Tensor->setTensorInit(TensorInitType::PARENTOP, 0);
+    LINKUPPER(data0_cpu1, scatter00);
+    LINKUPPER(weight0_cpu1, scatter01);
+    LINKUPPER(bias0_cpu1, scatter02);
 
-    OP(matmul0_gpu0, MatrixMatrixFCOp);
-    LINKUPPER(matmul0_gpu0, data0_gpu0, weight0_gpu0, bias0_gpu0);
-    TENSOR(data1_gpu0, 4, 512);
-    LINKUPPER(data1_gpu0, matmul0_gpu0);
+    OP(matmul0_cpu1, MatrixMatrixFCOp);
+    LINKUPPER(matmul0_cpu1, data0_cpu1, weight0_cpu1, bias0_cpu1);
+    TENSOR(data1_cpu1, 4, 512);
+    LINKUPPER(data1_cpu1, matmul0_cpu1);
 
-    OP(tanh0_gpu0, MatrixTanhOp);
-    LINKUPPER(tanh0_gpu0, data1_gpu0);
-    TENSOR(data2_gpu0, 4, 512);
-    LINKUPPER(data2_gpu0, tanh0_gpu0);
+    OP(tanh0_cpu1, MatrixTanhOp);
+    LINKUPPER(tanh0_cpu1, data1_cpu1);
+    TENSOR(data2_cpu1, 4, 512);
+    LINKUPPER(data2_cpu1, tanh0_cpu1);
 
     OP(gather0, GatherOp);
-    LINKUPPER(gather0, data2_gpu0);
+    LINKUPPER(gather0, data2_cpu1);
 
     TensorNode *data2_rep0 = new TensorNode("data2");
     data2_rep0->setTensor(data2->getTensor());
     LINKUPPER(data2_rep0, gather0);
 
     IRGraph *subGraph0 = new IRGraph();
-    subGraph0->pushTensorNode(data0_rep0, weight0_rep0, bias0_rep0, data0_gpu0,
-                              weight0_gpu0, bias0_gpu0, data1_gpu0, data2_gpu0,
+    subGraph0->pushTensorNode(data0_rep0, weight0_rep0, bias0_rep0, data0_cpu1,
+                              weight0_cpu1, bias0_cpu1, data1_cpu1, data2_cpu1,
                               data2_rep0);
-    subGraph0->pushOpNode(scatter00, scatter01, scatter02, matmul0_gpu0,
-                          tanh0_gpu0, gather0);
+    subGraph0->pushOpNode(scatter00, scatter01, scatter02, matmul0_cpu1,
+                          tanh0_cpu1, gather0);
 
-    // set these IRNode::_isExternal true to avoid
-    // labeling them dev_gpu0
     data0_rep0->setExternal(true);
     weight0_rep0->setExternal(true);
     bias0_rep0->setExternal(true);
     data2_rep0->setExternal(true);
-
-    subGraph0->setDeviceLabel(dev_gpu0);
-    // data0_rep0->getLabel()->setDeviceLabel(cpu0.type, cpu0.id);
-    // weight0_rep0->getLabel()->setDeviceLabel(cpu0.type, cpu0.id);
-    // bias0_rep0->getLabel()->setDeviceLabel(cpu0.type, cpu0.id);
-    // data2_rep0->getLabel()->setDeviceLabel(cpu0.type, cpu0.id);
-    //-----------GPU1-------------------------------------
+    subGraph0->setDeviceLabel(dev_cpu1);
+    //-----------CPU1-------------------------------------
     TensorNode *data0_rep1 = new TensorNode("data0");
     data0_rep1->setTensor(data0->getTensor());
     TensorNode *weight0_rep1 = new TensorNode("weight0");
@@ -179,57 +173,51 @@ int main() {
     LINKUPPER(scatter11, weight0_rep1);
     LINKUPPER(scatter12, bias0_rep1);
 
-    TENSOR(data0_gpu1, 4, 784);
-    TENSOR(weight0_gpu1, 784, 512);
-    TENSOR(bias0_gpu1, 512);
-    weight0_gpu1_Tensor->setTensorInit(TensorInitType::PARENTOP, 0);
-    bias0_gpu1_Tensor->setTensorInit(TensorInitType::PARENTOP, 0);
-    LINKUPPER(data0_gpu1, scatter10);
-    LINKUPPER(weight0_gpu1, scatter11);
-    LINKUPPER(bias0_gpu1, scatter12);
+    TENSOR(data0_cpu2, 4, 784);
+    TENSOR(weight0_cpu2, 784, 512);
+    TENSOR(bias0_cpu2, 512);
+    weight0_cpu2_Tensor->setTensorInit(TensorInitType::PARENTOP, 0);
+    bias0_cpu2_Tensor->setTensorInit(TensorInitType::PARENTOP, 0);
+    LINKUPPER(data0_cpu2, scatter10);
+    LINKUPPER(weight0_cpu2, scatter11);
+    LINKUPPER(bias0_cpu2, scatter12);
 
-    OP(matmul0_gpu1, MatrixMatrixFCOp);
-    LINKUPPER(matmul0_gpu1, data0_gpu1, weight0_gpu1, bias0_gpu1);
-    TENSOR(data1_gpu1, 4, 512);
-    LINKUPPER(data1_gpu1, matmul0_gpu1);
+    OP(matmul0_cpu2, MatrixMatrixFCOp);
+    LINKUPPER(matmul0_cpu2, data0_cpu2, weight0_cpu2, bias0_cpu2);
+    TENSOR(data1_cpu2, 4, 512);
+    LINKUPPER(data1_cpu2, matmul0_cpu2);
 
-    OP(tanh0_gpu1, MatrixTanhOp);
-    LINKUPPER(tanh0_gpu1, data1_gpu1);
-    TENSOR(data2_gpu1, 4, 512);
-    LINKUPPER(data2_gpu1, tanh0_gpu1);
+    OP(tanh0_cpu2, MatrixTanhOp);
+    LINKUPPER(tanh0_cpu2, data1_cpu2);
+    TENSOR(data2_cpu2, 4, 512);
+    LINKUPPER(data2_cpu2, tanh0_cpu2);
 
     OP(gather1, GatherOp);
     auto *gop = (ScatterOp *)gather1->getOp();
     gop->setOffset(4 * 512);
-    LINKUPPER(gather1, data2_gpu1);
+    LINKUPPER(gather1, data2_cpu2);
 
     TensorNode *data2_rep1 = new TensorNode("data2");
     data2_rep1->setTensor(data2->getTensor());
     LINKUPPER(data2_rep1, gather1);
 
     IRGraph *subGraph1 = new IRGraph();
-    subGraph1->pushTensorNode(data0_rep1, weight0_rep1, bias0_rep1, data0_gpu1,
-                              weight0_gpu1, bias0_gpu1, data1_gpu1, data2_gpu1,
+    subGraph1->pushTensorNode(data0_rep1, weight0_rep1, bias0_rep1, data0_cpu2,
+                              weight0_cpu2, bias0_cpu2, data1_cpu2, data2_cpu2,
                               data2_rep1);
-    subGraph1->pushOpNode(scatter10, scatter11, scatter12, matmul0_gpu1,
-                          tanh0_gpu1, gather1);
+    subGraph1->pushOpNode(scatter10, scatter11, scatter12, matmul0_cpu2,
+                          tanh0_cpu2, gather1);
 
-    // set these IRNode::_isExternal true to avoid
-    // labeling them dev_gpu1
     data0_rep1->setExternal(true);
     weight0_rep1->setExternal(true);
     bias0_rep1->setExternal(true);
     data2_rep1->setExternal(true);
 
-    subGraph1->setDeviceLabel(dev_gpu1);
-    // data0_rep1->getLabel()->setDeviceLabel(cpu0.type, cpu0.id);
-    // weight0_rep1->getLabel()->setDeviceLabel(cpu0.type, cpu0.id);
-    // bias0_rep1->getLabel()->setDeviceLabel(cpu0.type, cpu0.id);
-    // data2_rep1->getLabel()->setDeviceLabel(cpu0.type, cpu0.id);
+    subGraph1->setDeviceLabel(dev_cpu2);
+    //====================================================
 
-    //==================================
-    gpu0_Op->setGraph(subGraph0);
-    gpu1_Op->setGraph(subGraph1);
+    cpu1_Op->setGraph(subGraph0);
+    cpu2_Op->setGraph(subGraph1);
 
     mlp->updateTopology();
     pass::Optimizer *opt = new pass::Optimizer(mlp);
@@ -242,19 +230,16 @@ int main() {
     subGraph1->updateTopology();
     opt->setGraph(subGraph1);
     opt->runOptimizer();
+    //====================================================
 
-    //==================================
     dotGen(mlp);
     dotGen(subGraph0, "subGraph0.dot");
     dotGen(subGraph1, "subGraph1.dot");
 
-    //==================================
-    // nvcc -ccbin g++ -lcublas Graph.cu
+    //====================================================
     CodegenConfig config;
-    config.flag_multiGPU = true;
-    config.flag_multiStream = true;
-    config.flag_use_cublas = true;
-    codegen::Codegen *cg = new codegen::Codegen(mlp, config);
+    config.flag_MPI = true;
+    codegen::Codegen *cg = new codegen::Codegen(mlp);
     string code = cg->generate();
     cout << code;
 

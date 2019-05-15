@@ -38,8 +38,8 @@ int main() {
     TENSOR(weight_0, 784, 512);
     TENSOR(bias_0, 512);
     data_0_Tensor->setTensorInit(TensorInitType::FILE, "mnist_images_8.bin");
-    weight_0_Tensor->setTensorInit(TensorInitType::FILE, "mlp_weight_0.bin");
-    bias_0_Tensor->setTensorInit(TensorInitType::FILE, "mlp_bias_0.bin");
+    weight_0_Tensor->setTensorInit(TensorInitType::FILE, "mlp_weight0.bin");
+    bias_0_Tensor->setTensorInit(TensorInitType::FILE, "mlp_bias0.bin");
 
     OP(fc_0, MatrixMatrixFCOp);
     LINKUPPER(fc_0, data_0, weight_0, bias_0);
@@ -60,8 +60,8 @@ int main() {
 
     TENSOR(weight_1, 512, 10);
     TENSOR(bias_1, 10);
-    weight_1_Tensor->setTensorInit(TensorInitType::FILE, "mlp_weight_1.bin");
-    bias_1_Tensor->setTensorInit(TensorInitType::FILE, "mlp_bias_1.bin");
+    weight_1_Tensor->setTensorInit(TensorInitType::FILE, "mlp_weight1.bin");
+    bias_1_Tensor->setTensorInit(TensorInitType::FILE, "mlp_bias1.bin");
 
     OP(fc_1, MatrixMatrixFCOp);
     LINKUPPER(fc_1, data_2, weight_1, bias_1);

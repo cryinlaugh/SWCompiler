@@ -87,7 +87,7 @@ class Tensor {
         shape_ = shape;
         dataType_ = dtype;
     }
-    Tensor* clone() const;
+    Tensor *clone() const;
     TensorShape *
     getShuffledTensorShape(const std::vector<size_t> &shuffle) const;
 

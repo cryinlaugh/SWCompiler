@@ -22,6 +22,13 @@ struct TrainingProfile {
     size_t batch{1};
 };
 
+struct CodegenConfig {
+    bool flag_multiGPU{false};
+    bool flag_multiStream{false};
+    bool flag_MPI{false};
+    bool flag_use_cublas{false};
+};
+
 enum OpType { TENSOR_OP, BASIC_OP, DL_OP };
 
 enum NodeType { TENSOR_NODE, OP_NODE };

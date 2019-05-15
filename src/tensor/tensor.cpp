@@ -25,7 +25,7 @@ size_t TensorShape::size() const {
     return size;
 }
 
-Tensor* Tensor::clone() const {
+Tensor *Tensor::clone() const {
     Tensor *t = new Tensor(shape_, dataType_);
     t->setTraining(train_);
     t->setTensorInit(initType_, initInfo_);
