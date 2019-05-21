@@ -32,10 +32,13 @@ class Codegen {
     Codegen(IRGraph *graph) : graph_(graph) {}
     /// to be depreciated
     Codegen(IRGraph *graph, CodegenConfig &config) : graph_(graph) {
+        config_ = config;
+        /*
         flag_multiGPU = config.flag_multiGPU;
         flag_multiStream = config.flag_multiStream;
         flag_MPI = config.flag_MPI;
         flag_use_cublas = config.flag_use_cublas;
+        */
     }
     ~Codegen() { destroy(); }
 
@@ -94,6 +97,7 @@ class Codegen {
     /// may need to allocate for specific tensornode (e.g. different data type)
     std::string emitTensorMemAlloc(TensorNode *tnode);
     //----------------------------------------------------------
+    void emitExecute();
     /// generate function calls for opNodes
     void emitFuncCalls();
     /// generate function calls for opNodes of L2(Device) subGraph
@@ -128,23 +132,20 @@ class Codegen {
 
   private:
     void destroy();
-    void genIndent() {
-        for (int i = 0; i < indent_; i++)
-            stream_ << "    ";
-    }
 
     std::string getTypeString(Tensor *);
 
-    std::ostringstream stream_;
-    int indent_;
     CodeWriter writer_;
     IRGraph *graph_;
     IRGraph *active_graph_;
 
+    CodegenConfig config_;
+    /*
     bool flag_multiGPU{false};
     bool flag_multiStream{false};
     bool flag_MPI{true};
     bool flag_use_cublas{false};
+    */
 
     std::unordered_map<std::string, int> names_map_;
     std::vector<std::shared_ptr<MemoryAllocator>> mem_allocators_;

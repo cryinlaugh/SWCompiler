@@ -18,10 +18,6 @@ using namespace swc::op;
 namespace swc {
 namespace codegen {
 
-#define stream                                                                 \
-    genIndent();                                                               \
-    stream_
-
 static std::string deviceToStr(const Device &d) {
     std::ostringstream os;
     if (d.type == DeviceType::CPU) {
@@ -140,7 +136,6 @@ void Codegen::codeGenInit() {
     // tensors_name_map_.clear();
     // tensors_offset_map_.clear();
     this->active_graph_ = graph_;
-    indent_ = 0;
     initMemoryAllocators();
 }
 
@@ -156,7 +151,7 @@ void Codegen::emitCUDAInit() {
     if (N == 0)
         return;
 
-    if (flag_use_cublas) {
+    if(config_.cublas) {
         writer_ << "cublasStatus_t stat;\n";
         writer_ << "cublasHandle_t handle;\n";
         writer_ << "stat = cublasCreate(&handle);\n";
@@ -165,7 +160,7 @@ void Codegen::emitCUDAInit() {
         writer_ << "    return EXIT_FAILURE;\n";
         writer_ << "}\n\n";
     }
-    if (flag_multiStream) {
+    if(config_.cuda_stream) {
         writer_ << "cudaStream_t stream[" << N << "];\n";
         writer_ << "for(int i=0; i<" << N << "; i++)\n";
         writer_.indentInc();
@@ -175,7 +170,7 @@ void Codegen::emitCUDAInit() {
 }
 
 void Codegen::emitMPIInit() {
-    if (flag_MPI) {
+    if (config_.mpi) {
         writer_
             << "// ========================================================\n";
         writer_ << "// MPI INIT\n";
@@ -228,21 +223,24 @@ std::string Codegen::generate() {
             << "#include <random>\n"
             << "#include <stdlib.h>\n"
             << "#include <math.h>\n"
-            << "#include \"image.h\"\n";
+            << "#include \"utils/image.h\"\n";
 
-    if (flag_MPI) {
+    if (config_.mpi) {
         writer_ << "#include <mpi.h>\n";
     }
 
-    if (flag_use_cublas) {
+    if (config_.cuda) {
         writer_ << "#include <cuda.h>\n"
                 << "#include <cublas_v2.h>\n";
-#include "cuda_kernels.cu"
-        writer_ << CUDA_CODE;
+// #include "utils/cuda_kernels.cu"
+        // writer_ << CUDA_CODE;
+        writer_ << "#include \"utils/cuda_kernels.h\"\n";
     }
 
-#include "kernels.h"
-    writer_ << KERNELS_CODE;
+// #include "kernels.h"
+    // writer_ << KERNELS_CODE;
+    writer_ << "#include \"utils/kernels.h\"\n"
+            << "#include \"utils/DataLoader.h\"\n";
 
     writer_ << "\n"
             << "int main(int argc, char** argv) {\n";
@@ -255,7 +253,8 @@ std::string Codegen::generate() {
     emitMemAllocs();
 
     writer_ << "\n// call op routine functions\n";
-    emitFuncCalls();
+    emitExecute(); 
+    // emitFuncCalls();
 
     writer_ << "\n// free memory\n";
     emitMemFree();
@@ -268,7 +267,7 @@ std::string Codegen::generate() {
     writer_ << "}\n";
 
     std::ofstream fout("Graph.cpp", std::fstream::out);
-    fout << ss.str() + writer_.get_code() + stream_.str();
+    fout << ss.str() + writer_.get_code();
     fout.close();
 
     return ss.str() + writer_.get_code();
@@ -386,7 +385,7 @@ void Codegen::emitMemAllocations() {
         if (size == 0)
             continue;
 
-        if (flag_MPI) {
+        if (config_.mpi) {
             writer_ << "if(rank == " << dev.id << ") {\n";
             writer_.indentInc();
         }
@@ -407,7 +406,7 @@ void Codegen::emitMemAllocations() {
             break;
         }
 
-        if (flag_MPI) {
+        if (config_.mpi) {
             writer_.indentDec();
             writer_ << "} // if rank\n";
         }
@@ -415,21 +414,21 @@ void Codegen::emitMemAllocations() {
     writer_ << "\n";
 }
 
-/// if flag_MPI this func deal with
+/// if config_.mpi=true this func deal with
 /// the MASTER(0) process
 void Codegen::emitTensorAddresses() {
     SWLOG_DEBUG(4) << "begin emitTensorAddresse...\n";
 
     std::set<Tensor *> visited_tensors;
 
-    if (flag_MPI) {
+    if (config_.mpi) {
         writer_ << "if(rank == 0) {\n";
         writer_.indentInc();
     }
 
     emitTensorAddresses(graph_, &visited_tensors);
 
-    if (flag_MPI) {
+    if (config_.mpi) {
         writer_.indentDec();
         writer_ << "} // if rank\n";
     }
@@ -440,12 +439,12 @@ void Codegen::emitTensorAddresses() {
             if (auto ngraph = graphOp->getGraph()) {
                 switchTo(ngraph);
                 Device dev = ngraph->getDeviceLabel();
-                if (flag_MPI && dev.type == DeviceType::CPU) {
+                if (config_.mpi&& dev.type == DeviceType::CPU) {
                     writer_ << "if(rank ==" << dev.id << ") {\n";
                     writer_.indentInc();
                 }
                 emitTensorAddresses(ngraph, &visited_tensors);
-                if (flag_MPI && dev.type == DeviceType::CPU) {
+                if (config_.mpi && dev.type == DeviceType::CPU) {
                     writer_.indentDec();
                     writer_ << "} // if rank\n";
                 }
@@ -488,14 +487,14 @@ void Codegen::emitTensorInitializations() {
 
     std::set<Tensor *> visited_tensors;
 
-    if (flag_MPI) {
+    if (config_.mpi) {
         writer_ << "if(rank == 0) {\n";
         writer_.indentInc();
     }
 
     emitTensorInitializations(graph_, &visited_tensors);
 
-    if (flag_MPI) {
+    if (config_.mpi) {
         writer_.indentDec();
         writer_ << "} // if rank\n";
     }
@@ -603,6 +602,65 @@ std::string Codegen::emitTensorMemAlloc(TensorNode *tnode) {
     return bufferName;
 }
 
+static std::string getBytesProtoString(BytesProto proto) {
+    switch(proto) {
+        case ONE_BYTE_AS_INT:
+            return "ONE_BYTE_AS_INT";
+        case FOUR_BYTES_AS_FLOAT:
+            return "FOUR_BYTES_AS_FLOAT";
+        default:
+            return "ONE_BYTE_AS_INT";
+    }
+}
+
+static std::string getInitialLizerString(const std::vector<size_t> &dims) {
+    std::ostringstream os;
+    os << "{";
+    for (auto dim : dims)
+        os << dim << ", ";
+
+    std::string str = os.str();
+    return str.substr(0, str.length() - 2) + "}";
+}
+
+void Codegen::emitExecute() {
+    if(config_.train_mode) {
+        TensorNode *label = graph_->getTrainLabelNode(); 
+        TensorNode *data = graph_->getTrainDataNode(); 
+
+        //DataLoader loader(filename, BytesProto::ONE_BYTE_AS_INT, BytesProto::FOUR_BYTES_AS_FLOAT, 1, 60000, {8u}, {8u, 28u, 28u, 1u});
+        //
+        writer_ << "std::string filename = \"" << config_.train_config.train_data_file << "\";\n";
+        writer_ << "DataLoader loader(";
+        //writer_ << "\"" << config_.train_config.train_data_file << "\", ";
+        writer_ << "filename, ";
+        writer_ << getBytesProtoString(config_.train_config.label_bytes)<< ", ";
+        writer_ << getBytesProtoString(config_.train_config.data_bytes)<< ", ";
+        writer_ << config_.train_config.max_epoch<< ", ";
+        writer_ << config_.train_config.train_data_samples<< ", ";
+        writer_ << getInitialLizerString(label->getDims()) << ", ";
+        writer_ << getInitialLizerString(data->getDims());
+        writer_ << ");\n";
+
+        std::string label_var = tensors_name_map_.at(label->getTensor());
+        std::string data_var = tensors_name_map_.at(data->getTensor());
+        /*
+        std::string label_var = label->name();
+        std::string data_var = data->name();
+        */
+        writer_ << "while(loader.next(" << label_var << ", " << data_var <<  ")) {\n";
+        
+        writer_.indentInc();
+    }
+
+    emitFuncCalls();
+
+    if(config_.train_mode) {
+        writer_ << "} //while\n";
+        writer_.indentDec();
+    }
+}
+
 void Codegen::emitFuncCalls() {
     for (int i = 0; i < graph_->topologyNum(); i++)
         for (int j = 0; j < graph_->getNumInTopoLevel(i); j++) {
@@ -687,7 +745,7 @@ void Codegen::dispathOpNode(OpNode *op) {
 
         emitMemcpyFromTo(from_tensor, dev, 0, size, to_tensor, to_dev, offset);
     } else {
-        if (flag_MPI) {
+        if (config_.mpi) {
             writer_ << "if(rank == " << dev.id << ") {\n";
             writer_.indentInc();
         }
@@ -703,7 +761,7 @@ void Codegen::dispathOpNode(OpNode *op) {
             SWLOG_ERROR << "unknown device type in dispathOpNode\n";
         }
 
-        if (flag_MPI) {
+        if (config_.mpi) {
             writer_.indentDec();
             writer_ << "} // if rank\n";
         }
@@ -719,7 +777,7 @@ void Codegen::emitMemcpyFromTo(Tensor *from, Device from_dev,
     writer_ << "// Memcpy from " << fname << " to " << tname << "\n";
 
     if (from_dev.type == DeviceType::CPU && to_dev.type == DeviceType::GPU) {
-        if (flag_multiStream) {
+        if (config_.cuda_stream) {
             writer_ << "cudaMemcpyAsync(" << tname << "+" << to_offset << ", "
                     << fname << "+" << from_offset << ", " << size << ", "
                     << "cudaMemcpyHostToDevice, stream[" << to_dev.id
@@ -732,7 +790,7 @@ void Codegen::emitMemcpyFromTo(Tensor *from, Device from_dev,
     }
 
     if (from_dev.type == DeviceType::GPU && to_dev.type == DeviceType::CPU) {
-        if (flag_multiStream) {
+        if (config_.cuda_stream) {
             writer_ << "cudaMemcpyAsync(" << tname << "+" << to_offset << ", "
                     << fname << "+" << from_offset << ", " << size << ", "
                     << "cudaMemcpyDeviceToHost, stream[" << from_dev.id
@@ -748,7 +806,7 @@ void Codegen::emitMemcpyFromTo(Tensor *from, Device from_dev,
 
     if (from_dev.type == DeviceType::CPU && to_dev.type == DeviceType::CPU &&
         from_dev.id != to_dev.id) {
-        if (!flag_MPI)
+        if (!config_.mpi)
             return;
 
         int tag = getMPISendRecvTag(to);
@@ -1112,7 +1170,7 @@ void Codegen::emitMemFree() {
         if (size == 0)
             continue;
 
-        if (flag_MPI) {
+        if (config_.mpi) {
             writer_ << "if(rank == " << dev.id << ") {\n";
             writer_.indentInc();
         }
@@ -1131,7 +1189,7 @@ void Codegen::emitMemFree() {
             break;
         }
 
-        if (flag_MPI) {
+        if (config_.mpi) {
             writer_.indentDec();
             writer_ << "} // if rank\n";
         }
@@ -1156,7 +1214,7 @@ void Codegen::emitFuncCallCUDA(OpNode *op) {
         int m = C->getDim(0);
         int k = A->getDim(1);
         int n = C->getDim(1);
-        if (flag_use_cublas) {
+        if (config_.cublas) {
             std::string alpha = UniqueName("alpha");
             std::string beta = UniqueName("beta");
             writer_ << "const float " << alpha << "=1, " << beta << "=0;\n";
@@ -1215,7 +1273,7 @@ void Codegen::emitFuncCallCUDA(OpNode *op) {
 }
 
 void Codegen::emitMPIFinalize() {
-    if (flag_MPI)
+    if (config_.mpi)
         writer_ << "MPI_Finalize();\n";
 }
 

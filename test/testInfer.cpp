@@ -16,11 +16,11 @@ int main() {
     //  T:data0   T:weight0
     //     \       /
     //      \     /
-    //        O:fc_0 -- T:bias0
+    //        O:fc0 -- T:bias0
     //         |
-    //      T:data_1
+    //      T:data1
     //         |
-    //      O:tanh_0
+    //      O:tanh0
     //         |
     //      T:data2
     //                  T:weight1
@@ -38,9 +38,9 @@ int main() {
     TENSOR(data0, 8, 784);
     TENSOR(weight0, 784, 512);
     TENSOR(bias0, 512);
-    data0_Tensor->setTensorInit(TensorInitType::FILE, "mnist_images_8.bin");
-    weight0_Tensor->setTensorInit(TensorInitType::FILE, "mlp_weight0.bin");
-    bias0_Tensor->setTensorInit(TensorInitType::FILE, "mlp_bias0.bin");
+    data0_Tensor->setTensorInit(TensorInitType::FILE, "input/mnist_images_8.bin");
+    weight0_Tensor->setTensorInit(TensorInitType::FILE, "input/mlp_weight0.bin");
+    bias0_Tensor->setTensorInit(TensorInitType::FILE, "input/mlp_bias0.bin");
 
     OP(fc0, MatrixMatrixFCOp);
     LINKUPPER(fc0, data0, weight0, bias0);
@@ -55,8 +55,8 @@ int main() {
 
     TENSOR(weight1, 512, 10);
     TENSOR(bias1, 10);
-    weight1_Tensor->setTensorInit(TensorInitType::FILE, "mlp_weight1.bin");
-    bias1_Tensor->setTensorInit(TensorInitType::FILE, "mlp_bias1.bin");
+    weight1_Tensor->setTensorInit(TensorInitType::FILE, "input/mlp_weight1.bin");
+    bias1_Tensor->setTensorInit(TensorInitType::FILE, "input/mlp_bias1.bin");
 
     OP(fc1, MatrixMatrixFCOp);
     LINKUPPER(fc1, data2, weight1, bias1);

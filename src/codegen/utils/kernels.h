@@ -4,7 +4,7 @@
         > Mail:
         > Created Time: 二  1/22 19:06:41 2019
  ************************************************************************/
-static const char *KERNELS_CODE = R"(
+// static const char *KERNELS_CODE = R"(
 //----------------------------------------------------------------------
 // kernels for tensor init
 template <typename T>
@@ -434,4 +434,4 @@ void printMatrix(const T *a, int m, int n) {
         std::cout << std::endl;
     }
 }
-)";
+// )";

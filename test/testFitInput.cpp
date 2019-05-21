@@ -10,32 +10,32 @@ int main() {
     //============================
     // Example of 2-layer
     // fully connected network:
-    //  T:data_0   T:weight_0
+    //  T:data0   T:weight0
     //     \       /
     //      \     /
-    //        O:fc_0 -- T:bias_0
+    //        O:fc0 -- T:bias0
     //         |
-    //      T:data_1
+    //      T:data1
     //         |
-    //      O:tanh_0
+    //      O:tanh0
     //         |
-    //      T:data_2
-    //                  T:weight_1
+    //      T:data2
+    //                  T:weight1
     //          \       /
     //           \     /
-    //          O:fc_1 -- T:bias_1
+    //          O:fc1 -- T:bias1
     //              |
-    //          T:data_3
+    //          T:data3
     //              |
     //          O: softmax
     //              |
-    //          T:data_4
+    //          T:data4
     //=============================
 
     //--------1st FC layer------------------------------------
     auto *data0 = new TensorNode("data0", {8, 784});
     data0->getTensor()->setTensorInit(TensorInitType::FILE,
-                                      "mnist_images_8.bin");
+                                      "input/mnist_images_8.bin");
     // we can only specify output neuron num 512
     // then infer wieght & bias dims
     // as long as we are creating a FC layer

@@ -24,9 +24,9 @@ using namespace swc::op;
 
 namespace swc {
 
-IRGraph *getTrainNet(IRGraph *graph, TrainingProfile &profile) {
+IRGraph *getTrainNet(IRGraph *graph, TrainingConfig &config) {
     SWLOG_DEBUG(4) << "start get trainingNet\n";
-    // , TrainingProfile profile){
+    // , TrainingConfig config){
     IRGraph *net = graph->clone();
 
     net->updateTopology();
@@ -63,8 +63,8 @@ IRGraph *getTrainNet(IRGraph *graph, TrainingProfile &profile) {
                 mom_t->setTensorInit(TensorInitType::CONSTANT, 0);
                 auto *momentum = new TensorNode("momentum", mom_t);
 
-                auto *sgdOp = new SGDOp(profile.lr, profile.decay,
-                                        profile.momentum, profile.batch);
+                auto *sgdOp = new SGDOp(config.lr, config.decay,
+                                        config.momentum, config.batch);
                 auto *SGDNode = new OpNode(node->name() + "_sgd", sgdOp);
 
                 SGDNode->exlinkUpperNode(node, N, momentum);

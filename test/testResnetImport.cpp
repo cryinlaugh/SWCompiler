@@ -16,7 +16,7 @@ int main() {
     IRGraph *graph = new IRGraph();
     std::vector<TensorNode *> udef;
     auto *data = new TensorNode("gpu_0/data", {1, 224, 224, 3});
-    data->getTensor()->setTensorInit(TensorInitType::FILE, "cat_285.bin");
+    data->getTensor()->setTensorInit(TensorInitType::FILE, "input/cat_285.bin");
     udef.push_back(data);
     Caffe2Importer importer(graph, "./resnet50/predict_net.pb",
                             "./resnet50/init_net.pb", udef);

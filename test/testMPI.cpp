@@ -16,31 +16,31 @@ int main() {
     //  T:data0   T:weight0
     //     \       /
     //      \     /
-    //        O:fc_0 -- T:bias0
+    //        O:fc0 -- T:bias0
     //         |
-    //      T:data_1
+    //      T:data1
     //         |
-    //      O:tanh_0
+    //      O:tanh0
     //         |
     //      T:data2
-    //                  T:weight_1
+    //                  T:weight1
     //          \       /
     //           \     /
-    //          O:fc_1 -- T:bias_1
+    //          O:fc1 -- T:bias1
     //              |
-    //          T:data_3
+    //          T:data3
     //              |
     //          O: softmax
     //              |
-    //          T:data_4
+    //          T:data4
     //=============================
 
     TENSOR(data0, 8, 784);
     TENSOR(weight0, 784, 512);
     TENSOR(bias0, 512);
-    data0_Tensor->setTensorInit(TensorInitType::FILE, "mnist_images_8.bin");
-    weight0_Tensor->setTensorInit(TensorInitType::FILE, "mlp_weight0.bin");
-    bias0_Tensor->setTensorInit(TensorInitType::FILE, "mlp_bias0.bin");
+    data0_Tensor->setTensorInit(TensorInitType::FILE, "input/mnist_images_8.bin");
+    weight0_Tensor->setTensorInit(TensorInitType::FILE, "input/mlp_weight0.bin");
+    bias0_Tensor->setTensorInit(TensorInitType::FILE, "input/mlp_bias0.bin");
 
     //====================================================
     OP(cpu1, SubGraphOp);
@@ -59,8 +59,8 @@ int main() {
 
     TENSOR(weight_1, 512, 10);
     TENSOR(bias_1, 10);
-    weight_1_Tensor->setTensorInit(TensorInitType::FILE, "mlp_weight1.bin");
-    bias_1_Tensor->setTensorInit(TensorInitType::FILE, "mlp_bias1.bin");
+    weight_1_Tensor->setTensorInit(TensorInitType::FILE, "input/mlp_weight1.bin");
+    bias_1_Tensor->setTensorInit(TensorInitType::FILE, "input/mlp_bias1.bin");
 
     OP(fc_1, MatrixMatrixFCOp);
     LINKUPPER(fc_1, data2, weight_1, bias_1);
@@ -238,8 +238,8 @@ int main() {
 
     //====================================================
     CodegenConfig config;
-    config.flag_MPI = true;
-    codegen::Codegen *cg = new codegen::Codegen(mlp);
+    config.mpi= true;
+    codegen::Codegen *cg = new codegen::Codegen(mlp, config);
     string code = cg->generate();
     cout << code;
 

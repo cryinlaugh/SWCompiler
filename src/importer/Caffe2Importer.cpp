@@ -103,18 +103,18 @@ static std::vector<size_t> inferConvOutDims(size_t ih, size_t iw,
 //     return odims;
 // }
 
-static std::string getNodeName(std::string oldName) {
-    assert(!oldName.empty() && "inputName empty");
-    std::string name;
-    for (const char c : oldName) {
-        if (c == '/' || c == '.' || c == '-')
-            name.push_back('_');
-        else
-            name.push_back(c);
-    }
-
-    return name;
-}
+// static std::string getNodeName(std::string oldName) {
+//     assert(!oldName.empty() && "inputName empty");
+//     std::string name;
+//     for (const char c : oldName) {
+//         if (c == '/' || c == '.' || c == '-')
+//             name.push_back('_');
+//         else
+//             name.push_back(c);
+//     }
+//
+//     return name;
+// }
 
 Caffe2Importer::Caffe2Importer(IRGraph *g, const std::string &netProtoFile,
                                const std::string &tensorProtoFile,
