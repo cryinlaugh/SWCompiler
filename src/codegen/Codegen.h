@@ -46,6 +46,15 @@ class Codegen {
     /// \param name name of TensorNode, variable, whatever
     std::string UniqueName(std::string name);
 
+    /// emit gflags definition
+    void emitGflagsDef() {
+        writer_
+            << R"(DEFINE_string(snapshot, "", "Optional; the snapshot to resume training.");)"
+            << "\n";
+    }
+
+    void emitDataLoaderInit();
+
     /// initialization before code emitting
     void codeGenInit();
 
@@ -93,6 +102,10 @@ class Codegen {
     /// initialize tensors for L2(Device) subGraph
     void emitTensorInitializations(IRGraph *graph_,
                                    std::set<Tensor *> *visited);
+
+    void emitTensorInitFromSnapshot(IRGraph *graph_,
+                                    std::set<Tensor *> *visited);
+    void emitSaveSnapshot();
 
     /// may need to allocate for specific tensornode (e.g. different data type)
     std::string emitTensorMemAlloc(TensorNode *tnode);

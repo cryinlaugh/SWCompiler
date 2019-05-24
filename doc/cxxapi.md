@@ -58,6 +58,16 @@ passManager.run();imizePass *)&labelingpass;
 passManager.run();
 ```
 
+## Snapshot
+If TrainConfig.snapshot > 0, snapshot is enabled.
+
+e.g.
+```c++
+CodegenConfig config;
+config.train_config.snapshot = 500;
+```
+Snapshot files named snapshot_iter_[N].model will be saved.
+
 ## Codegen
 todo
 
@@ -164,7 +174,7 @@ int main() {
     CodegenConfig config;
     codegen::Codegen *cg = new codegen::Codegen(mlp, config);
     string code = cg->generate();
-    
+
     cout << code;
 
     return 0;

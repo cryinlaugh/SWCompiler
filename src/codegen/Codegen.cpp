@@ -151,7 +151,7 @@ void Codegen::emitCUDAInit() {
     if (N == 0)
         return;
 
-    if(config_.cublas) {
+    if (config_.cublas) {
         writer_ << "cublasStatus_t stat;\n";
         writer_ << "cublasHandle_t handle;\n";
         writer_ << "stat = cublasCreate(&handle);\n";
@@ -160,7 +160,7 @@ void Codegen::emitCUDAInit() {
         writer_ << "    return EXIT_FAILURE;\n";
         writer_ << "}\n\n";
     }
-    if(config_.cuda_stream) {
+    if (config_.cuda_stream) {
         writer_ << "cudaStream_t stream[" << N << "];\n";
         writer_ << "for(int i=0; i<" << N << "; i++)\n";
         writer_.indentInc();
@@ -232,19 +232,32 @@ std::string Codegen::generate() {
     if (config_.cuda) {
         writer_ << "#include <cuda.h>\n"
                 << "#include <cublas_v2.h>\n";
-// #include "utils/cuda_kernels.cu"
+        // #include "utils/cuda_kernels.cu"
         // writer_ << CUDA_CODE;
         writer_ << "#include \"utils/cuda_kernels.h\"\n";
     }
 
-// #include "kernels.h"
+    // #include "kernels.h"
     // writer_ << KERNELS_CODE;
     writer_ << "#include \"utils/kernels.h\"\n"
-            << "#include \"utils/DataLoader.h\"\n";
+            << "#include \"utils/DataLoader.h\"\n"
+            << "#include \"utils/utils.h\"\n";
 
-    writer_ << "\n"
+    if (config_.train_mode) {
+        writer_ << "#include \"gflags/gflags.h\"\n"
+                << "#include <google/protobuf/io/coded_stream.h>\n"
+                << "#include <google/protobuf/io/zero_copy_stream_impl.h>\n\n";
+
+        emitGflagsDef();
+    }
+
+    writer_ << "\n\n"
             << "int main(int argc, char** argv) {\n";
     writer_.indentInc();
+
+    if (config_.train_mode) {
+        writer_ << "gflags::ParseCommandLineFlags(&argc, &argv, true);\n";
+    }
 
     emitCUDAInit();
     emitMPIInit();
@@ -253,7 +266,7 @@ std::string Codegen::generate() {
     emitMemAllocs();
 
     writer_ << "\n// call op routine functions\n";
-    emitExecute(); 
+    emitExecute();
     // emitFuncCalls();
 
     writer_ << "\n// free memory\n";
@@ -283,6 +296,9 @@ void Codegen::emitMemAllocs() {
     emitMemAllocations();
 
     emitTensorAddresses();
+
+    emitDataLoaderInit();
+
     emitTensorInitializations();
 }
 void Codegen::allocateMemAddr() {
@@ -439,7 +455,7 @@ void Codegen::emitTensorAddresses() {
             if (auto ngraph = graphOp->getGraph()) {
                 switchTo(ngraph);
                 Device dev = ngraph->getDeviceLabel();
-                if (config_.mpi&& dev.type == DeviceType::CPU) {
+                if (config_.mpi && dev.type == DeviceType::CPU) {
                     writer_ << "if(rank ==" << dev.id << ") {\n";
                     writer_.indentInc();
                 }
@@ -492,7 +508,11 @@ void Codegen::emitTensorInitializations() {
         writer_.indentInc();
     }
 
-    emitTensorInitializations(graph_, &visited_tensors);
+    if (config_.train_mode) {
+        emitTensorInitFromSnapshot(graph_, &visited_tensors);
+    } else {
+        emitTensorInitializations(graph_, &visited_tensors);
+    }
 
     if (config_.mpi) {
         writer_.indentDec();
@@ -574,6 +594,152 @@ void Codegen::emitTensorInitializations(IRGraph *graph_,
     writer_ << "\n";
 }
 
+void Codegen::emitTensorInitFromSnapshot(IRGraph *graph_,
+                                         std::set<Tensor *> *visited_tensors) {
+    writer_ << "if(FLAGS_snapshot.size() > 0) {\n";
+    writer_.indentInc();
+    writer_ << "std::cout << \"restoring from snapshot \"  << FLAGS_snapshot "
+               "<< std::endl;\n";
+    writer_ << "caffe2::NetDef net;"
+            << "\n";
+    writer_
+        << "std::ifstream ff(FLAGS_snapshot, std::ios::in | std::ios::binary);"
+        << "\n";
+
+    writer_ << "google::protobuf::io::IstreamInputStream filestr(&ff);"
+            << "\n";
+    writer_ << "google::protobuf::io::CodedInputStream codedstr(&filestr);"
+            << "\n";
+    writer_ << "codedstr.SetTotalBytesLimit(MAX_PROTO_SIZE, MAX_PROTO_SIZE);"
+            << "\n";
+    writer_ << "bool parseNet = net.ParseFromCodedStream(&codedstr);"
+            << "\n";
+
+    for (int i = 0; i < graph_->tensorNodeNum(); i++) {
+        auto *tnode = graph_->getTensorNode(i);
+        auto *tensor = tnode->getTensor();
+
+        if (visited_tensors->count(tensor))
+            continue;
+        visited_tensors->insert(tensor);
+
+        std::string dtype = getTypeString(tensor);
+
+        std::string name = tensors_name_map_[tensor];
+        uint64_t size = tensor->size();
+        std::string base;
+        uint64_t offset;
+        std::tie(base, offset) = tensors_offset_map_[tensor];
+
+        TensorInitInfo info = tensor->getTensorInitInfo();
+
+        switch (tensor->getTensorInitType()) {
+        case TensorInitType::XAVIER:
+        case TensorInitType::CONSTANT:
+        case TensorInitType::ZERO:
+            writer_ << "loadFromSnapShot(net, \"" << name << "\", " << name
+                    << ", " << size << ");"
+                    << "\n";
+            break;
+        case TensorInitType::NONE:
+            break;
+        case TensorInitType::FILE: {
+            writer_ << "load(" << name << ", " << size << ", "
+                    << info.getOffset() << ", "
+                    << "\"" << info.getFilePath() << "\");\n";
+            break;
+        }
+        case TensorInitType::PARENTOP: {
+            auto *op = (OpNode *)tnode->getParentNode(0);
+            dispathOpNode(op);
+            break;
+        }
+        default:
+            SWLOG_DEBUG(1) << name << " TensorInitType= NONE\n";
+            break;
+
+        } // switch
+    }     // tensor loop
+
+    writer_ << "int snap_iter = getIterFromSnapShot(net);"
+            << "\n";
+    writer_ << "loader.shift(snap_iter);"
+            << "\n";
+    writer_ << "iter = snap_iter;"
+            << "\n";
+    writer_ << "std::cout << \"snapshot iter= \" << snap_iter << std::endl;"
+            << "\n";
+    writer_.indentDec();
+    writer_ << "} else { "
+            << "\n";
+    writer_.indentInc();
+    visited_tensors->clear();
+    emitTensorInitializations(graph_, visited_tensors);
+    writer_.indentDec();
+    writer_ << "}"
+            << "\n";
+}
+
+void Codegen::emitSaveSnapshot() {
+    writer_ << "\n";
+    writer_ << "if(iter % " << config_.train_config.snapshot << " == 0) {\n";
+    writer_.indentInc();
+    writer_ << R"(std::cout << "iter = " << iter << ", snapshot\n";)"
+            << "\n"
+            << "caffe2::NetDef net;\n";
+    writer_ << "caffe2::Argument *iter_arg = net.add_arg();\n"
+            << "iter_arg->set_name(\"iter\");\n"
+            << "iter_arg->set_i(iter);"
+            << "\n";
+
+    for (int i = 0; i < graph_->tensorNodeNum(); i++) {
+        auto *tnode = graph_->getTensorNode(i);
+        auto *tensor = tnode->getTensor();
+
+        std::string dtype = getTypeString(tensor);
+
+        std::string name = tensors_name_map_[tensor];
+        uint64_t size = tensor->size();
+        std::string base;
+        uint64_t offset;
+        std::tie(base, offset) = tensors_offset_map_[tensor];
+
+        TensorInitInfo info = tensor->getTensorInitInfo();
+
+        switch (tensor->getTensorInitType()) {
+        case TensorInitType::XAVIER:
+        case TensorInitType::CONSTANT:
+        case TensorInitType::ZERO:
+            writer_ << "addOp(net, \"" << name << "\", " << name << ", " << size
+                    << ");"
+                    << "\n";
+            break;
+        case TensorInitType::NONE:
+        case TensorInitType::FILE:
+        case TensorInitType::PARENTOP:
+            break;
+        default:
+            break;
+        } // switch
+    }     // tensor loop
+
+    writer_
+        << R"(std::string snapfile = "snapshot_iter"+std::to_string(iter)+".model";)"
+        << "\n";
+    writer_ << "std::ofstream ff(snapfile, "
+               "std::ios::out|std::ios::trunc|std::ios::binary);"
+            << "\n";
+    writer_ << "net.SerializeToOstream(&ff);"
+            << "\n";
+    writer_ << "ff.close();"
+            << "\n";
+    writer_ << R"(std::cout << "save snapshot to " << snapfile << "\n";)"
+            << "\n";
+    writer_.indentDec();
+    writer_ << "}"
+            << "\n";
+}
+
 std::string Codegen::emitTensorMemAlloc(TensorNode *tnode) {
     std::string bufferName =
         tnode->name(); // ensure IRNode name unique before Codegen
@@ -603,13 +769,13 @@ std::string Codegen::emitTensorMemAlloc(TensorNode *tnode) {
 }
 
 static std::string getBytesProtoString(BytesProto proto) {
-    switch(proto) {
-        case ONE_BYTE_AS_INT:
-            return "ONE_BYTE_AS_INT";
-        case FOUR_BYTES_AS_FLOAT:
-            return "FOUR_BYTES_AS_FLOAT";
-        default:
-            return "ONE_BYTE_AS_INT";
+    switch (proto) {
+    case ONE_BYTE_AS_INT:
+        return "ONE_BYTE_AS_INT";
+    case FOUR_BYTES_AS_FLOAT:
+        return "FOUR_BYTES_AS_FLOAT";
+    default:
+        return "ONE_BYTE_AS_INT";
     }
 }
 
@@ -623,24 +789,33 @@ static std::string getInitialLizerString(const std::vector<size_t> &dims) {
     return str.substr(0, str.length() - 2) + "}";
 }
 
-void Codegen::emitExecute() {
-    if(config_.train_mode) {
-        TensorNode *label = graph_->getTrainLabelNode(); 
-        TensorNode *data = graph_->getTrainDataNode(); 
+void Codegen::emitDataLoaderInit() {
+    TensorNode *label = graph_->getTrainLabelNode();
+    TensorNode *data = graph_->getTrainDataNode();
+    // DataLoader loader(filename, BytesProto::ONE_BYTE_AS_INT,
+    // BytesProto::FOUR_BYTES_AS_FLOAT, 1, 60000, {8u}, {8u, 28u, 28u, 1u});
+    //
+    writer_ << "std::string train_data_file = \""
+            << config_.train_config.train_data_file << "\";\n";
+    writer_ << "DataLoader loader(";
+    // writer_ << "\"" << config_.train_config.train_data_file << "\", ";
+    writer_ << "train_data_file, ";
+    writer_ << getBytesProtoString(config_.train_config.label_bytes) << ", ";
+    writer_ << getBytesProtoString(config_.train_config.data_bytes) << ", ";
+    writer_ << config_.train_config.max_epoch << ", ";
+    writer_ << config_.train_config.train_data_samples << ", ";
+    writer_ << getInitialLizerString(label->getDims()) << ", ";
+    writer_ << getInitialLizerString(data->getDims());
+    writer_ << ");\n";
 
-        //DataLoader loader(filename, BytesProto::ONE_BYTE_AS_INT, BytesProto::FOUR_BYTES_AS_FLOAT, 1, 60000, {8u}, {8u, 28u, 28u, 1u});
-        //
-        writer_ << "std::string filename = \"" << config_.train_config.train_data_file << "\";\n";
-        writer_ << "DataLoader loader(";
-        //writer_ << "\"" << config_.train_config.train_data_file << "\", ";
-        writer_ << "filename, ";
-        writer_ << getBytesProtoString(config_.train_config.label_bytes)<< ", ";
-        writer_ << getBytesProtoString(config_.train_config.data_bytes)<< ", ";
-        writer_ << config_.train_config.max_epoch<< ", ";
-        writer_ << config_.train_config.train_data_samples<< ", ";
-        writer_ << getInitialLizerString(label->getDims()) << ", ";
-        writer_ << getInitialLizerString(data->getDims());
-        writer_ << ");\n";
+    writer_ << "size_t iter = 0; "
+            << "\n\n";
+}
+
+void Codegen::emitExecute() {
+    if (config_.train_mode) {
+        TensorNode *label = graph_->getTrainLabelNode();
+        TensorNode *data = graph_->getTrainDataNode();
 
         std::string label_var = tensors_name_map_.at(label->getTensor());
         std::string data_var = tensors_name_map_.at(data->getTensor());
@@ -648,16 +823,24 @@ void Codegen::emitExecute() {
         std::string label_var = label->name();
         std::string data_var = data->name();
         */
-        writer_ << "while(loader.next(" << label_var << ", " << data_var <<  ")) {\n";
-        
+        writer_ << "while(loader.next(" << label_var << ", " << data_var
+                << ")) {\n";
+
         writer_.indentInc();
     }
 
     emitFuncCalls();
 
-    if(config_.train_mode) {
-        writer_ << "} //while\n";
+    if (config_.train_mode) {
+
+        writer_ << "\n";
+        writer_ << "iter++;\n";
+
+        emitSaveSnapshot();
+
         writer_.indentDec();
+
+        writer_ << "} //while\n";
     }
 }
 

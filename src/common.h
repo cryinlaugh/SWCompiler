@@ -26,6 +26,8 @@ struct TrainingConfig {
     float decay{0.001};
     float momentum{0.9};
     size_t batch{1};
+    // snapshot interval iter
+    size_t snapshot{0};
     // For Dataload
     size_t max_epoch{1};
     BytesProto label_bytes{ONE_BYTE_AS_INT};
