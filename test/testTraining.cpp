@@ -108,9 +108,8 @@ int main() {
 
     IRGraph *net = getTrainNet(mlp, profile);
 
-    TensorNode *data_input = (TensorNode*)net->getNodeByName("data0");
-    TensorNode *label_input = (TensorNode*)net->getNodeByName("selected");
-
+    TensorNode *data_input = (TensorNode *)net->getNodeByName("data0");
+    TensorNode *label_input = (TensorNode *)net->getNodeByName("selected");
 
     net->setTrainDataNodes(label_input, data_input);
     net->updateTopology();

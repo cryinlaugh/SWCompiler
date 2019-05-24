@@ -89,7 +89,7 @@ IRGraph *getTrainNet(IRGraph *graph, TrainingConfig &config) {
                 auto *tensor = ((TensorNode *)node)->getTensor();
                 auto *N = new TensorNode(node->name() + "_grad",
                                          new Tensor(tensor->getTensorShape()));
-                tensor->setTensorInit(TensorInitType::CONSTANT, 0);
+                // tensor->setTensorInit(TensorInitType::CONSTANT, 0);
 
                 gradNodeMap[node] = N;
                 net->pushTensorNode(N);

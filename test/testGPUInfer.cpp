@@ -38,8 +38,10 @@ int main() {
     TENSOR(data0, 8, 784);
     TENSOR(weight0, 784, 512);
     TENSOR(bias0, 512);
-    data0_Tensor->setTensorInit(TensorInitType::FILE, "input/mnist_images_8.bin");
-    weight0_Tensor->setTensorInit(TensorInitType::FILE, "input/mlp_weight0.bin");
+    data0_Tensor->setTensorInit(TensorInitType::FILE,
+                                "input/mnist_images_8.bin");
+    weight0_Tensor->setTensorInit(TensorInitType::FILE,
+                                  "input/mlp_weight0.bin");
     bias0_Tensor->setTensorInit(TensorInitType::FILE, "input/mlp_bias0.bin");
 
     //=======================================
@@ -60,7 +62,8 @@ int main() {
 
     TENSOR(weight1, 512, 10);
     TENSOR(bias1, 10);
-    weight1_Tensor->setTensorInit(TensorInitType::FILE, "input/mlp_weight1.bin");
+    weight1_Tensor->setTensorInit(TensorInitType::FILE,
+                                  "input/mlp_weight1.bin");
     bias1_Tensor->setTensorInit(TensorInitType::FILE, "input/mlp_bias1.bin");
 
     OP(fc1, MatrixMatrixFCOp);
@@ -145,8 +148,8 @@ int main() {
     subGraph0->pushTensorNode(data0_rep0, weight0_rep0, bias0_rep0, data0_gpu0,
                               weight0_gpu0, bias0_gpu0, data1_gpu0, data2_gpu0,
                               data2_rep0);
-    subGraph0->pushOpNode(scatter00, scatter01, scatter02, fc0_gpu0,
-                          tanh0_gpu0, gather0);
+    subGraph0->pushOpNode(scatter00, scatter01, scatter02, fc0_gpu0, tanh0_gpu0,
+                          gather0);
 
     // set these IRNode::_isExternal true to avoid
     // labeling them dev_gpu0
@@ -211,8 +214,8 @@ int main() {
     subGraph1->pushTensorNode(data0_rep1, weight0_rep1, bias0_rep1, data0_gpu1,
                               weight0_gpu1, bias0_gpu1, data1_gpu1, data2_gpu1,
                               data2_rep1);
-    subGraph1->pushOpNode(scatter10, scatter11, scatter12, fc0_gpu1,
-                          tanh0_gpu1, gather1);
+    subGraph1->pushOpNode(scatter10, scatter11, scatter12, fc0_gpu1, tanh0_gpu1,
+                          gather1);
 
     // set these IRNode::_isExternal true to avoid
     // labeling them dev_gpu1
@@ -251,9 +254,9 @@ int main() {
     //==================================
     // nvcc -ccbin g++ -lcublas Graph.cu
     CodegenConfig config;
-    config.cuda= true;
-    config.cuda_stream= true;
-    config.cublas= true;
+    config.cuda = true;
+    config.cuda_stream = true;
+    config.cublas = true;
     codegen::Codegen *cg = new codegen::Codegen(mlp, config);
     string code = cg->generate();
     cout << code;

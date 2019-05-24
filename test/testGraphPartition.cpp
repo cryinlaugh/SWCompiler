@@ -37,8 +37,10 @@ int main() {
     TENSOR(data0, 8, 784);
     TENSOR(weight0, 784, 512);
     TENSOR(bias0, 512);
-    data0_Tensor->setTensorInit(TensorInitType::FILE, "input/mnist_images_8.bin");
-    weight0_Tensor->setTensorInit(TensorInitType::FILE, "input/mlp_weight0.bin");
+    data0_Tensor->setTensorInit(TensorInitType::FILE,
+                                "input/mnist_images_8.bin");
+    weight0_Tensor->setTensorInit(TensorInitType::FILE,
+                                  "input/mlp_weight0.bin");
     bias0_Tensor->setTensorInit(TensorInitType::FILE, "input/mlp_bias0.bin");
 
     OP(fc0, MatrixMatrixFCOp);
@@ -60,7 +62,8 @@ int main() {
 
     TENSOR(weight1, 512, 10);
     TENSOR(bias1, 10);
-    weight1_Tensor->setTensorInit(TensorInitType::FILE, "input/mlp_weight1.bin");
+    weight1_Tensor->setTensorInit(TensorInitType::FILE,
+                                  "input/mlp_weight1.bin");
     bias1_Tensor->setTensorInit(TensorInitType::FILE, "input/mlp_bias1.bin");
 
     OP(fc1, MatrixMatrixFCOp);
@@ -90,8 +93,7 @@ int main() {
     CHECKT(data2);
     CHECKG(mlp);
 
-    bool res =
-        mlp->buildSubGraphs(data0, data2, ParallelStrategy::SLICE, 0, 2);
+    bool res = mlp->buildSubGraphs(data0, data2, ParallelStrategy::SLICE, 0, 2);
     if (res) {
         std::cout << "build SubGraph Ok\n";
     }
