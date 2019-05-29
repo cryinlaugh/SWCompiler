@@ -8,6 +8,7 @@
 #define _CODEGEN_H_
 
 #include "CodeWriter.h"
+#include "MakefileBuilder.h"
 #include "MemoryAllocator.h"
 #include "common.h"
 #include <set>
@@ -149,6 +150,7 @@ class Codegen {
     std::string getTypeString(Tensor *);
 
     CodeWriter writer_;
+    MakefileBuilder makefile_builder_;
     IRGraph *graph_;
     IRGraph *active_graph_;
 

@@ -283,6 +283,27 @@ std::string Codegen::generate() {
     fout << ss.str() + writer_.get_code();
     fout.close();
 
+    fout.flush();
+    // TODO : NVCC
+    if (config_.mpi) {
+        makefile_builder_.setCXXCompiler("mpic++");
+    } else {
+        makefile_builder_.setCXXCompiler("/usr/bin/c++");
+    }
+
+    makefile_builder_.addCXXSrc("Graph.cpp");
+    makefile_builder_.addCXXSrc("utils/DataLoader.cpp");
+    makefile_builder_.addCXXSrc("caffe2.pb.cc");
+    makefile_builder_.addIncDir("/usr/local/include");
+
+    makefile_builder_.addLibDir("/usr/local/lib");
+    makefile_builder_.addLib("protobuf");
+    makefile_builder_.addLib("gflags");
+
+    fout.open("G_Makefile", std::fstream::out);
+    fout << makefile_builder_.generate();
+    fout.close();
+
     return ss.str() + writer_.get_code();
 }
 
@@ -297,7 +318,8 @@ void Codegen::emitMemAllocs() {
 
     emitTensorAddresses();
 
-    emitDataLoaderInit();
+    if (config_.train_mode)
+        emitDataLoaderInit();
 
     emitTensorInitializations();
 }
