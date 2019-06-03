@@ -25,13 +25,12 @@ namespace op {
 //=====================================================
 
 class MatrixMatrixFCOp : public Op {
-    // input, weight, bias
+    // input, weights
     // output
   public:
-    MatrixMatrixFCOp() : Op(DL_OP, 3, 1, std::string("MatrixMatrixFC")) {
+    MatrixMatrixFCOp() : Op(DL_OP, 2, 1, std::string("MatrixMatrixFC")) {
         this->_inputNDims.push_back(2);
         this->_inputNDims.push_back(2);
-        this->_inputNDims.push_back(1);
         this->_outputNDims.push_back(2);
     }
     ~MatrixMatrixFCOp() {}
@@ -40,6 +39,26 @@ class MatrixMatrixFCOp : public Op {
     // for lowering
     void lowering(IRGraph *graph, IRNode *node);
 };
+
+
+class MatrixMatrixFCBiasOp : public Op {
+    // input, weight, bias
+    // output
+  public:
+    MatrixMatrixFCBiasOp() : Op(DL_OP, 3, 1, std::string("MatrixMatrixFCBias")) {
+        this->_inputNDims.push_back(2);
+        this->_inputNDims.push_back(2);
+        this->_inputNDims.push_back(1);
+        this->_outputNDims.push_back(2);
+    }
+    ~MatrixMatrixFCBiasOp() {}
+    void destroy(){};
+
+    // for lowering
+    //void lowering(IRGraph *graph, IRNode *node);
+};
+
+
 
 class MatrixMatrixFCGradOp : public Op {
     // input, wieght, bias, orig_output, orig_output_grad
@@ -73,9 +92,8 @@ class MatrixTanhGradOp : public Op {
 
 class MatrixSoftmaxOp : public Op {
   public:
-    MatrixSoftmaxOp() : Op(DL_OP, 2, 1, std::string("MatrixSoftmax")) {
+    MatrixSoftmaxOp() : Op(DL_OP, 1, 1, std::string("MatrixSoftmax")) {
         this->_inputNDims.push_back(2);
-        this->_inputNDims.push_back(1);
         this->_outputNDims.push_back(2);
     };
     ~MatrixSoftmaxOp();

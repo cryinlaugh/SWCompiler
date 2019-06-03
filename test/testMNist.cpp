@@ -187,7 +187,7 @@ int main(){
     TENSOR(bias2, 120);
     INIT(bias2, TensorInitType::ZERO, 0);
 
-    OP(mlp0, MatrixMatrixFCOp);
+    OP(mlp0, MatrixMatrixFCBiasOp);
     LINKUPPER(mlp0, data6, weight2, bias2);
 
     TENSOR(data7, 256, 120);
@@ -205,7 +205,7 @@ int main(){
     TENSOR(bias3, 84);
     INIT(bias3, TensorInitType::ZERO, 0);
 
-    OP(mlp1, MatrixMatrixFCOp);
+    OP(mlp1, MatrixMatrixFCBiasOp);
     LINKUPPER(mlp1, data8, weight3, bias3);
 
     TENSOR(data9, 256, 84);
