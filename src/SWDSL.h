@@ -28,6 +28,13 @@
     Tensor *name##_Tensor = new Tensor(name##_TensorShape);                    \
     name->setTensor(name##_Tensor)
 
+
+
+//set init for tensor
+#define INIT(name, type, args)      \
+    name##_Tensor->setTensorInit(type,args)
+        
+
 // check OpNode
 #define CHECKO(oname)                                                          \
     SWLOG_INFO << "======================================================"     \
@@ -58,6 +65,7 @@
 #define GpT(name, tensorNodes...) name->pushTensorNode(tensorNodes)
 
 #define GpO(name, OpNodes...) name->pushOpNode(OpNodes)
+
 
 #define CHECKG(g)                                                              \
     printf("Generate MLP layer done!\n");                                      \
