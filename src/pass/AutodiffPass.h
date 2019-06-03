@@ -14,18 +14,23 @@ namespace swc {
 namespace pass {
 
 /**
- * @breif AutodiffPass to do the auto differential of the
+ * @breif AutodiffPass to do the auto-differential of the
  * original net and generate a training network.
  */
 class AutodiffPass {
   private:
     IRGraph *_graph;
-  
+
+
   public:
     AutodiffPass(IRGraph *graph){ _graph = graph; };
     ~AutodiffPass(){};
 
-    void getMethod();
+    template <typename T, typename... Types>
+    void getParameters(const T &firsrArg, const Types &... args) {
+
+    }
+
     void run();
 };
 

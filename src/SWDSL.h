@@ -77,4 +77,10 @@
         printf("out:%d\n", g->getOpNode(i)->childNum());                       \
     }
 
+
+#define TRAIN(graph, parameters...)                                            \
+    AutodiffPass auto_diff_path(graph);                                        \
+    auto_diff_path->getParameters(parameters);                                 \
+    auto_diff_path->run();
+
 #endif /* !SWDSL_H */

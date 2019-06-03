@@ -16,12 +16,6 @@ using namespace std;
 namespace swc {
 namespace pass {
 
-
-void AutodiffPass::getMethod()
-{
-
-}
-
 void AutodiffPass::run()
 {
 
