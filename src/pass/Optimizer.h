@@ -8,12 +8,18 @@
 #ifndef _OPTIMIZER_H
 #define _OPTIMIZER_H
 
-#include "../src/graphIR/IRGraph.h"
+#include <queue>
+
 #include "LabelingPass.h"
 #include "LoweringPass.h"
 #include "RenamingNodePass.h"
-#include <queue>
+#include "AutodiffPass.h"
+
 namespace swc {
+
+// Forward declarations
+class IRGraph;
+    
 namespace pass {
 
 class PassManager {

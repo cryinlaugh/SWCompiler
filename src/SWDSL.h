@@ -85,10 +85,17 @@
         printf("out:%d\n", g->getOpNode(i)->childNum());                       \
     }
 
-
-#define TRAIN(graph, parameters...)                                            \
-    AutodiffPass auto_diff_path(graph);                                        \
-    auto_diff_path->getParameters(parameters);                                 \
-    auto_diff_path->run();
+// The DSL to generate a train network
+// the main parameters include:
+//  1. inference graph name
+//  2. method
+//  3. further method-paras
+//  
+//  now support SGD for paras: learning rate
+#define TRAIN(graph, parameters...)                              \
+    swc::pass::AutodiffPass auto_diff_path(graph);               \
+    auto_diff_path.getMethods(parameters);                      \
+    auto_diff_path.getParameters(parameters);                   \
+    auto_diff_path.run();
 
 #endif /* !SWDSL_H */

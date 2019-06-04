@@ -249,6 +249,10 @@ int main(){
             softmax0);
 
     lenet5->updateTopology();
+
+    TRAIN(lenet5, "sgd");
+
+
     dotGen(lenet5);
 
     SWLOG_INFO<<"Start generating graph..."<<endl;

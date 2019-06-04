@@ -9,7 +9,9 @@
 
 #include "AutodiffPass.h"
 
+
 #include "SWLOG.h"
+#include "graphIR/IRGraph.h"
 
 using namespace std;
 

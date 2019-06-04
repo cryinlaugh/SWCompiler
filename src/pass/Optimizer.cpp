@@ -10,9 +10,6 @@
 #include "Optimizer.h"
 
 #include "SWLOG.h"
-#include "graphIR/IRGraph.h"
-#include "graphIR/OpNode.h"
-#include "graphIR/TensorNode.h"
 
 namespace swc {
 
