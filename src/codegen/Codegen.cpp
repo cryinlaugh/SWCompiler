@@ -12,6 +12,7 @@
 #include <fstream>
 #include <iomanip>
 #include <string>
+#include <unordered_set>
 
 using namespace swc::op;
 
@@ -714,9 +715,17 @@ void Codegen::emitSaveSnapshot() {
             << "iter_arg->set_i(iter);"
             << "\n";
 
+    std::unordered_set<Tensor *> visited_tensors;
+
     for (int i = 0; i < graph_->tensorNodeNum(); i++) {
         auto *tnode = graph_->getTensorNode(i);
         auto *tensor = tnode->getTensor();
+
+        if(visited_tensors.count(tensor)) {
+            continue;
+        } else {
+            visited_tensors.insert(tensor);
+        }
 
         std::string dtype = getTypeString(tensor);
 
@@ -857,8 +866,9 @@ void Codegen::emitExecute() {
 
         writer_ << "\n";
         writer_ << "iter++;\n";
-
-        emitSaveSnapshot();
+        if (config_.train_config.snapshot) {
+            emitSaveSnapshot();
+        }
 
         writer_.indentDec();
 
