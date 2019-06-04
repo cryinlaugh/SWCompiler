@@ -128,6 +128,13 @@ Caffe2Importer::Caffe2Importer(IRGraph *g, const std::string &netProtoFile,
         name_tNode_map_[name] = tnode;
     }
 
+    size_t err = system("mkdir /tmp/SW");
+    if(err == 0) {
+        SWLOG_INFO << "Create directory /tmp/SW/\n";
+    } else {
+        SWLOG_INFO << "Directory /tmp/SW/ already exists, go on\n";
+    }
+
     caffe2::NetDef tensors;
     caffe2::NetDef network;
     loadProto(network, netProtoFile);
