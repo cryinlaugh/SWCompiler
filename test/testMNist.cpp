@@ -250,7 +250,7 @@ int main(){
 
     lenet5->updateTopology();
 
-    TRAIN(lenet5, "sgd");
+    TRAIN(lenet5);
 
 
     dotGen(lenet5);

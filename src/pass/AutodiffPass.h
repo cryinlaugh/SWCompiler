@@ -10,42 +10,27 @@
 
 #include "SWLOG.h"
 
-
-// to handle string ignored-case-senstive compare 
-inline int stricmp(char *s, char *t)
-{
-    if (s == NULL || t == NULL) {
-        printf("compared strings are not exist");
-        abort();
-    }
-    while (*s != '\0') {
-        if((*s >= 'A') && (*s <= 'Z'))
-            *s += 0x20;
-        if((*t >= 'A') && (*t <= 'Z'))
-            *t += 0x20;
-        if (*s != *t)
-            return 0;
-    }
-    if (*t != '\0') return 0;
-    return 1;
-}
-
 namespace swc {
 
 // Forward declarations
 class IRGraph;
-    
+
 namespace pass {
 
 #define SGD_METHOD 0
-#define ADMA_METHOD 1
+#define ADAM_METHOD 1
 
 //define sgd parameters
 typedef struct
 {
-    double _lr;
-} SGD_PARAMETRS;
+    double lr;
+} SGD_PARAMETERS;
 
+//define adam parameters
+typedef struct
+{
+    double lr;
+} ADAM_PARAMETERS;
 
 /**
  * @breif AutodiffPass to do the auto-differential of the
@@ -60,34 +45,48 @@ class AutodiffPass {
 
   public:
     AutodiffPass(IRGraph *graph){ _graph = graph; };
-    ~AutodiffPass(){};
+    ~AutodiffPass(){ destroy(); };
 
+    int string2method(char* s);
+    
     //Method determination
-    //default by SGD
-    void getMethods(){
-            
-        SWLOG_INFO<<"Default SGD method..."<<std::endl;
-        _method = SGD_METHOD;
-        _parameters = (SGD_PARAMETRS*)malloc(sizeof(SGD_PARAMETRS));
-    };
+    void getMethods();
+    
     template <typename T, typename... Types>
     void getMethods(T &firstArg, const Types &... args) {
-        if(strcmp((char*)firstArg, "SGD") == 0)
-        {
-            
+        if(string2method((char*)firstArg) == SGD_METHOD) {
             SWLOG_INFO<<"Detect SGD method..."<<std::endl;
             _method = SGD_METHOD;
-            _parameters = (SGD_PARAMETRS*)malloc(sizeof(SGD_PARAMETRS));
+            _parameters = (SGD_PARAMETERS*)malloc(sizeof(SGD_PARAMETERS));
+            getSGDParameters(args...);
+        } 
+        else if(string2method((char*)firstArg) == ADAM_METHOD) {
+            SWLOG_INFO<<"Detect ADAM method..."<<std::endl;
+            _method = ADAM_METHOD;
+            _parameters = (ADAM_PARAMETERS*)malloc(sizeof(ADAM_PARAMETERS));
+            getADAMParameters(args...);
+        } else {
+            SWLOG_INFO<<"Unidentified method..."<<std::endl;
+            abort();
         }
-    }
 
-    // Parameters read-in
-    void getParameters(){};
-    template <typename T, typename... Types>
-    void getParameters(const T &firsrArg, const Types &... args) {
-    }
+    };
+
+
+    // SGD Parameters read-in
+    void getSGDParameters();
+    void getSGDParameters(double lr);
+
+    // ADAM Parameters read-in
+    void getADAMParameters();
+    void getADAMParameters(double lr);
+    
+    
+    void show();
 
     void run();
+    void destroy();
+
 };
 
 }  //namespace pass 
