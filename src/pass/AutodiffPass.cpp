@@ -9,9 +9,8 @@
 
 #include "AutodiffPass.h"
 
-#include <ctype.h>
 #include <stdlib.h>
-#include <string.h>
+#include <string>
 
 #include "SWLOG.h"
 #include "graphIR/IRGraph.h"
@@ -21,17 +20,13 @@ using namespace std;
 namespace swc {
 namespace pass {
 
-int AutodiffPass::string2method(char *s)
+METHOD_TYPE AutodiffPass::string2method(std::string& s)
 {
-    char *p = s;
-    while (*p != '\0')
-    {
-        if(*p >= 'A' && *p <= 'Z')
-            *p = (*p) + 0x20;
-        p++;
-    }
-    if (strncmp(s, "sgd", 3) == 0) return SGD_METHOD;
-    if (strncmp(s, "adam", 4) == 0) return SGD_METHOD;
+    for (unsigned long i = 0; i < s.size(); i++)
+       s[i] = tolower(s[i]);
+    
+    if (s == "sgd") return SGD_METHOD;
+    if (s == "adam") return ADAM_METHOD;
     return -1;
 }
 
@@ -61,7 +56,6 @@ void AutodiffPass::getADAMParameters(double lr)
 
 void AutodiffPass::run()
 {
-
     SWLOG_INFO << "autodiff-run" << endl;
 }
 
@@ -77,13 +71,13 @@ void AutodiffPass::show()
     switch(_method)
     {
         case SGD_METHOD:
-            SWLOG_INFO << "SGD" << endl;
-            SWLOG_INFO << "learning rate:" 
+            SWLOG_INFO << "----SGD" << endl;
+            SWLOG_INFO << "----learning rate:" 
                 << ((SGD_PARAMETERS*)_parameters)->lr << endl;
             break;
         case ADAM_METHOD:
-            SWLOG_INFO << "SGD" << endl;
-            SWLOG_INFO << "learning rate:" 
+            SWLOG_INFO << "----ADAM" << endl;
+            SWLOG_INFO << "----learning rate:" 
                 << ((ADAM_PARAMETERS*)_parameters)->lr << endl;
             break;
         default:

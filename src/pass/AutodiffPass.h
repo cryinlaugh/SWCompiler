@@ -20,6 +20,8 @@ namespace pass {
 #define SGD_METHOD 0
 #define ADAM_METHOD 1
 
+typedef int METHOD_TYPE;
+
 //define sgd parameters
 typedef struct
 {
@@ -47,20 +49,22 @@ class AutodiffPass {
     AutodiffPass(IRGraph *graph){ _graph = graph; };
     ~AutodiffPass(){ destroy(); };
 
-    int string2method(char* s);
+    int string2method(std::string& s);
     
     //Method determination
     void getMethods();
     
     template <typename T, typename... Types>
-    void getMethods(T &firstArg, const Types &... args) {
-        if(string2method((char*)firstArg) == SGD_METHOD) {
+    void getMethods(const T &firstArg, const Types &... args) {
+        std::string method_type_s(firstArg);
+        METHOD_TYPE method_type = string2method(method_type_s);
+        if(method_type == SGD_METHOD) {
             SWLOG_INFO<<"Detect SGD method..."<<std::endl;
             _method = SGD_METHOD;
             _parameters = (SGD_PARAMETERS*)malloc(sizeof(SGD_PARAMETERS));
             getSGDParameters(args...);
         } 
-        else if(string2method((char*)firstArg) == ADAM_METHOD) {
+        else if(method_type == ADAM_METHOD) {
             SWLOG_INFO<<"Detect ADAM method..."<<std::endl;
             _method = ADAM_METHOD;
             _parameters = (ADAM_PARAMETERS*)malloc(sizeof(ADAM_PARAMETERS));
