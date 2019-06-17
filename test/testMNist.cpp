@@ -252,8 +252,7 @@ int main(){
 
     TRAIN(lenet5, "SGD");
 
-
-    dotGen(lenet5);
+    dotGen(lenet5_train);
 
     SWLOG_INFO<<"Start generating graph..."<<endl;
 

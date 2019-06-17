@@ -334,6 +334,10 @@ void IRGraph::updateTopoNodeList() {
     }
 }
 
+void IRGraph::copyFrom(const IRGraph* graph) {
+    
+}
+
 IRGraph *IRGraph::clone() const {
     // TODO: add topo check before clone
     IRGraph *graph = new IRGraph();

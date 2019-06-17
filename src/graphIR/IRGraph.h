@@ -110,7 +110,8 @@ class IRGraph {
 
     void updateTopology();
     void updateTopoNodeList();
-
+    void copyFrom(const IRGraph* graph);
+    
     IRGraph *clone() const;
     void setDeviceLabel(Device dev);
     Device getDeviceLabel() { return _dev; }

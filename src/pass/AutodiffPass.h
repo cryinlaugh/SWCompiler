@@ -25,13 +25,15 @@ typedef int METHOD_TYPE;
 //define sgd parameters
 typedef struct
 {
-    double lr;
+    float lr;
+    float decay;
+    float momentum;
 } SGD_PARAMETERS;
 
 //define adam parameters
 typedef struct
 {
-    double lr;
+    float lr;
 } ADAM_PARAMETERS;
 
 /**
@@ -70,7 +72,7 @@ class AutodiffPass {
             _parameters = (ADAM_PARAMETERS*)malloc(sizeof(ADAM_PARAMETERS));
             getADAMParameters(args...);
         } else {
-            SWLOG_INFO<<"Unidentified method..."<<std::endl;
+            SWLOG_INFO<<"Undefined method..."<<std::endl;
             abort();
         }
 
@@ -79,16 +81,18 @@ class AutodiffPass {
 
     // SGD Parameters read-in
     void getSGDParameters();
-    void getSGDParameters(double lr);
+    void getSGDParameters(float lr,
+                          float decay,
+                          float momentum);
 
     // ADAM Parameters read-in
     void getADAMParameters();
-    void getADAMParameters(double lr);
+    void getADAMParameters(float lr);
     
     
     void show();
 
-    void run();
+    void run(IRGraph* graph_train);
     void destroy();
 
 };

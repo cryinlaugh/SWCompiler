@@ -96,6 +96,7 @@
     swc::pass::AutodiffPass auto_diff_path(graph);               \
     auto_diff_path.getMethods(parameters);                       \
     auto_diff_path.show();                                       \
-    auto_diff_path.run();
+    G(graph##_train);                                            \
+    auto_diff_path.run(graph##_train);
 
 #endif /* !SWDSL_H */

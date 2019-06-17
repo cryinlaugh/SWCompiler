@@ -34,29 +34,40 @@ void AutodiffPass::getMethods()
 {
     SWLOG_INFO<<"No method determinated..."<<std::endl;
     SWLOG_INFO<<"Please choose a solver: SGD, ADAM..."<<std::endl;
+    abort();
 }
 
 void AutodiffPass::getSGDParameters()
 {
-    ((SGD_PARAMETERS*)_parameters)->lr = 0.01;
+    ((SGD_PARAMETERS*)_parameters)->lr = 0.001;
+    ((SGD_PARAMETERS*)_parameters)->decay = 0.001;
+    ((SGD_PARAMETERS*)_parameters)->momentum = 0.9;
 }
-void AutodiffPass::getSGDParameters(double lr)
+void AutodiffPass::getSGDParameters(float lr,
+                                    float decay,
+                                    float momentum)
 {
     ((SGD_PARAMETERS*)_parameters)->lr = lr;
+    ((SGD_PARAMETERS*)_parameters)->decay = decay;
+    ((SGD_PARAMETERS*)_parameters)->momentum = momentum;
 }
 
 void AutodiffPass::getADAMParameters()
 {
     ((ADAM_PARAMETERS*)_parameters)->lr = 0.01;
 }
-void AutodiffPass::getADAMParameters(double lr)
+void AutodiffPass::getADAMParameters(float lr)
 {
     ((ADAM_PARAMETERS*)_parameters)->lr = lr;
 }
 
-void AutodiffPass::run()
+void AutodiffPass::run(IRGraph* graph_train)
 {
-    SWLOG_INFO << "autodiff-run" << endl;
+    SWLOG_INFO << "AutodiffPassi Run" << endl;
+    graph_train->copyFrom(_graph);
+
+    graph_train->updateTopology();
+
 }
 
 void AutodiffPass::destroy()
@@ -74,6 +85,10 @@ void AutodiffPass::show()
             SWLOG_INFO << "----SGD" << endl;
             SWLOG_INFO << "----learning rate:" 
                 << ((SGD_PARAMETERS*)_parameters)->lr << endl;
+            SWLOG_INFO<< "----decay:"
+                << ((SGD_PARAMETERS*)_parameters)->decay << endl;
+            SWLOG_INFO << "----momentum:"
+                << ((SGD_PARAMETERS*)_parameters)->momentum << endl;
             break;
         case ADAM_METHOD:
             SWLOG_INFO << "----ADAM" << endl;
