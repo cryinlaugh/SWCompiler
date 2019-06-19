@@ -134,6 +134,7 @@ int main() {
     config.train_config.label_bytes = BytesProto::ONE_BYTE_AS_INT;
     config.train_config.data_bytes = BytesProto::FOUR_BYTES_AS_FLOAT;
     config.train_config.train_data_samples = 60000;
+    config.train_config.snapshot = 500;
 
     codegen::Codegen *cg = new codegen::Codegen(net, config);
 

@@ -1,4 +1,4 @@
-static const char *CUDA_CODE = R"(
+// static const char *CUDA_CODE = R"(
 //----------------------------------------------------------------------
 // cuda kernels for OpNode
 __global__ void matrixSoftmax_float(float *src, float *dest,
@@ -36,4 +36,4 @@ __global__ void batchedadd_float(float *dest, const float *batch, const float *s
     }
 }
 
-)";
+// )";

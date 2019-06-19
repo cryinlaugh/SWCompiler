@@ -17,7 +17,7 @@ int main() {
     std::vector<TensorNode *> udef;
     auto *data = new TensorNode("data", {8, 28, 28, 1});
     data->getTensor()->setTensorInit(TensorInitType::FILE,
-                                     "mnist_images_8.bin");
+                                     "input/mnist_images_8.bin");
     udef.push_back(data);
     Caffe2Importer importer(graph, "./lenet_mnist/predict_net.pb",
                             "./lenet_mnist/init_net.pb", udef);
