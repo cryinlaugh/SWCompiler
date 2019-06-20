@@ -14,6 +14,7 @@
 
 #include "SWLOG.h"
 #include "graphIR/IRGraph.h"
+#include "graphIR/IRNode.h"
 
 using namespace std;
 
@@ -63,11 +64,42 @@ void AutodiffPass::getADAMParameters(float lr)
 
 void AutodiffPass::run(IRGraph* graph_train)
 {
-    SWLOG_INFO << "AutodiffPassi Run" << endl;
-    graph_train->copyFrom(_graph);
+    SWLOG_INFO << "AutodiffPass Run" << endl;
+    _graph->copyTo(graph_train);
+    //graph_train = _graph;
 
-    graph_train->updateTopology();
+    std::vector<IRNode*> topo_nodes;
+    std::unordered_map<IRNode*, IRNode*> gradNodeMap;
 
+    //get each level nodes;
+    for (int i = 0; i < graph_train->topologyNum(); i++) {
+        for (int j = 0; j < graph_train->getNumInTopoLevel(i); j++) {
+            auto node = graph_train->getNodeInTopo(i, j);
+            SWLOG_INFO << "TopoLevel.." << i << "\tType..." 
+                << (node->nodeType() == TENSOR_NODE ? "TENSOR\t" : "OP\t")
+                << (node->name()) << std::endl;
+            topo_nodes.push_back(node);
+        }
+    }
+
+    //node autodiff
+    for (auto it = topo_nodes.rbegin(); it != topo_nodes.rend(); it++) {
+        IRNode* irnode = *it;
+       
+        // if tensorNode build new grad tensorNode then add 
+        // method(sgd .etc) opNode.
+        if (irnode->nodeType() == TENSOR_NODE) {
+            irnode->autoDiff(graph_train, gradNodeMap, _parameters, _method);
+        }
+        // if opNode builds opNode and tensorNode to calculate the grad.
+        else if (irnode->nodeType() == OP_NODE) {
+            irnode->autoDiff(graph_train, gradNodeMap);
+        }
+        else {
+            std::cout << "illegal node type"<< std::endl;
+            abort();
+        }
+    }
 }
 
 void AutodiffPass::destroy()

@@ -98,6 +98,7 @@ class MatrixSoftmaxOp : public Op {
     };
     ~MatrixSoftmaxOp();
     void destroy(){};
+    void autoDiff(IRGraph* graph);
 };
 
 class MatrixSoftmaxGradOp : public Op {

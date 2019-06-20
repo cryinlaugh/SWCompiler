@@ -226,11 +226,17 @@ int main(){
     TENSOR(data11, 256, 10);
     LINKUPPER(data11, mlp2);
 
+    TENSOR(label, 256, 10);
+    INIT(label, TensorInitType::FILE, "mnist_images_8_label.bin");
+    
     OP(softmax0, MatrixSoftmaxOp);
     LINKUPPER(softmax0, data11);
+    LINKUPPER(softmax0, label);
 
     TENSOR(prob, 256, 10);
+    TENSOR(loss, 1, 1);
     LINKUPPER(prob, softmax0);
+    LINKUPPER(loss, softmax0);
 
 
     G(lenet5);
@@ -238,10 +244,10 @@ int main(){
             data2, data3, data4,
             data5, data6, data7,
             data8, data9, data10,
-            data11, 
+            data11, label, 
             weight0, weight1, weight2, weight3, weight4,
             bias0, bias1, bias2, bias3,
-            prob);
+            prob, loss);
     GpO(lenet5, conv0, conv1,
             pool0, pool1,
             relu0, relu1, relu2, relu3,

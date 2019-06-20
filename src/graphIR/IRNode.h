@@ -9,10 +9,14 @@
 #define IRNODE_H_
 
 #include "common.h"
+
 #include <iostream>
 #include <string>
+#include <unordered_map>
 
 #include "pass/Label.h"
+#include "graphIR/IRGraph.h"
+#include "pass/AutodiffPass.h"
 
 namespace swc {
 
@@ -28,7 +32,14 @@ class IRNode {
     ~IRNode() { printf("free:%s\n", _name.c_str()); }
 
     virtual void destroy(){};
+    virtual void autoDiff(IRGraph* graph, 
+                        std::unordered_map<IRNode*, IRNode*> &gradNodeMap){};
 
+    virtual void autoDiff(IRGraph* graph, 
+                        std::unordered_map<IRNode*, IRNode*> &gradNodeMap,
+                        void* methodParams,
+                        pass::METHOD_TYPE methodType){};
+    
     void pushParentNode(){};
     template <typename T, typename... Types>
     void pushParentNode(const T &firstArg, const Types &... args) {

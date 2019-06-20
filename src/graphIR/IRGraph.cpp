@@ -334,8 +334,43 @@ void IRGraph::updateTopoNodeList() {
     }
 }
 
-void IRGraph::copyFrom(const IRGraph* graph) {
+void IRGraph::copyTo(IRGraph* graph) const {
+
+    std::unordered_map<TensorNode *, TensorNode *> tensors_map;
+    std::unordered_map<OpNode *, OpNode *> ops_map;
+
+
+    for (auto &N : _tensors) {
+        TensorNode *tn = (N->isExternal()) ? N->clone() : N->deepClone();
+        tensors_map[N] = tn;
+        graph->pushTensorNode(tn);
+    }
+    for (auto &N : _ops) {
+        OpNode *opn = N->clone();
+        ops_map[N] = opn;
+        graph->pushOpNode(opn);
+    }
+
+    for (auto &N : _tensors) {
+        auto tn = tensors_map[N];
+        for (int i = 0; i < N->parentNum(); i++) {
+            auto parent = ops_map[(OpNode *)N->getParentNode(i)];
+            tn->exlinkUpperNode(parent);
+        }
+    }
+    for (auto &N : _ops) {
+        auto opn = ops_map[N];
+        for (int i = 0; i < N->parentNum(); i++) {
+            auto parent = tensors_map[(TensorNode *)N->getParentNode(i)];
+            opn->exlinkUpperNode(parent);
+        }
+    }
     
+    graph->setDeviceLabel(_dev);
+    graph->findInOut();
+    graph->updateTopology();
+    graph->updateTopoNodeList();
+
 }
 
 IRGraph *IRGraph::clone() const {

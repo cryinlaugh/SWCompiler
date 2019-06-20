@@ -144,3 +144,15 @@ void MatrixMatrixFCGradOp::lowering(IRGraph *graph, IRNode *node) {
 
     graph->updateTopology();
 }
+
+
+
+/*-----------------------------------Auto Diff ----------------------------
+ * 
+ * 
+ * 
+ * -------------------------------------------------------------------------*/
+void MatrixSoftmaxOp::autoDiff(IRGraph* graph)
+{
+    std::cout << "autoDiff: " << _opClassName   << std::endl;
+}

@@ -50,6 +50,11 @@ class OpNode : public IRNode {
         return run;
     }
 
+    void autoDiff(IRGraph* graph){
+        std::cout << "OpNode begin to autodiff" << std::endl;
+    
+    };
+
   private:
     Op *op_;
     bool run_{true};

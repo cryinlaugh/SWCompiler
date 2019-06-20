@@ -9,9 +9,12 @@
 #define TENSORNODE_H_
 
 #include "IRNode.h"
-#include "tensor/tensor.h"
-//#include "SWDSL.h"
+
 #include <sstream>
+#include <unordered_map>
+
+#include "SWLOG.h"
+#include "tensor/tensor.h"
 
 namespace swc {
 
@@ -40,11 +43,18 @@ class TensorNode : public IRNode {
     void setTraining(int train) { tensor_->setTraining(train); }
     int getTraining() const { return tensor_->getTraining(); }
 
+
     DataType getDataType() { return tensor_->getDataType(); }
     std::vector<unsigned long> getDims() { return tensor_->getDims(); }
     TensorNode *clone() const;
     TensorNode *deepClone() const;
     std::string toString() const;
+
+    //AutoDiff implementation in tensorNodes
+    void autoDiff(IRGraph* graph, 
+            std::unordered_map<IRNode*, IRNode*> &gradNodeMap,
+            void* methodParams,
+            pass::METHOD_TYPE methodType);
 
   private:
     Tensor *tensor_{nullptr};
