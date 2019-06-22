@@ -23,6 +23,8 @@ unsigned load(float *data, size_t size, size_t offset, std::string inputFile) {
                               (std::istreambuf_iterator<char>()));
     float *dataAsFloatPtr = reinterpret_cast<float *>(&binData[0]);
 
+    size = (size > binData.size()) ? binData.size() : size;
+
     dataAsFloatPtr += offset;
     for (size_t i = 0; i < size; i++) {
         data[i] = dataAsFloatPtr[i];

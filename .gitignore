@@ -4,4 +4,5 @@ build
 doc/html
 doc/latex
 tags
+.vscode
 

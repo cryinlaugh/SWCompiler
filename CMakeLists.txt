@@ -24,6 +24,8 @@ if(LEVELDEBUG)
   endif()
 endif ()
 
+option(ONNX_IMPORT_ENABLE "Enable ONNX importer" FALSE)
+
 set(SW_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${SW_BINARY_DIR})
 
@@ -66,9 +68,22 @@ find_package(Protobuf REQUIRED)
 include_directories(${PROTOBUF_INCLUDE_DIRS})
 
 PROTOBUF_GENERATE_CPP(CAFFE2_SRCS CAFFE2_HDRS src/importer/caffe2.proto)
+PROTOBUF_GENERATE_CPP(ONNX_SRCS ONNX_HDRS src/importer/onnx-ml.proto)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
+
+#-----------------------------------------------------------------------------------------------
+# External projects install directory
+#-----------------------------------------------------------------------------------------------
+set(EXTERNAL_INSTALL_DIR ${CMAKE_BINARY_DIR}/external)
+if(NOT DEFINED EXTERNAL_PROJECTS_ROOT)
+    set(EXTERNAL_PROJECTS_ROOT ${CMAKE_CURRENT_BINARY_DIR})
+endif()
+message(STATUS "EXTERNAL_PROJECTS_ROOT ${EXTERNAL_PROJECTS_ROOT}")
+if (ONNX_IMPORT_ENABLE)
+    include(cmake/external_onnx.cmake)
+endif()
 
 # Source
 file(GLOB_RECURSE SOURCES
@@ -77,15 +92,30 @@ file(GLOB_RECURSE SOURCES
 add_library(graphcore
 			STATIC
 			${SOURCES}
-			${CAFFE2_SRCS}
-           	${CMAKE_CURRENT_BINARY_DIR}/caffe2.pb.h)
+      ${CAFFE2_SRCS}
+      ${ONNX_SRCS})
+      # ${CMAKE_CURRENT_BINARY_DIR}/caffe2.pb.h)
 target_compile_definitions(graphcore
                            INTERFACE
                              -DGOOGLE_PROTOBUF_NO_RTTI)
                              
-target_link_libraries(graphcore PUBLIC ${PROTOBUF_LIBRARY}
+target_link_libraries(graphcore PUBLIC 
+                        ${PROTOBUF_LIBRARY}
                         Threads::Threads)
+#-----------------------------------------------------------------------------------------------
+# ONNX support tmp.
+#-----------------------------------------------------------------------------------------------
+if (ONNX_IMPORT_ENABLE)
+    set(ONNX_OPSET_VERSION 9 CACHE INTERNAL "Supported version of ONNX operator set")
 
+    add_dependencies(graphcore onnx::libonnx onnx::libonnx_proto)
+
+    target_include_directories(graphcore  SYSTEM PRIVATE 
+        ${ONNX_INCLUDE_DIR} ${ONNX_PROTO_INCLUDE_DIR} ${Protobuf_INCLUDE_DIR})
+    target_link_libraries(graphcore PRIVATE ${Protobuf_LIBRARIES} ${ONNX_PROTO_LIBRARY})
+
+    target_compile_definitions(graphcore PRIVATE ONNX_OPSET_VERSION=${ONNX_OPSET_VERSION})
+endif()
 # Libraries are compiled
 link_libraries(graphcore)
 
