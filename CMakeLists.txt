@@ -98,6 +98,7 @@ add_library(graphcore
 target_compile_definitions(graphcore
                            INTERFACE
                              -DGOOGLE_PROTOBUF_NO_RTTI)
+set_property(TARGET graphcore PROPERTY POSITION_INDEPENDENT_CODE ON)                            
                              
 target_link_libraries(graphcore PUBLIC 
                         ${PROTOBUF_LIBRARY}
@@ -124,6 +125,7 @@ link_libraries(graphcore)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
 add_subdirectory(test)
+add_subdirectory(python)
 # file(GLOB TEST_SOURCES ${PROJECT_SOURCE_DIR}/test/*.cpp)
 # foreach(TESTSRC ${TEST_SOURCES})
 #    get_filename_component(TESTNAME ${TESTSRC} NAME_WE) # file name without directories or longest extension
