@@ -99,7 +99,13 @@ void AutodiffPass::run(IRGraph* graph_train)
             std::cout << "illegal node type"<< std::endl;
             abort();
         }
+
+        //for (auto it : gradNodeMap) {
+        //    SWLOG_INFO << "gradNode Map:"
+        //        << "\t" << it.first->name() << "\t" << it.second->name() << "\n";
+        //}
     }
+
 }
 
 void AutodiffPass::destroy()

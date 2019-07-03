@@ -38,6 +38,10 @@ class MatrixMatrixFCOp : public Op {
 
     // for lowering
     void lowering(IRGraph *graph, IRNode *node);
+
+    void autoDiff(IRGraph* graph, 
+        IRNode* opNode,
+        std::unordered_map<IRNode*, IRNode*>&gradNodeMap);
 };
 
 
@@ -54,11 +58,26 @@ class MatrixMatrixFCBiasOp : public Op {
     ~MatrixMatrixFCBiasOp() {}
     void destroy(){};
 
+    void autoDiff(IRGraph* graph, 
+        IRNode* opNode,
+        std::unordered_map<IRNode*, IRNode*>&gradNodeMap);
     // for lowering
     //void lowering(IRGraph *graph, IRNode *node);
 };
 
 
+class MatrixMatrixFCBiasGradOp : public Op {
+    // input, wieght, bias, orig_output, orig_output_grad
+    // input_grad, weight_grad, bias_grad
+  public:
+    MatrixMatrixFCBiasGradOp()
+        : Op(DL_OP, 4, 2, std::string("MatrixMatrixFCBiasGrad")) {}
+    ~MatrixMatrixFCBiasGradOp() {}
+    void destroy() {}
+
+    // for lowering
+    void lowering(IRGraph *graph, IRNode *node);
+};
 
 class MatrixMatrixFCGradOp : public Op {
     // input, wieght, bias, orig_output, orig_output_grad
@@ -81,6 +100,9 @@ class MatrixTanhOp : public Op {
     };
     ~MatrixTanhOp();
     void destroy(){};
+    void autoDiff(IRGraph* graph, 
+        IRNode* opNode,
+        std::unordered_map<IRNode*, IRNode*>&gradNodeMap);
 };
 
 class MatrixTanhGradOp : public Op {
@@ -98,7 +120,9 @@ class MatrixSoftmaxOp : public Op {
     };
     ~MatrixSoftmaxOp();
     void destroy(){};
-    void autoDiff(IRGraph* graph);
+    void autoDiff(IRGraph* graph, 
+        IRNode* opNode,
+        std::unordered_map<IRNode*, IRNode*>&gradNodeMap);
 };
 
 class MatrixSoftmaxGradOp : public Op {
@@ -280,6 +304,43 @@ class Conv2dOp : public Op {
     size_t getGroup() { return group_; }
     ~Conv2dOp();
     void destroy() {}
+    
+    void autoDiff(IRGraph* graph, 
+        IRNode* opNode,
+        std::unordered_map<IRNode*, IRNode*>&gradNodeMap);
+};
+
+
+class Conv2dGradOp : public Op {
+    std::vector<size_t> kernels_;
+    std::vector<size_t> strides_;
+    std::vector<size_t> pads_;
+    int group_{1};
+
+  public:
+    Conv2dGradOp() : Op(DL_OP, 3, 1, std::string("Conv2dGrad")) {
+        this->_inputNDims.push_back(4);
+        this->_inputNDims.push_back(4);
+        this->_inputNDims.push_back(1);
+        this->_outputNDims.push_back(4);
+    };
+    Conv2dGradOp(std::vector<size_t> &kernels, std::vector<size_t> &strides,
+             std::vector<size_t> &pads)
+        : Op(DL_OP, 3, 1, std::string("Conv2dGrad")) {
+        kernels_.assign(kernels.begin(), kernels.end());
+        strides_.assign(strides.begin(), strides.end());
+        pads_.assign(pads.begin(), pads.end());
+        this->_inputNDims.push_back(4);
+        this->_inputNDims.push_back(4);
+        this->_inputNDims.push_back(1);
+        this->_outputNDims.push_back(4);
+    }
+    std::vector<size_t> getPads() { return pads_; }
+    std::vector<size_t> getKernels() { return kernels_; }
+    std::vector<size_t> getStrides() { return strides_; }
+    size_t getGroup() { return group_; }
+    ~Conv2dGradOp();
+    void destroy() {}
 };
 
 class BatchNormalizationOp : public Op {
@@ -304,6 +365,19 @@ class ReluOp : public Op {
     }
     ~ReluOp();
     void destroy() {}
+    void autoDiff(IRGraph* graph, 
+        IRNode* opNode,
+        std::unordered_map<IRNode*, IRNode*>&gradNodeMap);
+};
+
+class ReluGradOp : public Op {
+  public:
+    ReluGradOp() : Op(DL_OP, 1, 1, std::string("ReluGrad")) {
+        this->_inputNDims.push_back(4);
+        this->_outputNDims.push_back(4);
+    }
+    ~ReluGradOp();
+    void destroy() {}
 };
 
 class MaxPoolOp : public Op {
@@ -326,6 +400,36 @@ class MaxPoolOp : public Op {
         this->_outputNDims.push_back(4);
     }
     ~MaxPoolOp();
+    std::vector<size_t> getPads() { return pads_; }
+    std::vector<size_t> getKernels() { return kernels_; }
+    std::vector<size_t> getStrides() { return strides_; }
+    void destroy() {}
+    
+    void autoDiff(IRGraph* graph, 
+        IRNode* opNode,
+        std::unordered_map<IRNode*, IRNode*>&gradNodeMap);
+};
+
+class MaxPoolGradOp : public Op {
+    std::vector<size_t> kernels_;
+    std::vector<size_t> strides_;
+    std::vector<size_t> pads_;
+
+  public:
+    MaxPoolGradOp() : Op(DL_OP, 1, 1, std::string("MaxPoolGrad")) {
+        this->_inputNDims.push_back(4);
+        this->_outputNDims.push_back(4);
+    }
+    MaxPoolGradOp(std::vector<size_t> &kernels, std::vector<size_t> &strides,
+              std::vector<size_t> &pads)
+        : Op(DL_OP, 1, 1, std::string("MaxPoolGrad")) {
+        kernels_.assign(kernels.begin(), kernels.end());
+        strides_.assign(strides.begin(), strides.end());
+        pads_.assign(pads.begin(), pads.end());
+        this->_inputNDims.push_back(4);
+        this->_outputNDims.push_back(4);
+    }
+    ~MaxPoolGradOp();
     std::vector<size_t> getPads() { return pads_; }
     std::vector<size_t> getKernels() { return kernels_; }
     std::vector<size_t> getStrides() { return strides_; }

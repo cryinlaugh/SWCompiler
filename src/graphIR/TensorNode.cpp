@@ -9,10 +9,17 @@
 
 #include "TensorNode.h"
 
+#include "op/dlOp/dlOp.h"
+#include "pass/AutodiffPass.h"
+#include "graphIR/OpNode.h"
+
+using namespace swc::op;
+using namespace swc::pass;
+
 namespace swc {
 /// share tensor, that tensor_ point to
 TensorNode *TensorNode::clone() const {
-    TensorNode *tn = new TensorNode(name());
+    TensorNode *tn = new TensorNode(name()+"_clone");
     tn->setTensor(tensor_);
     tn->setLabel(getLabel()); // mainly for training flag
     tn->setExternal(isExternal());
@@ -60,23 +67,35 @@ void TensorNode::autoDiff(IRGraph* graph,
             return;
         }
 
-        auto *node_mirror = clone();
+        if (methodType == SGD_METHOD) {
+            SWLOG_INFO << "SGD generate..." << std::endl;
+            auto *node_mirror = clone();
 
-        auto *mom_t = new Tensor(this->getTensor()->getTensorShape());
-        mom_t->setTensorInit(TensorInitType::CONSTANT, 0);
-        auto *momentum = new TensorNode("momentum", mom_t);
+            auto *mom_t = new Tensor(this->getTensor()->getTensorShape());
+            mom_t->setTensorInit(TensorInitType::CONSTANT, 0);
+            auto *momentum = new TensorNode("momentum", mom_t);
 
-        //auto *sgdOp = new SGDOp(profile.lr, profile.decay,
-        //        profile.momentum, profile.batch);
-        //auto *SGDNode = new OpNode(this->name() + "_sgd", sgdOp);
+            SGD_PARAMETERS* profile = (SGD_PARAMETERS*)methodParams;
 
-        //SGDNode->exlinkUpperNode(node, N, momentum);
-        //node_mirror->exlinkUpperNode(SGDNode);
+            auto *sgdOp = new SGDOp(profile->lr, profile->decay,
+                    profile->momentum, 128);
+            auto *SGDNode = new OpNode(this->name() + "_sgd", sgdOp);
 
-        //graph->pushOpNode(SGDNode);
-        //graph->pushTensorNode(node_mirror, momentum);
+            SGDNode->exlinkUpperNode(this, N, momentum);
+            node_mirror->exlinkUpperNode(SGDNode);
+            graph->pushOpNode(SGDNode);
+            graph->pushTensorNode(node_mirror, momentum);
 
+        }
+        else if (methodType == ADAM_METHOD) {
+            SWLOG_INFO << "No adam method now. Passed..." << std::endl;
+        }
+        else {
+            SWLOG_INFO << "Illegal method type" << std::endl;
+            abort();
+        }
         return;
+
     }
 
     //End point tensor

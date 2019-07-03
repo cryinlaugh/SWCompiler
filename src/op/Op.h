@@ -9,6 +9,7 @@
 #define _OP_H
 
 #include <string>
+#include <unordered_map>
 
 #include "SWLOG.h"
 #include "common.h"
@@ -36,6 +37,9 @@ class Op {
     ~Op(){};
 
     virtual void destroy(){};
+    virtual void autoDiff(IRGraph* graph,
+            IRNode* opNode,
+            std::unordered_map<IRNode*, IRNode*> &gradNodeMap){};
 
     void addInputTensor(Tensor *inputTensor) {
         _inputTensors.push_back(inputTensor);

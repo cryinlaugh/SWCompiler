@@ -138,6 +138,8 @@ int main(){
     INIT(weight0, TensorInitType::XAVIER, 0.2);
     TENSOR(bias0, 6);
     INIT(bias0, TensorInitType::ZERO, 0);
+    weight0->setTraining(1);
+    bias0->setTraining(1);
 
     OP(conv0, Conv2dOp); 
     LINKUPPER(conv0, data0, weight0, bias0);
@@ -162,6 +164,8 @@ int main(){
 
     TENSOR(bias1, 16);
     INIT(bias1, TensorInitType::ZERO, 0);
+    weight1->setTraining(1);
+    bias1->setTraining(1);
 
     OP(conv1, Conv2dOp); 
     LINKUPPER(conv1, data3, weight1, bias1);
@@ -187,6 +191,9 @@ int main(){
     TENSOR(bias2, 120);
     INIT(bias2, TensorInitType::ZERO, 0);
 
+    weight2->setTraining(1);
+    bias2->setTraining(1);
+    
     OP(mlp0, MatrixMatrixFCBiasOp);
     LINKUPPER(mlp0, data6, weight2, bias2);
 
@@ -205,6 +212,9 @@ int main(){
     TENSOR(bias3, 84);
     INIT(bias3, TensorInitType::ZERO, 0);
 
+    weight3->setTraining(1);
+    bias3->setTraining(1);
+    
     OP(mlp1, MatrixMatrixFCBiasOp);
     LINKUPPER(mlp1, data8, weight3, bias3);
 
@@ -220,6 +230,8 @@ int main(){
     TENSOR(weight4, 84, 10);
     INIT(weight4, TensorInitType::XAVIER, 0.3);
 
+    weight4->setTraining(1);
+    
     OP(mlp2, MatrixMatrixFCOp);
     LINKUPPER(mlp2, data10, weight4);
 
@@ -258,6 +270,8 @@ int main(){
 
     TRAIN(lenet5, "SGD");
 
+    lenet5_train->updateTopology();
+    
     dotGen(lenet5_train);
 
     SWLOG_INFO<<"Start generating graph..."<<endl;

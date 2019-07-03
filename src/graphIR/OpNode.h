@@ -50,9 +50,11 @@ class OpNode : public IRNode {
         return run;
     }
 
-    void autoDiff(IRGraph* graph){
-        std::cout << "OpNode begin to autodiff" << std::endl;
-    
+    void autoDiff(IRGraph* graph,
+            std::unordered_map<IRNode*, IRNode*> &gradNodeMap){
+        SWLOG_INFO << "OpNode begin to autodiff" << std::endl;
+        Op *_op = op_;
+        _op->autoDiff(graph, this, gradNodeMap);
     };
 
   private:
