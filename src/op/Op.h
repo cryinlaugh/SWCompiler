@@ -66,6 +66,7 @@ class Op {
     }
     */
 
+
   protected:
     /* The following variables are constant values in a specific Op Class
        indicating what kind of input/output tensors it should keep. */
@@ -86,6 +87,19 @@ class Op {
     int _nOutputTensor;
     std::vector<Tensor *> _inputTensors;
     std::vector<Tensor *> _outputTensors;
+
+    /* Edit by zwl @ 20190705
+     * The following variables indicate the dimension-level relation shape of input/output tensors,
+     * which is designed as a generalized abstraction for tensors (similar to a Einsum expression),
+     * and is used for analyzing and generating parallel strategies for a tensor graph.
+     * 
+     * _einOp is a label variable indicats whether the Op can be discribed using Einsum expression.
+     *
+     */
+    int _einOp;
+    std::vector<std::string> _einRep;
+
+    friend class ParallelGen;
 };
 
 } // namespace op

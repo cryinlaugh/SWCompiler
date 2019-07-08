@@ -12,6 +12,7 @@
 namespace swc {
 namespace op {
 
+
 //=====================================================
 // Definition of 2-D basic operations.
 // Version v0.1: basic ops for simple-MLP-nobias-fw listed below
@@ -27,6 +28,12 @@ class MatrixMatrixMulOp : public Op {
         this->_inputNDims.push_back(2);
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
+
+        this->_einOp = 1;
+        this->_einRep.push_back("ij");
+        this->_einRep.push_back("jk");
+        this->_einRep.push_back("ik");
+        
     }
     ~MatrixMatrixMulOp() {}
     void destroy(){};
@@ -38,6 +45,11 @@ class VectorMatrixMulOp : public Op {
         this->_inputNDims.push_back(1);
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(1);
+
+        this->_einOp = 1;
+        this->_einRep.push_back("i");
+        this->_einRep.push_back("ij");
+        this->_einRep.push_back("j");
     }
     ~VectorMatrixMulOp() {}
     void destroy(){};
@@ -49,6 +61,11 @@ class MatrixVectorMulOp : public Op {
         this->_inputNDims.push_back(2);
         this->_inputNDims.push_back(1);
         this->_outputNDims.push_back(1);
+
+        this->_einOp = 1;
+        this->_einRep.push_back("ij");
+        this->_einRep.push_back("j");
+        this->_einRep.push_back("i");
     }
     ~MatrixVectorMulOp() {}
     void destroy(){};
@@ -70,6 +87,11 @@ class VectorVectorInnerProductOp : public Op {
         this->_inputNDims.push_back(1);
         this->_inputNDims.push_back(1);
         this->_outputNDims.push_back(0);
+
+        this->_einOp = 1;
+        this->_einRep.push_back("i");
+        this->_einRep.push_back("i");
+        this->_einRep.push_back("");
     }
     ~VectorVectorInnerProductOp() {}
     void destroy(){};
@@ -95,6 +117,11 @@ class ScalarMulOp : public Op {
         this->_inputNDims.push_back(0);
         this->_inputNDims.push_back(0);
         this->_outputNDims.push_back(0);
+
+        this->_einOp = 1;
+        this->_einRep.push_back("");
+        this->_einRep.push_back("");
+        this->_einRep.push_back("");
     }
     ~ScalarMulOp() {}
     void destroy(){};
@@ -106,6 +133,11 @@ class ScalarAddOp : public Op {
         this->_inputNDims.push_back(0);
         this->_inputNDims.push_back(0);
         this->_outputNDims.push_back(0);
+
+        this->_einOp = 1;
+        this->_einRep.push_back("");
+        this->_einRep.push_back("");
+        this->_einRep.push_back("");
     }
     ~ScalarAddOp() {}
     void destroy(){};
@@ -117,6 +149,11 @@ class ScalarMaxOp : public Op {
         this->_inputNDims.push_back(0);
         this->_inputNDims.push_back(0);
         this->_outputNDims.push_back(0);
+
+        this->_einOp = 1;
+        this->_einRep.push_back("");
+        this->_einRep.push_back("");
+        this->_einRep.push_back("");
     }
     ~ScalarMaxOp() {}
     void destroy(){};
@@ -127,6 +164,10 @@ class ScalarExpOp : public Op {
     ScalarExpOp() : Op(BASIC_OP, 1, 1, std::string("ScalarExp")) {
         this->_inputNDims.push_back(0);
         this->_outputNDims.push_back(0);
+
+        this->_einOp = 1;
+        this->_einRep.push_back("");
+        this->_einRep.push_back("");
     }
     ~ScalarExpOp() {}
     void destroy(){};
@@ -137,6 +178,10 @@ class ScalarNegOp : public Op {
     ScalarNegOp() : Op(BASIC_OP, 1, 1, std::string("ScalarNeg")) {
         this->_inputNDims.push_back(0);
         this->_outputNDims.push_back(0);
+
+        this->_einOp = 1;
+        this->_einRep.push_back("");
+        this->_einRep.push_back("");
     }
     ~ScalarNegOp() {}
     void destroy(){};
@@ -147,6 +192,10 @@ class ScalarDivOp : public Op {
     ScalarDivOp() : Op(BASIC_OP, 1, 1, std::string("ScalarDiv")) {
         this->_inputNDims.push_back(0);
         this->_outputNDims.push_back(0);
+
+        this->_einOp = 1;
+        this->_einRep.push_back("");
+        this->_einRep.push_back("");
     }
     ~ScalarDivOp() {}
     void destroy(){};
@@ -157,6 +206,10 @@ class ScalarLogOp : public Op {
     ScalarLogOp() : Op(BASIC_OP, 1, 1, std::string("ScalarLog")) {
         this->_inputNDims.push_back(0);
         this->_outputNDims.push_back(0);
+
+        this->_einOp = 1;
+        this->_einRep.push_back("");
+        this->_einRep.push_back("");
     }
     ~ScalarLogOp() {}
     void destroy(){};
