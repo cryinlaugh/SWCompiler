@@ -4,16 +4,18 @@ class OpNode(object):
     def __init__(self, val, optype, *parlist):
         lib.OpNode.argtypes = [c_char_p, c_char_p]
         lib.OpNode.restype = c_void_p
-        self.obj = lib.OpNode(val, optype)
+
+        lib.OpNode_toString.argtypes = [c_void_p, c_char_p]
+        lib.OpNode_toString.restype = c_char_p
 
         lib.OpNode_link.argtypes = [c_void_p, c_void_p]
+        
+        self.obj = lib.OpNode(val, optype)
         for par in parlist:
             if isinstance(par, TensorNode):
                 lib.OpNode_link(self.obj, par.obj)
 
     def toString(self):
-        lib.OpNode_toString.argtypes = [c_void_p, c_char_p]
-        lib.OpNode_toString.restype = c_char_p
         s = create_string_buffer('\0'*100)
         lib.OpNode_toString(self.obj, s)
         return s.value
@@ -27,22 +29,21 @@ class TensorNode(object):
         lib.TensorNode.argtypes = [c_char_p, c_int64, POINTER(c_int64)]
         lib.TensorNode.restype = c_void_p
         
+        lib.TensorNode_link.argtypes = [c_void_p, c_void_p]
+
+        lib.TensorNode_toString.argtypes = [c_void_p, c_char_p]
+        lib.TensorNode_toString.restype = c_char_p
+        
         # _shape = TensorShape()
         # _shape.ndim = len(dims)
         # _shape.shape = (c_int64*len(dims))(dims)
         shape = (c_int64*len(dims))(*dims)
-
         self.obj = lib.TensorNode(val, len(dims), shape)
-
-
-        lib.TensorNode_link.argtypes = [c_void_p, c_void_p]
         for op in oplist:
             if isinstance(op, OpNode):
                 lib.TensorNode_link(self.obj, op.obj)
 
     def toString(self):
-        lib.TensorNode_toString.argtypes = [c_void_p, c_char_p]
-        lib.TensorNode_toString.restype = c_char_p
         s = create_string_buffer('\0'*100)
         lib.TensorNode_toString(self.obj, s)
         return s.raw
@@ -53,12 +54,13 @@ class IRGraph(object):
         self.obj = lib.IRGraph(val)
         self.__ops = []
         self.__tensors = []
+
         lib.IRGraph_addOpNode.argtypes=[c_void_p, c_void_p]
         lib.IRGraph_addTensorNode.argtypes=[c_void_p, c_void_p]
         lib.IRGraph_summary.argtypes = [c_void_p]
         lib.IRGraph_summary.restype = c_char_p
-
         lib.IRGraph_dotGen.argtypes = [c_void_p, c_char_p]
+
     def addOpNode(self, op):
         lib.IRGraph_addOpNode(self.obj, op.obj)
         self.__ops.append(op)
@@ -90,6 +92,7 @@ class IRGraph(object):
             print (op.toString())
         for tensor in self.__tensors:
             print (tensor.toString())
+            
     def summary(self):
         return lib.IRGraph_summary(self.obj)
     
