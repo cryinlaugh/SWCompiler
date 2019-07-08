@@ -13,6 +13,7 @@
 #include "../src/common.h"
 
 #include "../src/op/dlOp/dlOp.h"
+#include "../src/op/tensorOp/tensorOps.h"
 #include "../src/tensor/tensor.h"
 
 #include "../src/graphIR/IRGraph.h"

@@ -20,6 +20,7 @@ namespace op {
 //----MatrixMatrixMul
 //----VectorMatrixMul
 //----MatrixVectorMul
+//----MatrixVectorAdd
 //=====================================================
 
 class MatrixMatrixMulOp : public Op {
@@ -68,6 +69,22 @@ class MatrixVectorMulOp : public Op {
         this->_einRep.push_back("i");
     }
     ~MatrixVectorMulOp() {}
+    void destroy(){};
+};
+
+class MatrixVectorAddOp : public Op {
+  public:
+    MatrixVectorAddOp() : Op(BASIC_OP, 2, 1, std::string("MatrixVectorAdd")) {
+        this->_inputNDims.push_back(2);
+        this->_inputNDims.push_back(1);
+        this->_outputNDims.push_back(1);
+
+        this->_einOp = 1;
+        this->_einRep.push_back("ij");
+        this->_einRep.push_back("j");
+        this->_einRep.push_back("ij");
+    }
+    ~MatrixVectorAddOp() {}
     void destroy(){};
 };
 

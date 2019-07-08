@@ -56,6 +56,8 @@ class TensorNode : public IRNode {
             void* methodParams,
             pass::METHOD_TYPE methodType);
 
+    void checkValid();
+
   private:
     Tensor *tensor_{nullptr};
 };

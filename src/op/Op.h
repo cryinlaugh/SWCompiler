@@ -40,6 +40,9 @@ class Op {
     virtual void autoDiff(IRGraph* graph,
             IRNode* opNode,
             std::unordered_map<IRNode*, IRNode*> &gradNodeMap){};
+    virtual void einsumLowering(IRGraph *graph, IRNode *node) {
+        SWLOG_DEBUG(100) << "Unimplemented in base Op class" << std::endl;
+    }
 
     void addInputTensor(Tensor *inputTensor) {
         _inputTensors.push_back(inputTensor);
@@ -70,6 +73,8 @@ class Op {
     }
     */
 
+    inline int getInputDims(int n) { return _inputNDims[n]; }
+    inline int getOutputDims(int n) { return _outputNDims[n]; }
 
   protected:
     /* The following variables are constant values in a specific Op Class

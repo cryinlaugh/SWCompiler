@@ -37,13 +37,27 @@ class MatrixMatrixFCOp : public Op {
     void destroy(){};
 
     // for lowering
-    void lowering(IRGraph *graph, IRNode *node);
-
     void autoDiff(IRGraph* graph, 
         IRNode* opNode,
         std::unordered_map<IRNode*, IRNode*>&gradNodeMap);
+    
+    void einsumLowering(IRGraph *graph, IRNode *node);
+
 };
 
+class MatrixMatrixFCGradOp : public Op {
+    // input, wieght, orig_output, orig_output_grad
+    // input_grad, weight_grad
+  public:
+    MatrixMatrixFCGradOp()
+        : Op(DL_OP, 4, 2, std::string("MatrixMatrixFCGrad")) {}
+    ~MatrixMatrixFCGradOp() {}
+    void destroy() {}
+
+    // for lowering
+    void einsumLowering(IRGraph *graph, IRNode *node);
+    
+};
 
 class MatrixMatrixFCBiasOp : public Op {
     // input, weight, bias
@@ -58,11 +72,11 @@ class MatrixMatrixFCBiasOp : public Op {
     ~MatrixMatrixFCBiasOp() {}
     void destroy(){};
 
+    // for lowering
     void autoDiff(IRGraph* graph, 
         IRNode* opNode,
         std::unordered_map<IRNode*, IRNode*>&gradNodeMap);
-    // for lowering
-    //void lowering(IRGraph *graph, IRNode *node);
+    void einsumLowering(IRGraph *graph, IRNode *node);
 };
 
 
@@ -71,26 +85,14 @@ class MatrixMatrixFCBiasGradOp : public Op {
     // input_grad, weight_grad, bias_grad
   public:
     MatrixMatrixFCBiasGradOp()
-        : Op(DL_OP, 4, 2, std::string("MatrixMatrixFCBiasGrad")) {}
+        : Op(DL_OP, 5, 3, std::string("MatrixMatrixFCBiasGrad")) {}
     ~MatrixMatrixFCBiasGradOp() {}
     void destroy() {}
 
     // for lowering
-    void lowering(IRGraph *graph, IRNode *node);
+    void einsumLowering(IRGraph *graph, IRNode *node);
 };
 
-class MatrixMatrixFCGradOp : public Op {
-    // input, wieght, bias, orig_output, orig_output_grad
-    // input_grad, weight_grad, bias_grad
-  public:
-    MatrixMatrixFCGradOp()
-        : Op(DL_OP, 5, 3, std::string("MatrixMatrixFCGrad")) {}
-    ~MatrixMatrixFCGradOp() {}
-    void destroy() {}
-
-    // for lowering
-    void lowering(IRGraph *graph, IRNode *node);
-};
 
 class MatrixTanhOp : public Op {
   public:
@@ -461,7 +463,7 @@ class AvgPoolOp : public Op {
     std::vector<size_t> getStrides() { return strides_; }
     void destroy() {}
 };
-
+/*
 class BatchedAddOp : public Op {
   public:
     BatchedAddOp() : Op(DL_OP, 2, 1, std::string("BatchedAdd")) {
@@ -472,6 +474,9 @@ class BatchedAddOp : public Op {
     ~BatchedAddOp();
     void destroy() {}
 };
+
+BatchedAddOp should be MatrixVectorAddOp, remove 
+*/
 
 class BatchedReduceAddOp : public Op {
   public:

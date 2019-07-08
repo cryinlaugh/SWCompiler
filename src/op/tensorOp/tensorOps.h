@@ -8,10 +8,63 @@
 #ifndef _TENSOROPS_H
 #define _TENSOROPS_H
 
+#include <cassert>
+
 #include "op/Op.h"
+
 namespace swc {
 namespace op {
 
+class TensorDescendOp : public Op {
+  public:
+    TensorDescendOp(int nDim, int start, int end) : 
+        Op(TENSOR_OP, 1, 1, std::string("TensorDescend")) {
+        assert((start <= end) && "start can not be larger than end");
+        _start = start;
+        _end = end;
+        _nDim = nDim;
+        this->_inputNDims.push_back(nDim);
+        this->_outputNDims.push_back(nDim-(end-start));
+    }
+    ~TensorDescendOp() {}
+
+    void autoDiff(IRGraph* graph, 
+        IRNode* opNode,
+        std::unordered_map<IRNode*, IRNode*>&gradNodeMap);
+
+
+    void destroy(){};
+
+  private:
+    int _nDim;
+    int _start;
+    int _end;
+};
+
+class TensorAscendOp : public Op {
+  public:
+    TensorAscendOp(int nDim, int start, int end) : 
+        Op(TENSOR_OP, 1, 1, std::string("TensorAscend")) {
+        assert((start <= end) && "start can not be larger than end");
+        _start = start;
+        _end = end;
+        _nDim = nDim;
+        this->_inputNDims.push_back(nDim-(end-start));
+        this->_outputNDims.push_back(nDim);
+    }
+    ~TensorAscendOp() {}
+
+    void autoDiff(IRGraph* graph, 
+        IRNode* opNode,
+        std::unordered_map<IRNode*, IRNode*>&gradNodeMap);
+    
+    void destroy(){};
+  
+  private:
+    int _nDim;
+    int _start;
+    int _end;
+};
 //=====================================================
 // Definition of 2-D tensor operations.
 // Version v0.1: basic ops for tensors listed below
@@ -73,6 +126,7 @@ class MatrixTransposeOp : public Op {
     ~MatrixTransposeOp() {}
     void destroy(){};
 };
+
 
 class MatrixDescendOp : public Op {
   public:

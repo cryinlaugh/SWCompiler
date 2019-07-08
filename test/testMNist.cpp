@@ -184,7 +184,13 @@ int main(){
 
     TENSOR(data6, 256, 16, 5, 5);
     LINKUPPER(data6, relu1);
-
+    
+    DYOP(des1, TensorDescendOp, 4, 2, 4);
+    LINKUPPER(des1, data6);
+    
+    TENSOR(data6des, 256, 400);
+    LINKUPPER(data6des, des1);
+    
     TENSOR(weight2, 400, 120);
     INIT(weight2, TensorInitType::XAVIER, 0.1);
 
@@ -193,9 +199,11 @@ int main(){
 
     weight2->setTraining(1);
     bias2->setTraining(1);
-    
+   
     OP(mlp0, MatrixMatrixFCBiasOp);
-    LINKUPPER(mlp0, data6, weight2, bias2);
+    LINKUPPER(mlp0, data6des, weight2, bias2);
+
+    mlp0->checkValid();
 
     TENSOR(data7, 256, 120);
     LINKUPPER(data7, mlp0);
@@ -254,14 +262,14 @@ int main(){
     G(lenet5);
     GpT(lenet5, data0, data1,
             data2, data3, data4,
-            data5, data6, data7,
+            data5, data6, data6des, data7,
             data8, data9, data10,
             data11, label, 
             weight0, weight1, weight2, weight3, weight4,
             bias0, bias1, bias2, bias3,
             prob, loss);
     GpO(lenet5, conv0, conv1,
-            pool0, pool1,
+            pool0, pool1, des1,
             relu0, relu1, relu2, relu3,
             mlp0, mlp1, mlp2,
             softmax0);
@@ -273,6 +281,7 @@ int main(){
     lenet5_train->updateTopology();
     
     dotGen(lenet5_train);
+    //dotGen(lenet5);
 
     SWLOG_INFO<<"Start generating graph..."<<endl;
 

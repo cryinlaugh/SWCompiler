@@ -9,9 +9,11 @@
 
 #include "TensorNode.h"
 
+#include "graphIR/OpNode.h"
+#include "graphIR/IRGraph.h"
+
 #include "op/dlOp/dlOp.h"
 #include "pass/AutodiffPass.h"
-#include "graphIR/OpNode.h"
 
 using namespace swc::op;
 using namespace swc::pass;
@@ -54,7 +56,7 @@ void TensorNode::autoDiff(IRGraph* graph,
         void* methodParams, 
         pass::METHOD_TYPE methodType)
 {
-    SWLOG_INFO << "TensorNode: " << name() <<
+    SWLOG_DEBUG(4) << "TensorNode: " << name() <<
         " begin to autodiff" << std::endl;
 
     if (gradNodeMap.count(this)) {
@@ -63,12 +65,12 @@ void TensorNode::autoDiff(IRGraph* graph,
         // label::needTraining not set yet
         // if (!label->needTraining())
         if (!getTraining()) {
-            SWLOG_INFO << "Tensor need not to train. Passed..." << std::endl;
+            SWLOG_DEBUG(4) << "Tensor need not to train. Passed..." << std::endl;
             return;
         }
 
         if (methodType == SGD_METHOD) {
-            SWLOG_INFO << "SGD generate..." << std::endl;
+            SWLOG_DEBUG(4) << "SGD generate..." << std::endl;
             auto *node_mirror = clone();
 
             auto *mom_t = new Tensor(this->getTensor()->getTensorShape());
@@ -88,10 +90,10 @@ void TensorNode::autoDiff(IRGraph* graph,
 
         }
         else if (methodType == ADAM_METHOD) {
-            SWLOG_INFO << "No adam method now. Passed..." << std::endl;
+            SWLOG_DEBUG(4) << "No adam method now. Passed..." << std::endl;
         }
         else {
-            SWLOG_INFO << "Illegal method type" << std::endl;
+            SWLOG_DEBUG(4) << "Illegal method type" << std::endl;
             abort();
         }
         return;
@@ -100,7 +102,7 @@ void TensorNode::autoDiff(IRGraph* graph,
 
     //End point tensor
     if (childNum() == 0) {
-        SWLOG_INFO << "End point tensor" << std::endl;
+        SWLOG_DEBUG(4) << "End point tensor" << std::endl;
 
         //generate new tensors
         auto *tensor = getTensor();
@@ -115,5 +117,36 @@ void TensorNode::autoDiff(IRGraph* graph,
     }
 
 }
+
+
+void TensorNode::checkValid() {
+
+    unsigned int i;
+    SWLOG_DEBUG(4) << "Checking connect validation for " 
+        << this->name() << std::endl;
+        
+    OpNode* parentIter = (OpNode*)(this->getParentNode(0));
+    for (i = 0; i < parentIter->getChildNodes().size(); i++) {
+        if(this == parentIter->getChildNode(i)) {
+            break;
+        }
+    }
+    if (parentIter->getOp()->getOutputDims(i) 
+            != this->getTensor()->getNDim()) {
+        std::cout << " Warnning: The upper op"
+            << parentIter->name() 
+            << " with " << i << "th output dim:"
+            << parentIter->getOp()->getOutputDims(i)
+            << " while the current tensor "
+            << this->name()
+            << " with " << i << "th"
+            << " dim:"
+            << this->getTensor()->getNDim()
+            << std::endl;
+        //abort();
+    }
+
+}
+
 
 } // namespace swc

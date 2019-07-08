@@ -15,10 +15,13 @@
 #include <unordered_map>
 
 #include "pass/Label.h"
-#include "graphIR/IRGraph.h"
 #include "pass/AutodiffPass.h"
 
 namespace swc {
+
+//forward declaration
+class IRGraph;
+
 
 class IRNode {
   public:
@@ -39,6 +42,7 @@ class IRNode {
                         std::unordered_map<IRNode*, IRNode*> &gradNodeMap,
                         void* methodParams,
                         pass::METHOD_TYPE methodType){};
+    
     
     void pushParentNode(){};
     template <typename T, typename... Types>
@@ -87,7 +91,7 @@ class IRNode {
         firstArg->delChildNode(this);
         destroyUpperNode(args...);
     }
-
+        
     const std::vector<IRNode *> &getParentNodes() const { return _parentNodes; }
     const std::vector<IRNode *> &getChildNodes() const { return _childNodes; }
 

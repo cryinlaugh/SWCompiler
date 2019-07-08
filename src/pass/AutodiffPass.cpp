@@ -33,8 +33,8 @@ METHOD_TYPE AutodiffPass::string2method(std::string& s)
 
 void AutodiffPass::getMethods() 
 {
-    SWLOG_INFO<<"No method determinated..."<<std::endl;
-    SWLOG_INFO<<"Please choose a solver: SGD, ADAM..."<<std::endl;
+    SWLOG_DEBUG(4)<<"No method determinated..."<<std::endl;
+    SWLOG_DEBUG(4)<<"Please choose a solver: SGD, ADAM..."<<std::endl;
     abort();
 }
 
@@ -64,7 +64,7 @@ void AutodiffPass::getADAMParameters(float lr)
 
 void AutodiffPass::run(IRGraph* graph_train)
 {
-    SWLOG_INFO << "AutodiffPass Run" << endl;
+    SWLOG_DEBUG(4) << "AutodiffPass Run" << endl;
     _graph->copyTo(graph_train);
     //graph_train = _graph;
 
@@ -75,7 +75,7 @@ void AutodiffPass::run(IRGraph* graph_train)
     for (int i = 0; i < graph_train->topologyNum(); i++) {
         for (int j = 0; j < graph_train->getNumInTopoLevel(i); j++) {
             auto node = graph_train->getNodeInTopo(i, j);
-            SWLOG_INFO << "TopoLevel.." << i << "\tType..." 
+            SWLOG_DEBUG(4) << "TopoLevel.." << i << "\tType..." 
                 << (node->nodeType() == TENSOR_NODE ? "TENSOR\t" : "OP\t")
                 << (node->name()) << std::endl;
             topo_nodes.push_back(node);
@@ -101,7 +101,7 @@ void AutodiffPass::run(IRGraph* graph_train)
         }
 
         //for (auto it : gradNodeMap) {
-        //    SWLOG_INFO << "gradNode Map:"
+        //    SWLOG_DEBUG(4) << "gradNode Map:"
         //        << "\t" << it.first->name() << "\t" << it.second->name() << "\n";
         //}
     }
@@ -111,19 +111,19 @@ void AutodiffPass::run(IRGraph* graph_train)
 void AutodiffPass::destroy()
 {
     if (_parameters != NULL) free(_parameters);
-    SWLOG_INFO << "free AutodiffPass parameters" << endl;
+    SWLOG_DEBUG(4) << "free AutodiffPass parameters" << endl;
 }
 
 void AutodiffPass::show()
 {
-    SWLOG_INFO << "Show Methods:" << endl;
+    SWLOG_DEBUG(4) << "Show Methods:" << endl;
     switch(_method)
     {
         case SGD_METHOD:
             SWLOG_INFO << "----SGD" << endl;
             SWLOG_INFO << "----learning rate:" 
                 << ((SGD_PARAMETERS*)_parameters)->lr << endl;
-            SWLOG_INFO<< "----decay:"
+            SWLOG_INFO << "----decay:"
                 << ((SGD_PARAMETERS*)_parameters)->decay << endl;
             SWLOG_INFO << "----momentum:"
                 << ((SGD_PARAMETERS*)_parameters)->momentum << endl;

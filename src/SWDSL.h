@@ -48,6 +48,11 @@
     method *name##_Op = new method();                                          \
     name->setOp(name##_Op)
 
+#define DYOP(name, method, para...)                                            \
+    OpNode *name = new OpNode(#name);                                          \
+    method *name##_Op = new method(para);                                      \
+    name->setOp(name##_Op)
+
 // link FATHER
 #define LINKPARENT(self, parent...) self->pushParentNode(parent)
 
