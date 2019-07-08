@@ -1,0 +1,5 @@
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/utils/)
+file(GLOB files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} utils/*)
+foreach(filename ${files})
+  configure_file(${filename} ${SW_BINARY_DIR}/${filename} COPYONLY)
+endforeach(filename)

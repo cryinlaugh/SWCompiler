@@ -12,86 +12,88 @@ using namespace std;
 int main() {
     //============================
     // Example of 2 FC layer:
-    //  T:data_0   T:weight_0
+    //  T:data0   T:weight0
     //     \       /
     //      \     /
-    //        O:fc_0 -- T:bias_0
+    //        O:fc0 -- T:bias0
     //         |
-    //      T:data_1
+    //      T:data1
     //         |
-    //      O:tanh_0
+    //      O:tanh0
     //         |
-    //      T:data_2
-    //                  T:weight_1
+    //      T:data2
+    //                  T:weight1
     //          \       /
     //           \     /
-    //          O:fc_1 -- T:bias_1
+    //          O:fc1 -- T:bias1
     //              |
-    //          T:data_3
+    //          T:data3
     //              |
     //          O: softmax
     //              |
-    //          T:data_4
+    //          T:data4
     //=============================
 
-    TENSOR(data_0, 8, 784);
-    TENSOR(weight_0, 784, 512);
-    TENSOR(bias_0, 512);
-    data_0_Tensor->setTensorInit(TensorInitType::FILE, "mnist_images_8.bin");
-    weight_0_Tensor->setTensorInit(TensorInitType::FILE, "mlp_weight0.bin");
-    bias_0_Tensor->setTensorInit(TensorInitType::FILE, "mlp_bias0.bin");
+    TENSOR(data0, 8, 784);
+    TENSOR(weight0, 784, 512);
+    TENSOR(bias0, 512);
+    data0_Tensor->setTensorInit(TensorInitType::FILE,
+                                "input/mnist_images_8.bin");
+    weight0_Tensor->setTensorInit(TensorInitType::FILE,
+                                  "input/mlp_weight0.bin");
+    bias0_Tensor->setTensorInit(TensorInitType::FILE, "input/mlp_bias0.bin");
 
-    OP(fc_0, MatrixMatrixFCOp);
-    LINKUPPER(fc_0, data_0, weight_0, bias_0);
+    OP(fc0, MatrixMatrixFCOp);
+    LINKUPPER(fc0, data0, weight0, bias0);
 
-    TENSOR(data_1, 8, 512);
-    LINKUPPER(data_1, fc_0);
+    TENSOR(data1, 8, 512);
+    LINKUPPER(data1, fc0);
 
-    OP(tanh_0, MatrixTanhOp);
-    LINKUPPER(tanh_0, data_1);
+    OP(tanh0, MatrixTanhOp);
+    LINKUPPER(tanh0, data1);
 
-    TENSOR(data_2, 8, 512);
-    LINKUPPER(data_2, tanh_0);
+    TENSOR(data2, 8, 512);
+    LINKUPPER(data2, tanh0);
 
     // define IR graph
     G(mlp);
-    GpT(mlp, data_0, data_1, data_2, weight_0, bias_0);
-    GpO(mlp, fc_0, tanh_0);
+    GpT(mlp, data0, data1, data2, weight0, bias0);
+    GpO(mlp, fc0, tanh0);
 
-    TENSOR(weight_1, 512, 10);
-    TENSOR(bias_1, 10);
-    weight_1_Tensor->setTensorInit(TensorInitType::FILE, "mlp_weight1.bin");
-    bias_1_Tensor->setTensorInit(TensorInitType::FILE, "mlp_bias1.bin");
+    TENSOR(weight1, 512, 10);
+    TENSOR(bias1, 10);
+    weight1_Tensor->setTensorInit(TensorInitType::FILE,
+                                  "input/mlp_weight1.bin");
+    bias1_Tensor->setTensorInit(TensorInitType::FILE, "input/mlp_bias1.bin");
 
-    OP(fc_1, MatrixMatrixFCOp);
-    LINKUPPER(fc_1, data_2, weight_1, bias_1);
+    OP(fc1, MatrixMatrixFCOp);
+    LINKUPPER(fc1, data2, weight1, bias1);
 
-    TENSOR(data_3, 8, 10);
-    LINKUPPER(data_3, fc_1);
+    TENSOR(data3, 8, 10);
+    LINKUPPER(data3, fc1);
 
     Tensor *labelt = new Tensor({8}, DataType::Int32_t);
     TensorNode *labeln = new TensorNode("selected", labelt);
     // labelt->setTensorInit(TensorInitType::FILE, "mnist_labels.bin");
 
     OP(softmax, MatrixSoftmaxOp);
-    LINKUPPER(softmax, data_3, labeln);
+    LINKUPPER(softmax, data3, labeln);
 
-    TENSOR(data_4, 8, 10);
-    LINKUPPER(data_4, softmax);
+    TENSOR(data4, 8, 10);
+    LINKUPPER(data4, softmax);
 
-    GpT(mlp, data_3, data_4, weight_1, bias_1, labeln);
-    GpO(mlp, fc_1, softmax);
+    GpT(mlp, data3, data4, weight1, bias1, labeln);
+    GpO(mlp, fc1, softmax);
 
-    CHECKT(data_0);
-    CHECKT(weight_0);
-    CHECKO(fc_0);
-    CHECKT(data_1);
-    CHECKO(tanh_0);
-    CHECKT(data_2);
+    CHECKT(data0);
+    CHECKT(weight0);
+    CHECKO(fc0);
+    CHECKT(data1);
+    CHECKO(tanh0);
+    CHECKT(data2);
     CHECKG(mlp);
 
-    bool res =
-        mlp->buildSubGraphs(data_0, data_2, ParallelStrategy::SLICE, 0, 2);
+    bool res = mlp->buildSubGraphs(data0, data2, ParallelStrategy::SLICE, 0, 2);
     if (res) {
         std::cout << "build SubGraph Ok\n";
     }

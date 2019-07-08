@@ -5,7 +5,7 @@
     > Created Time: 三  4/10 17:25:58 2019
  ************************************************************************/
 
-struct TrainingProfile;
+struct TrainingConfig;
 
 namespace swc {
 class IRGraph;
@@ -18,6 +18,6 @@ class IRGraph;
  *  \param profile Training profile, like learning rate, decay etc.
  *  \return IRGraph for training
  */
-IRGraph *getTrainNet(IRGraph *graph, TrainingProfile &profile);
+IRGraph *getTrainNet(IRGraph *graph, TrainingConfig &profile);
 
 } // namespace swc

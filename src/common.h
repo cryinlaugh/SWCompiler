@@ -10,23 +10,42 @@
 
 #include <memory>
 #include <vector>
+#include <string>
 
 enum class DataType { Float_t, Double_t, Int8_t, Int32_t };
 
 enum ParallelStrategy { SLICE, TILING };
 
-struct TrainingProfile {
+enum BytesProto {
+    ONE_BYTE_AS_INT,
+    FOUR_BYTES_AS_FLOAT
+};
+
+struct TrainingConfig {
     float lr{0.001};
     float decay{0.001};
     float momentum{0.9};
     size_t batch{1};
+    // snapshot interval iter
+    size_t snapshot{0};
+    // For Dataload
+    size_t max_epoch{1};
+    BytesProto label_bytes{ONE_BYTE_AS_INT};
+    BytesProto data_bytes{FOUR_BYTES_AS_FLOAT};
+    std::string train_data_file;
+    size_t train_data_samples{0};
 };
 
 struct CodegenConfig {
-    bool flag_multiGPU{false};
-    bool flag_multiStream{false};
-    bool flag_MPI{false};
-    bool flag_use_cublas{false};
+    bool train_mode{false};
+
+    bool cuda{false};
+    bool cublas{false};
+    bool cuda_stream{false};
+
+    bool mpi{false};
+
+    TrainingConfig train_config;
 };
 
 enum OpType { TENSOR_OP, BASIC_OP, DL_OP };

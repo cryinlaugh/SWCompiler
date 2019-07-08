@@ -195,7 +195,7 @@ class ElementAddOp : public Op {
 
 class ElementSubOp : public Op {
   public:
-    ElementSubOp() : Op(DL_OP, 2, 1, std::string("ElementAdd")) {
+    ElementSubOp() : Op(DL_OP, 2, 1, std::string("ElementSub")) {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
     };
@@ -205,7 +205,7 @@ class ElementSubOp : public Op {
 
 class ElementMulOp : public Op {
   public:
-    ElementMulOp() : Op(DL_OP, 2, 1, std::string("ElementAdd")) {
+    ElementMulOp() : Op(DL_OP, 2, 1, std::string("ElementMul")) {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
     };
@@ -215,7 +215,7 @@ class ElementMulOp : public Op {
 
 class ElementDivOp : public Op {
   public:
-    ElementDivOp() : Op(DL_OP, 2, 1, std::string("ElementAdd")) {
+    ElementDivOp() : Op(DL_OP, 2, 1, std::string("ElementDiv")) {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
     };

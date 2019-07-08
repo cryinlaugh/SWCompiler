@@ -103,18 +103,18 @@ static std::vector<size_t> inferConvOutDims(size_t ih, size_t iw,
 //     return odims;
 // }
 
-static std::string getNodeName(std::string oldName) {
-    assert(!oldName.empty() && "inputName empty");
-    std::string name;
-    for (const char c : oldName) {
-        if (c == '/' || c == '.' || c == '-')
-            name.push_back('_');
-        else
-            name.push_back(c);
-    }
-
-    return name;
-}
+// static std::string getNodeName(std::string oldName) {
+//     assert(!oldName.empty() && "inputName empty");
+//     std::string name;
+//     for (const char c : oldName) {
+//         if (c == '/' || c == '.' || c == '-')
+//             name.push_back('_');
+//         else
+//             name.push_back(c);
+//     }
+//
+//     return name;
+// }
 
 Caffe2Importer::Caffe2Importer(IRGraph *g, const std::string &netProtoFile,
                                const std::string &tensorProtoFile,
@@ -126,6 +126,13 @@ Caffe2Importer::Caffe2Importer(IRGraph *g, const std::string &netProtoFile,
         std::string name = tnode->name();
 
         name_tNode_map_[name] = tnode;
+    }
+
+    size_t err = system("mkdir /tmp/SW");
+    if(err == 0) {
+        SWLOG_INFO << "Create directory /tmp/SW/\n";
+    } else {
+        SWLOG_INFO << "Directory /tmp/SW/ already exists, go on\n";
     }
 
     caffe2::NetDef tensors;

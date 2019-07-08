@@ -116,6 +116,13 @@ class IRGraph {
     void setDeviceLabel(Device dev);
     Device getDeviceLabel() { return _dev; }
 
+    void setTrainDataNodes(TensorNode *label, TensorNode *data) {
+        _input_label_node = label;
+        _input_data_node = data;
+    }
+    TensorNode *getTrainLabelNode() { return _input_label_node; }
+    TensorNode *getTrainDataNode() { return _input_data_node; }
+
   private:
     std::vector<TensorNode *> _tensors;
     std::vector<OpNode *> _ops;
@@ -124,6 +131,9 @@ class IRGraph {
     std::vector<TensorNode *> _outNodes;
 
     std::vector<std::vector<IRNode *>> _nodesByTopology;
+
+    TensorNode *_input_data_node{nullptr};
+    TensorNode *_input_label_node{nullptr};
 
     Device _dev;
 };

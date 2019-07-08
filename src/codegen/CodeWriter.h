@@ -4,6 +4,7 @@
     > Mail:
     > Created Time: 日  4/28 13:07:06 2019
  ************************************************************************/
+#pragma once
 
 #include <sstream>
 class CodeWriter {
