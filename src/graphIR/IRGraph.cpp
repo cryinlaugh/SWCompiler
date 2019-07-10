@@ -211,6 +211,19 @@ OpNode *IRGraph::extractSubGraph(TensorNode *in, TensorNode *out) {
 }
 
 //---------------------------------------------------------
+std::vector<size_t> inferConvOutDims(size_t ih, size_t iw,
+                                            std::vector<size_t> &kernels,
+                                            std::vector<size_t> &strides,
+                                            std::vector<size_t> &pads) {
+    assert(kernels.size() == 2);
+    assert(strides.size() == 2);
+    assert(pads.size() == 4);
+
+    size_t oh = ((ih + pads[0] + pads[2] - kernels[0]) / strides[0] + 1);
+    size_t ow = ((iw + pads[1] + pads[3] - kernels[1]) / strides[1] + 1);
+    return {oh, ow};
+}
+
 void IRGraph::initTensorNodes() {
     updateTopology();
 
@@ -220,7 +233,7 @@ void IRGraph::initTensorNodes() {
             if (irNode->nodeType() == OP_NODE) {
                 auto *node = (OpNode *)irNode;
                 auto *op = node->getOp();
-                if (dynamic_cast<MatrixMatrixFCOp *>(op)) {
+                if (dynamic_cast<MatrixMatrixFCOp *>(op) || dynamic_cast<MatrixMatrixFCBiasOp *>(op)) {
                     auto idims =
                         ((TensorNode *)node->getParentNode(0))->getDims();
                     auto *weight = (TensorNode *)node->getParentNode(1);
@@ -238,6 +251,14 @@ void IRGraph::initTensorNodes() {
                     auto *out = (TensorNode *)node->getChildNode(0);
                     out->setTensor(new Tensor({idims[0], idims[1]}));
                 }
+
+                if (dynamic_cast<ReluOp *>(op)) {
+
+                    auto *in = (TensorNode *)node->getParentNode(0);
+                    auto *out = (TensorNode *)node->getChildNode(0);
+                    out->setTensor(new Tensor(in->getTensor()->getTensorShape()));
+                }
+
                 if (dynamic_cast<MatrixSoftmaxOp *>(op)) {
                     auto idims =
                         ((TensorNode *)node->getParentNode(0))->getDims();
@@ -250,6 +271,29 @@ void IRGraph::initTensorNodes() {
                     // auto odims = out->getDims();
                     auto *shape = out->getTensor()->getTensorShape();
                     out->setTensor(new Tensor(shape));
+                }
+                if(auto *conv = dynamic_cast<Conv2dOp *>(op)) {
+                    auto idims = ((TensorNode *)node->getParentNode(0))->getDims();
+                    auto wdims = ((TensorNode *)node->getParentNode(1))->getDims(); // OC K K IC
+                    auto kernels = conv->getKernels();
+                    auto strides = conv->getStrides();
+                    auto pads = conv->getPads();
+                    std::vector<size_t> ohw = inferConvOutDims(idims[1], idims[2], kernels, strides, pads); 
+
+                    auto *out = (TensorNode *)node->getChildNode(0);
+                    out->setTensor(new Tensor({idims[0], idims[1]}));
+                    out->setTensor(new Tensor({idims[0], ohw[0], ohw[1], wdims[0]}));
+                }
+                if(auto *pool = dynamic_cast<MaxPoolOp *>(op)) {
+                    auto idims = ((TensorNode *)node->getParentNode(0))->getDims();
+                    auto kernels = pool->getKernels();
+                    auto strides = pool->getStrides();
+                    auto pads = pool->getPads();
+                    std::vector<size_t> ohw = inferConvOutDims(idims[1], idims[2], kernels, strides, pads); 
+
+                    auto *out = (TensorNode *)node->getChildNode(0);
+                    out->setTensor(new Tensor({idims[0], idims[1]}));
+                    out->setTensor(new Tensor({idims[0], ohw[0], ohw[1], idims[3]}));
                 }
             }
         }
