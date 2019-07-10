@@ -10,6 +10,7 @@
 
 using namespace swc;
 using namespace swc::op;
+using namespace swc::pass;
 using namespace std;
 
 int main()
@@ -18,9 +19,11 @@ int main()
     INIT(data0, TensorInitType::FILE, "mnist_images_8.bin");
 
     TENSOR(conv0_w, 16, 5, 5, 1);
-    INIT(conv0_w, TensorInitType::XAVIER, 784); // fanIn
     TENSOR(conv0_b, 16);
+    INIT(conv0_w, TensorInitType::XAVIER, 784); // fanIn
     INIT(conv0_b, TensorInitType::CONSTANT, 0);
+    conv0_w->setTraining(1);
+    conv0_b->setTraining(1);
     vector<size_t> conv0_kernels{5, 5};
 	vector<size_t> conv0_strides{1, 1};
 	vector<size_t> conv0_pads{2, 2, 2, 2};
@@ -43,9 +46,11 @@ int main()
     LINKUPPER(data3, relu0);
 
     TENSOR(conv1_w, 16, 5, 5, 16);
-    INIT(conv1_w, TensorInitType::XAVIER, 5*5*16); // fanIn
     TENSOR(conv1_b, 16);
+    INIT(conv1_w, TensorInitType::XAVIER, 5*5*16); // fanIn
     INIT(conv1_b, TensorInitType::CONSTANT, 0);
+    conv1_w->setTraining(1);
+    conv1_b->setTraining(1);
     vector<size_t> conv1_kernels{5, 5};
 	vector<size_t> conv1_strides{1, 1};
 	vector<size_t> conv1_pads{2, 2, 2, 2};
@@ -69,13 +74,21 @@ int main()
 
     TENSOR(fc0_w, 144, 10);
     TENSOR(fc0_b, 10);
+    INIT(fc0_w, TensorInitType::XAVIER, 144); // fanIn
+    INIT(fc0_b, TensorInitType::CONSTANT, 0);
+    fc0_w->setTraining(1);
+    fc0_b->setTraining(1);
     OP(fc0, MatrixMatrixFCBiasOp);
     LINKUPPER(fc0, data6, fc0_w, fc0_b);
     TENSOR(data7, 0);
     LINKUPPER(data7, fc0);
 
+
+    Tensor *label_t = new Tensor({8}, DataType::Int32_t);
+    TensorNode *label = new TensorNode("selected", label_t);
+
     OP(softmax, MatrixSoftmaxOp);
-    LINKUPPER(softmax, data7);
+    LINKUPPER(softmax, data7, label);
     TENSOR(prob, 0);
     LINKUPPER(prob, softmax);
 
@@ -85,7 +98,7 @@ int main()
     		data3, conv1_w, conv1_b,
     		data4, data5, 
     		data6, fc0_w, fc0_b,
-    		data7, prob);
+    		data7, label, prob);
     GpO(lenet, conv0, pool0, relu0,
     	conv1, pool1, relu1,
     	fc0, softmax);
@@ -93,7 +106,39 @@ int main()
     lenet->initTensorNodes();
 
     lenet->updateTopology();
-    dotGen(lenet);
+
+    TRAIN(lenet, "sgd", 0.001, 0.001, 0.9, 8);
+
+    TensorNode *data_input = (TensorNode *)lenet_train->getNodeByName("data0");
+    TensorNode *label_input = (TensorNode *)lenet_train->getNodeByName("selected");
+
+    lenet_train->setTrainDataNodes(label_input, data_input);
+    lenet_train->updateTopology();
+
+    PassManager passManager;
+    RenamingNodePass renamingpass(lenet_train);
+    LabelingPass labelingpass(lenet_train);
+    LoweringPass loweringpass(lenet_train);
+    passManager.add((OptimizePass *)&renamingpass);
+    passManager.add((OptimizePass *)&labelingpass);
+    passManager.add((OptimizePass *)&loweringpass);
+    passManager.add((OptimizePass *)&labelingpass);
+    passManager.run();
+
+
+    dotGen(lenet_train);
+
+
+   
+    CodegenConfig config;
+    config.train_mode = true;
+    config.train_config.train_data_file = "mnist_labels_images.bin";
+    config.train_config.label_bytes = BytesProto::ONE_BYTE_AS_INT;
+    config.train_config.data_bytes = BytesProto::FOUR_BYTES_AS_FLOAT;
+    config.train_config.train_data_samples = 60000;
+
+    
+    
 
 	return 0;
 }
