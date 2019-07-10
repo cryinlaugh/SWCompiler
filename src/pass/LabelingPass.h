@@ -66,7 +66,7 @@ class swc::pass::LabelingPass : public swc::pass::OptimizePass {
         for (int i = 0; i < nOpNodes; i++) {
             OpNode *node = _graph->getOpNode(i);
             Label *label = node->getLabel();
-            if ((label->getTypeNameLabel()).compare("MatrixMatrixFC") == 0) {
+            if ((label->getTypeNameLabel()).compare("MatrixMatrixFCBias") == 0) {
                 SWLOG_DEBUG(2)
                     << label->getTypeNameLabel() << " "
                     << label->getNodeNameLabel()

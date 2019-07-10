@@ -1090,7 +1090,7 @@ void Codegen::emitFuncCall(OpNode *op) {
                 << tensors_name_map_[C] << ", " << n << ");\n";
     }
 
-    if ((oplabel->getTypeNameLabel()) == "BatchedAdd") {
+    if ((oplabel->getTypeNameLabel()) == "BatchedAdd"  || (oplabel->getTypeNameLabel()) == "MatrixVectorAdd") {
         auto *A = ((TensorNode *)op->getParentNode(0))->getTensor();
         auto *B = ((TensorNode *)op->getParentNode(1))->getTensor();
         auto *C = ((TensorNode *)op->getChildNode(0))->getTensor();
@@ -1456,7 +1456,7 @@ void Codegen::emitFuncCallCUDA(OpNode *op) {
                 << tensors_name_map_[A] << ", " << tensors_name_map_[B] << ", "
                 << n << ");\n";
     }
-    if ((oplabel->getTypeNameLabel()) == "BatchedAdd") {
+    if ((oplabel->getTypeNameLabel()) == "BatchedAdd" || (oplabel->getTypeNameLabel()) == "MatrixVectorAdd") {
         auto *A = ((TensorNode *)op->getParentNode(0))->getTensor();
         auto *B = ((TensorNode *)op->getParentNode(1))->getTensor();
         auto *C = ((TensorNode *)op->getChildNode(0))->getTensor();

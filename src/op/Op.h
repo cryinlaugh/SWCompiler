@@ -41,7 +41,7 @@ class Op {
             IRNode* opNode,
             std::unordered_map<IRNode*, IRNode*> &gradNodeMap){};
     virtual void einsumLowering(IRGraph *graph, IRNode *node) {
-        SWLOG_DEBUG(100) << "Unimplemented in base Op class" << std::endl;
+        SWLOG_DEBUG(100) << "EinsumLowering unimplemented in base Op class" << std::endl;
     }
 
     void addInputTensor(Tensor *inputTensor) {
@@ -64,7 +64,7 @@ class Op {
 
     // for lowering
     virtual void lowering(IRGraph *graph, IRNode *node) {
-        SWLOG_DEBUG(100) << "Unimplemented in base Op class" << std::endl;
+        SWLOG_DEBUG(100) << "Lowering unimplemented in base Op class" << std::endl;
     }
 
     /*

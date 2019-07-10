@@ -143,10 +143,10 @@ void MatrixMatrixFCGradOp::einsumLowering(IRGraph *graph, IRNode *node)
     graph->updateTopology();
 }
 
-void MatrixMatrixFCBiasOp::einsumLowering(IRGraph *graph, IRNode *node) 
+void MatrixMatrixFCBiasOp::einsumLowering(IRGraph *graph, IRNode *node)
 {
-    SWLOG_DEBUG(4) << "einsumLowering MatrixMatrixFCOp ..." << std::endl;
-    
+    SWLOG_DEBUG(4) << "einsumLowering MatrixMatrixFCBiasOp ..." << std::endl;
+
     // Op check;
     assert(node->parentNum() == 3 &&
            "FC input should be 3: data, weight, bias");
@@ -181,8 +181,8 @@ void MatrixMatrixFCBiasOp::einsumLowering(IRGraph *graph, IRNode *node)
     O2->getLabel()->setDeviceLabel(dev.type, dev.id);
 
     // link parent nodes
-    LINKUPPER(O1, node->getParentNode(0), node->getParentNode(1));
-    LINKUPPER(O2, O1_out, node->getParentNode(2));
+    LINKUPPER(O1, input, weight);
+    LINKUPPER(O2, O1_out, bias);
     // link children nodes
     LINKUPPER(node->getChildNode(0), O2);
 
@@ -206,9 +206,9 @@ void MatrixMatrixFCBiasOp::einsumLowering(IRGraph *graph, IRNode *node)
     graph->updateTopology();
 }
 
-void MatrixMatrixFCBiasGradOp::einsumLowering(IRGraph *graph, IRNode *node) 
+void MatrixMatrixFCBiasGradOp::einsumLowering(IRGraph *graph, IRNode *node)
 {
-    SWLOG_DEBUG(4) << "einsumLowering MatrixMatrixFCGradOp ..." << std::endl;
+    SWLOG_DEBUG(4) << "einsumLowering MatrixMatrixFCBiasGradOp ..." << std::endl;
     for (int i = 0; i < node->parentNum(); i++) {
         std::cout << node->getParentNode(i)->name() << std::endl;
     }
@@ -272,5 +272,3 @@ void MatrixMatrixFCBiasGradOp::einsumLowering(IRGraph *graph, IRNode *node)
 
     graph->updateTopology();
 }
-
-

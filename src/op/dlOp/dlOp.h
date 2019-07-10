@@ -73,10 +73,12 @@ class MatrixMatrixFCBiasOp : public Op {
     void destroy(){};
 
     // for lowering
-    void autoDiff(IRGraph* graph, 
+    void autoDiff(IRGraph* graph,
         IRNode* opNode,
         std::unordered_map<IRNode*, IRNode*>&gradNodeMap);
     void einsumLowering(IRGraph *graph, IRNode *node);
+    // for common lowering
+    void lowering(IRGraph *graph, IRNode *node);
 };
 
 
@@ -91,6 +93,8 @@ class MatrixMatrixFCBiasGradOp : public Op {
 
     // for lowering
     void einsumLowering(IRGraph *graph, IRNode *node);
+    // for common lowering
+    void lowering(IRGraph *graph, IRNode *node);
 };
 
 
