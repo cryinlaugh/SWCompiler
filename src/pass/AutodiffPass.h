@@ -28,6 +28,7 @@ typedef struct
     float lr;
     float decay;
     float momentum;
+    size_t batch;
 } SGD_PARAMETERS;
 
 //define adam parameters
@@ -83,11 +84,17 @@ class AutodiffPass {
     void getSGDParameters();
     void getSGDParameters(float lr,
                           float decay,
-                          float momentum);
+                          float momentum,
+                          size_t batch);
 
     // ADAM Parameters read-in
     void getADAMParameters();
     void getADAMParameters(float lr);
+    // temporary functon to avoid compilation error
+    void getADAMParameters(float lr,
+                          float decay,
+                          float momentum,
+                          size_t batch) {}
     
     
     void show();

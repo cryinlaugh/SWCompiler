@@ -43,14 +43,17 @@ void AutodiffPass::getSGDParameters()
     ((SGD_PARAMETERS*)_parameters)->lr = 0.001;
     ((SGD_PARAMETERS*)_parameters)->decay = 0.001;
     ((SGD_PARAMETERS*)_parameters)->momentum = 0.9;
+    ((SGD_PARAMETERS*)_parameters)->batch = 1;
 }
 void AutodiffPass::getSGDParameters(float lr,
                                     float decay,
-                                    float momentum)
+                                    float momentum,
+                                    size_t batch)
 {
     ((SGD_PARAMETERS*)_parameters)->lr = lr;
     ((SGD_PARAMETERS*)_parameters)->decay = decay;
     ((SGD_PARAMETERS*)_parameters)->momentum = momentum;
+    ((SGD_PARAMETERS*)_parameters)->batch = batch;
 }
 
 void AutodiffPass::getADAMParameters()
@@ -120,17 +123,19 @@ void AutodiffPass::show()
     switch(_method)
     {
         case SGD_METHOD:
-            SWLOG_INFO << "----SGD" << endl;
-            SWLOG_INFO << "----learning rate:" 
+            SWLOG_DEBUG(4) << "----SGD" << endl;
+            SWLOG_DEBUG(4) << "----learning rate:" 
                 << ((SGD_PARAMETERS*)_parameters)->lr << endl;
-            SWLOG_INFO << "----decay:"
+            SWLOG_DEBUG(4) << "----decay:"
                 << ((SGD_PARAMETERS*)_parameters)->decay << endl;
-            SWLOG_INFO << "----momentum:"
+            SWLOG_DEBUG(4) << "----momentum:"
                 << ((SGD_PARAMETERS*)_parameters)->momentum << endl;
+            SWLOG_DEBUG(4) << "----momentum:"
+                << ((SGD_PARAMETERS*)_parameters)->batch << endl;
             break;
         case ADAM_METHOD:
-            SWLOG_INFO << "----ADAM" << endl;
-            SWLOG_INFO << "----learning rate:" 
+            SWLOG_DEBUG(4) << "----ADAM" << endl;
+            SWLOG_DEBUG(4) << "----learning rate:" 
                 << ((ADAM_PARAMETERS*)_parameters)->lr << endl;
             break;
         default:
