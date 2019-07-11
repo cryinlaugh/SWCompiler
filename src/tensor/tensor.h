@@ -9,6 +9,7 @@
 #define _TENSOR_H
 
 #include "common.h"
+#include "SWLOG.h"
 #include <string>
 
 #include <cassert>
@@ -27,6 +28,7 @@ class TensorShape {
         for (auto i : shape) {
             shape_->push_back(i);
         }
+        _ndim = shape_->size();
     }
 
     ~TensorShape() {}
@@ -94,6 +96,7 @@ class Tensor {
 
     void reset(TensorShape *shape, DataType dtype = DataType::Float_t) {
         shape_ = shape;
+        SWLOG_DEBUG(2) << "reset shape dims " << shape_->getNDim() << "\n";
         dataType_ = dtype;
     }
     Tensor *clone() const;
@@ -110,6 +113,8 @@ class Tensor {
             dims.push_back(getDim(i));
         return dims;
     }
+
+    std::pair<size_t, size_t> viewAs2D(int n);
 
     void setTensorInit(TensorInitType type, float value = 0);
     void setTensorInit(TensorInitType type, std::string file,
