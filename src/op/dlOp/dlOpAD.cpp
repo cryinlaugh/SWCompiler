@@ -35,6 +35,9 @@ void MatrixMatrixFCBiasOp::autoDiff(IRGraph* graph,
             "grad of FC output unfound\n");
     auto *outputGrad = gradNodeMap[output];
 
+    // SWLOG_DEBUG(6) << opNode->name() << " weight " << ((TensorNode*)weight)->getTraining() << "\n";
+    // SWLOG_DEBUG(6) << opNode->name() << " bias " << ((TensorNode*)bias)->getTraining() << "\n";
+
     auto *N = new OpNode(opNode->name() + "_grad",
             new MatrixMatrixFCBiasGradOp());
     N->exlinkUpperNode(input, weight, bias, output, outputGrad);
@@ -169,12 +172,18 @@ void MaxPoolOp::autoDiff(IRGraph* graph,
     SWLOG_DEBUG(4) << "autoDiff: " << _opClassName   << std::endl;
     auto *input = opNode->getParentNode(0);
     auto *output = opNode->getChildNode(0);
+
+    auto *pool_op = (MaxPoolOp*)((OpNode*)opNode)->getOp();
+    auto kernels = pool_op->getKernels();
+    auto strides = pool_op->getStrides();
+    auto pads = pool_op->getPads();
+
     assert(gradNodeMap.count(output) &&
             "grad of MaxPool output unfound\n");
     auto *outputGrad = gradNodeMap[output];
 
     auto *N =
-        new OpNode(opNode->name() + "_grad", new MaxPoolGradOp());
+        new OpNode(opNode->name() + "_grad", new MaxPoolGradOp(kernels, strides, pads));
     N->exlinkUpperNode(input, output, outputGrad);
 
     gradNodeMap[opNode] = N;
@@ -244,12 +253,18 @@ void Conv2dOp::autoDiff(IRGraph* graph,
     auto *weight = opNode->getParentNode(1);
     auto *bias = opNode->getParentNode(2);
     auto *output = opNode->getChildNode(0);
+
+    auto *conv_op = (Conv2dOp*)((OpNode*)opNode)->getOp();
+    auto kernels = conv_op->getKernels();
+    auto strides = conv_op->getStrides();
+    auto pads = conv_op->getPads();
+
     assert(gradNodeMap.count(output) &&
             "grad of Conv2d output unfound\n");
     auto *outputGrad = gradNodeMap[output];
 
     auto *N = new OpNode(opNode->name() + "_grad",
-            new Conv2dGradOp());
+            new Conv2dGradOp(kernels, strides, pads));
     N->exlinkUpperNode(input, weight, bias, output, outputGrad);
 
     gradNodeMap[opNode] = N;
