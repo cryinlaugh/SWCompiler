@@ -25,6 +25,7 @@ class TensorDescendOp : public Op {
         _nDim = nDim;
         this->_inputNDims.push_back(nDim);
         this->_outputNDims.push_back(nDim-(end-start));
+        this->_einOp = 1;
     }
     ~TensorDescendOp() {}
 
@@ -51,6 +52,7 @@ class TensorAscendOp : public Op {
         _nDim = nDim;
         this->_inputNDims.push_back(nDim-(end-start));
         this->_outputNDims.push_back(nDim);
+        this->_einOp = 1;
     }
     ~TensorAscendOp() {}
 
@@ -65,6 +67,7 @@ class TensorAscendOp : public Op {
     int _start;
     int _end;
 };
+
 //=====================================================
 // Definition of 2-D tensor operations.
 // Version v0.1: basic ops for tensors listed below
@@ -122,6 +125,7 @@ class MatrixTransposeOp : public Op {
     MatrixTransposeOp() : Op(TENSOR_OP, 1, 1, std::string("MatrixTranspose")) {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
+        this->_einOp = 1;
     }
     ~MatrixTransposeOp() {}
     void destroy(){};

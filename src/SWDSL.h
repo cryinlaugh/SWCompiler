@@ -71,6 +71,9 @@
 
 #define GpO(name, OpNodes...) name->pushOpNode(OpNodes)
 
+#define GdT(name, tensorNodes...) name->delTensorNode(tensorNodes)
+
+#define GdO(name, OpNodes...) name->delOpNode(OpNodes)
 
 #define CHECKG(g)                                                              \
     printf("Generate MLP layer done!\n");                                      \

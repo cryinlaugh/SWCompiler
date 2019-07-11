@@ -32,6 +32,8 @@ class MatrixMatrixFCOp : public Op {
         this->_inputNDims.push_back(2);
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
+        
+        this->_einOp = 0;
     }
     ~MatrixMatrixFCOp() {}
     void destroy(){};
@@ -52,7 +54,10 @@ class MatrixMatrixFCGradOp : public Op {
     // input_grad, weight_grad
   public:
     MatrixMatrixFCGradOp()
-        : Op(DL_OP, 4, 2, std::string("MatrixMatrixFCGrad")) {}
+        : Op(DL_OP, 4, 2, std::string("MatrixMatrixFCGrad")) {
+            
+        this->_einOp = 0;
+    }
     ~MatrixMatrixFCGradOp() {}
     void destroy() {}
 
@@ -496,6 +501,7 @@ class BatchedReduceAddOp : public Op {
     void destroy() {}
 };
 
+
 class TransposeOp : public Op {
     std::vector<size_t> shuffle_;
 
@@ -511,6 +517,7 @@ class TransposeOp : public Op {
     std::vector<size_t> getShuffle() { return shuffle_; }
     void destroy() {}
 };
+//this may be a tensor op;
 
 class ArgMaxOp : public Op {
     int topK_;

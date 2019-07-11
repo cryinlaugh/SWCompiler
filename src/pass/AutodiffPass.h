@@ -89,14 +89,12 @@ class AutodiffPass {
 
     // ADAM Parameters read-in
     void getADAMParameters();
-    void getADAMParameters(float lr);
+    void getADAMParameters(float lr); 
     // temporary functon to avoid compilation error
     void getADAMParameters(float lr,
-                          float decay,
-                          float momentum,
-                          size_t batch) {}
-    
-    
+                           float decay,
+                           float momentum,
+                           size_t batch) {} 
     void show();
 
     void run(IRGraph* graph_train);
