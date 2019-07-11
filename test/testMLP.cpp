@@ -51,7 +51,7 @@ int main() {
     OpNode *fcOpNode_0 = new OpNode("fc_0");
     // Init op nodes as following:
     //--init Op:
-    MatrixMatrixFCOp *fcOp_0 = new MatrixMatrixFCOp();
+    MatrixMatrixFCBiasOp *fcOp_0 = new MatrixMatrixFCBiasOp();
     //--set Op in Op node
     fcOpNode_0->setOp(fcOp_0);
 

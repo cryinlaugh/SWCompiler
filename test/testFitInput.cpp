@@ -42,7 +42,7 @@ int main() {
     auto *weight0 = new TensorNode("weight0", {784, 512});
     auto *bias0 = new TensorNode("bias0", {512});
 
-    auto *fc0 = new OpNode("fc0", new MatrixMatrixFCOp());
+    auto *fc0 = new OpNode("fc0", new MatrixMatrixFCBiasOp());
     // order of input must be fixed
     // better not to expose this  to user
     fc0->exlinkUpperNode(data0, weight0, bias0);
@@ -61,7 +61,7 @@ int main() {
     auto *weight1 = new TensorNode("weight1", {0, 10});
     auto *bias1 = new TensorNode("bias1", {10});
 
-    auto *fc1 = new OpNode("fc1", new MatrixMatrixFCOp());
+    auto *fc1 = new OpNode("fc1", new MatrixMatrixFCBiasOp());
     fc1->exlinkUpperNode(data2, weight1, bias1);
 
     auto *data3 = new TensorNode("data3", fc1);

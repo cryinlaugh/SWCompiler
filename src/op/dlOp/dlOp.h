@@ -1,7 +1,7 @@
 /*************************************************************************
 	> File Name: dlOp.h
-	> Author: cryinlaugh 
-	> Mail: cryinlaugh@gmail.com 
+	> Author: cryinlaugh
+	> Mail: cryinlaugh@gmail.com
 	> Created Time: 二 12/ 4 15:57:29 2018
  ************************************************************************/
 
@@ -37,11 +37,13 @@ class MatrixMatrixFCOp : public Op {
     void destroy(){};
 
     // for lowering
-    void autoDiff(IRGraph* graph, 
+    void autoDiff(IRGraph* graph,
         IRNode* opNode,
         std::unordered_map<IRNode*, IRNode*>&gradNodeMap);
-    
+
     void einsumLowering(IRGraph *graph, IRNode *node);
+    // for common lowering
+    void lowering(IRGraph *graph, IRNode *node);
 
 };
 
@@ -56,7 +58,9 @@ class MatrixMatrixFCGradOp : public Op {
 
     // for lowering
     void einsumLowering(IRGraph *graph, IRNode *node);
-    
+    // for common lowering
+    void lowering(IRGraph *graph, IRNode *node);
+
 };
 
 class MatrixMatrixFCBiasOp : public Op {
@@ -106,7 +110,7 @@ class MatrixTanhOp : public Op {
     };
     ~MatrixTanhOp();
     void destroy(){};
-    void autoDiff(IRGraph* graph, 
+    void autoDiff(IRGraph* graph,
         IRNode* opNode,
         std::unordered_map<IRNode*, IRNode*>&gradNodeMap);
 };
@@ -126,7 +130,7 @@ class MatrixSoftmaxOp : public Op {
     };
     ~MatrixSoftmaxOp();
     void destroy(){};
-    void autoDiff(IRGraph* graph, 
+    void autoDiff(IRGraph* graph,
         IRNode* opNode,
         std::unordered_map<IRNode*, IRNode*>&gradNodeMap);
 };
@@ -310,8 +314,8 @@ class Conv2dOp : public Op {
     size_t getGroup() { return group_; }
     ~Conv2dOp();
     void destroy() {}
-    
-    void autoDiff(IRGraph* graph, 
+
+    void autoDiff(IRGraph* graph,
         IRNode* opNode,
         std::unordered_map<IRNode*, IRNode*>&gradNodeMap);
 };
@@ -371,7 +375,7 @@ class ReluOp : public Op {
     }
     ~ReluOp();
     void destroy() {}
-    void autoDiff(IRGraph* graph, 
+    void autoDiff(IRGraph* graph,
         IRNode* opNode,
         std::unordered_map<IRNode*, IRNode*>&gradNodeMap);
 };
@@ -410,8 +414,8 @@ class MaxPoolOp : public Op {
     std::vector<size_t> getKernels() { return kernels_; }
     std::vector<size_t> getStrides() { return strides_; }
     void destroy() {}
-    
-    void autoDiff(IRGraph* graph, 
+
+    void autoDiff(IRGraph* graph,
         IRNode* opNode,
         std::unordered_map<IRNode*, IRNode*>&gradNodeMap);
 };
@@ -479,7 +483,7 @@ class BatchedAddOp : public Op {
     void destroy() {}
 };
 
-BatchedAddOp should be MatrixVectorAddOp, remove 
+BatchedAddOp should be MatrixVectorAddOp, remove
 */
 
 class BatchedReduceAddOp : public Op {

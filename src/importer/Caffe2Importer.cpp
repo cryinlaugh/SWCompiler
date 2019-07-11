@@ -365,7 +365,7 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
     }
 
     if (opType == "FC") {
-        opNode = new OpNode(opName, new MatrixMatrixFCOp());
+        opNode = new OpNode(opName, new MatrixMatrixFCBiasOp());
 
         assert(op.input_size() == 3 && "FC bias is needed!!");
         auto in = name_tNode_map_[op.input(0)];

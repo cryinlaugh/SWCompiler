@@ -43,7 +43,7 @@ int main() {
     weight0->setExternal(true);
     bias0->setExternal(true);
 
-    OP(fc0, MatrixMatrixFCOp);
+    OP(fc0, MatrixMatrixFCBiasOp);
     LINKUPPER(fc0, data0, weight0, bias0);
 
     TENSOR(data1, 8, 512);
@@ -67,7 +67,7 @@ int main() {
     weight1->setTraining(1);
     bias1->setTraining(1);
 
-    OP(fc1, MatrixMatrixFCOp);
+    OP(fc1, MatrixMatrixFCBiasOp);
     LINKUPPER(fc1, data2, weight1, bias1);
 
     TENSOR(data3, 8, 10);

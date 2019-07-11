@@ -25,3 +25,13 @@ void MatrixMatrixFCBiasGradOp::lowering(IRGraph *graph, IRNode *node) {
 	SWLOG_DEBUG(4) << "Lowering MatrixMatrixFCBiasGradOp ..." << std::endl;
 	this->einsumLowering(graph, node);
 }
+
+void MatrixMatrixFCOp::lowering(IRGraph *graph, IRNode *node) {
+	SWLOG_DEBUG(4) << "Lowering MatrixMatrixFCBiasGradOp ..." << std::endl;
+	this->einsumLowering(graph, node);
+}
+
+void MatrixMatrixFCGradOp::lowering(IRGraph *graph, IRNode *node) {
+	SWLOG_DEBUG(4) << "Lowering MatrixMatrixFCBiasGradOp ..." << std::endl;
+	this->einsumLowering(graph, node);
+}

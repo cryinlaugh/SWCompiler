@@ -114,6 +114,21 @@ IRGraph *getTrainNet(IRGraph *graph, TrainingConfig &config) {
 
                 gradNodeMap[node] = N;
                 net->pushOpNode(N);
+            } if (auto op = dynamic_cast<MatrixMatrixFCBiasOp *>(node->getOp())) {
+                auto *input = node->getParentNode(0);
+                auto *weight = node->getParentNode(1);
+                auto *bias = node->getParentNode(2);
+                auto *output = node->getChildNode(0);
+                assert(gradNodeMap.count(output) &&
+                       "grad of FC output unfound\n");
+                auto *outputGrad = gradNodeMap[output];
+
+                auto *N = new OpNode(node->name() + "_grad",
+                                     new MatrixMatrixFCBiasGradOp());
+                N->exlinkUpperNode(input, weight, bias, output, outputGrad);
+
+                gradNodeMap[node] = N;
+                net->pushOpNode(N);
             } else if (auto op = dynamic_cast<MatrixTanhOp *>(node->getOp())) {
                 SWLOG_DEBUG(2)
                     << "get Gradient node for op " << node->name() << "\n";

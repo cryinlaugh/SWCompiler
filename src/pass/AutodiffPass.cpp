@@ -130,7 +130,7 @@ void AutodiffPass::show()
                 << ((SGD_PARAMETERS*)_parameters)->decay << endl;
             SWLOG_DEBUG(4) << "----momentum:"
                 << ((SGD_PARAMETERS*)_parameters)->momentum << endl;
-            SWLOG_DEBUG(4) << "----momentum:"
+            SWLOG_DEBUG(4) << "----batch:"
                 << ((SGD_PARAMETERS*)_parameters)->batch << endl;
             break;
         case ADAM_METHOD:

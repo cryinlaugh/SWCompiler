@@ -65,7 +65,7 @@ int main() {
                                    "input/mlp_weight1.bin");
     bias_1_Tensor->setTensorInit(TensorInitType::FILE, "input/mlp_bias1.bin");
 
-    OP(fc_1, MatrixMatrixFCOp);
+    OP(fc_1, MatrixMatrixFCBiasOp);
     LINKUPPER(fc_1, data2, weight_1, bias_1);
 
     TENSOR(data_3, 8, 10);
@@ -128,7 +128,7 @@ int main() {
     LINKUPPER(weight0_cpu1, scatter01);
     LINKUPPER(bias0_cpu1, scatter02);
 
-    OP(matmul0_cpu1, MatrixMatrixFCOp);
+    OP(matmul0_cpu1, MatrixMatrixFCBiasOp);
     LINKUPPER(matmul0_cpu1, data0_cpu1, weight0_cpu1, bias0_cpu1);
     TENSOR(data1_cpu1, 4, 512);
     LINKUPPER(data1_cpu1, matmul0_cpu1);
@@ -185,7 +185,7 @@ int main() {
     LINKUPPER(weight0_cpu2, scatter11);
     LINKUPPER(bias0_cpu2, scatter12);
 
-    OP(matmul0_cpu2, MatrixMatrixFCOp);
+    OP(matmul0_cpu2, MatrixMatrixFCBiasOp);
     LINKUPPER(matmul0_cpu2, data0_cpu2, weight0_cpu2, bias0_cpu2);
     TENSOR(data1_cpu2, 4, 512);
     LINKUPPER(data1_cpu2, matmul0_cpu2);
