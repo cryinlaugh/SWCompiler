@@ -80,7 +80,7 @@ void TensorNode::autoDiff(IRGraph* graph,
             SGD_PARAMETERS* profile = (SGD_PARAMETERS*)methodParams;
 
             auto *sgdOp = new SGDOp(profile->lr, profile->decay,
-                    profile->momentum, 128);
+                    profile->momentum, profile->batch);
             auto *SGDNode = new OpNode(this->name() + "_sgd", sgdOp);
 
             SGDNode->exlinkUpperNode(this, N, momentum);
