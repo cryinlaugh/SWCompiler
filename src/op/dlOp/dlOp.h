@@ -101,6 +101,24 @@ class MatrixMatrixFCBiasGradOp : public Op {
     void lowering(IRGraph *graph, IRNode *node);
 };
 
+class ReshapeOp: public Op {
+    std::vector<size_t> oshape_;
+
+  public:
+    ReshapeOp() : Op(DL_OP, 1, 1, std::string("Reshape")) {
+        /* unknown
+        this->_inputNDims.push_back(4);
+        this->_outputNDims.push_back(4);
+        */
+    };
+    ReshapeOp(std::vector<size_t> &shape)
+        : Op(DL_OP, 1, 1, std::string("Reshape")) {
+        oshape_.assign(shape.begin(), shape.end());
+    }
+    std::vector<size_t> getOutShape() { return oshape_; }
+    ~ReshapeOp();
+    void destroy() {}
+};
 
 class MatrixTanhOp : public Op {
   public:
