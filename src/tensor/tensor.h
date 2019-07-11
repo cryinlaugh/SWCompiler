@@ -22,10 +22,19 @@ class TensorShape {
 
   public:
     TensorShape(std::vector<size_t> *shape);
+    TensorShape(const std::initializer_list<size_t> &shape) {
+        shape_ = new std::vector<size_t>();
+        for (auto i : shape) {
+            shape_->push_back(i);
+        }
+    }
+
     ~TensorShape() {}
     int getNDim() const;
     size_t getDim(int idx) const;
     size_t size() const;
+    TensorShape *
+    getShuffledTensorShape(const std::vector<size_t> &shuffle) const;
 };
 
 class TensorInitInfo {

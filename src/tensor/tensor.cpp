@@ -25,6 +25,18 @@ size_t TensorShape::size() const {
     return size;
 }
 
+TensorShape *
+TensorShape::getShuffledTensorShape(const std::vector<size_t> &shuffle) const {
+    std::vector<size_t> *shape = new std::vector<size_t>();
+    for (auto idx : shuffle) {
+        if ((int)idx < shape_->size())
+            shape->push_back(shape_->at(idx));
+    }
+
+    return new TensorShape(shape);
+}
+
+
 Tensor *Tensor::clone() const {
     Tensor *t = new Tensor(shape_, dataType_);
     t->setTraining(train_);
