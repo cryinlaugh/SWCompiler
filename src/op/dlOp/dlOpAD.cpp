@@ -1,7 +1,7 @@
 /*************************************************************************
 	> File Name: dlOp.cpp
-	> Author: cryinlaugh 
-	> Mail: cryinlaugh@gmail.com 
+	> Author: cryinlaugh
+	> Mail: cryinlaugh@gmail.com
 	> Created Time: 二 12/ 4 15:57:35 2018
  ************************************************************************/
 
@@ -18,11 +18,11 @@
 using namespace swc::op;
 
 /*--------------------------------Auto Diff ------------------------
- * 
- * 
- * 
+ *
+ *
+ *
  * ----------------------------------------------------------------*/
-void MatrixMatrixFCBiasOp::autoDiff(IRGraph* graph, 
+void MatrixMatrixFCBiasOp::autoDiff(IRGraph* graph,
         IRNode* opNode,
         std::unordered_map<IRNode*, IRNode*>&gradNodeMap)
 {
@@ -36,12 +36,12 @@ void MatrixMatrixFCBiasOp::autoDiff(IRGraph* graph,
     auto *outputGrad = gradNodeMap[output];
 
     auto *N = new OpNode(opNode->name() + "_grad",
-            new MatrixMatrixFCGradOp());
+            new MatrixMatrixFCBiasGradOp());
     N->exlinkUpperNode(input, weight, bias, output, outputGrad);
 
     gradNodeMap[opNode] = N;
     graph->pushOpNode(N);
-    
+
     for (int i = 0; i < opNode->parentNum(); i++) {
 
         auto *tnode = (TensorNode *)(opNode->getParentNode(i));
@@ -57,7 +57,7 @@ void MatrixMatrixFCBiasOp::autoDiff(IRGraph* graph,
         graph->pushTensorNode(N);
     }
 }
-void MatrixMatrixFCOp::autoDiff(IRGraph* graph, 
+void MatrixMatrixFCOp::autoDiff(IRGraph* graph,
         IRNode* opNode,
         std::unordered_map<IRNode*, IRNode*>&gradNodeMap)
 {
@@ -70,12 +70,12 @@ void MatrixMatrixFCOp::autoDiff(IRGraph* graph,
     auto *outputGrad = gradNodeMap[output];
 
     auto *N = new OpNode(opNode->name() + "_grad",
-            new MatrixMatrixFCBiasGradOp());
+            new MatrixMatrixFCGradOp());
     N->exlinkUpperNode(input, weight, output, outputGrad);
 
     gradNodeMap[opNode] = N;
     graph->pushOpNode(N);
-    
+
     for (int i = 0; i < opNode->parentNum(); i++) {
 
         auto *tnode = (TensorNode *)(opNode->getParentNode(i));
@@ -93,7 +93,7 @@ void MatrixMatrixFCOp::autoDiff(IRGraph* graph,
 }
 
 
-void ReluOp::autoDiff(IRGraph* graph, 
+void ReluOp::autoDiff(IRGraph* graph,
         IRNode* opNode,
         std::unordered_map<IRNode*, IRNode*>&gradNodeMap)
 {
@@ -110,7 +110,7 @@ void ReluOp::autoDiff(IRGraph* graph,
 
     gradNodeMap[opNode] = N;
     graph->pushOpNode(N);
-    
+
     for (int i = 0; i < opNode->parentNum(); i++) {
 
         auto *tnode = (TensorNode *)(opNode->getParentNode(i));
@@ -127,7 +127,7 @@ void ReluOp::autoDiff(IRGraph* graph,
     }
 }
 
-void MatrixTanhOp::autoDiff(IRGraph* graph, 
+void MatrixTanhOp::autoDiff(IRGraph* graph,
         IRNode* opNode,
         std::unordered_map<IRNode*, IRNode*>&gradNodeMap)
 {
@@ -144,7 +144,7 @@ void MatrixTanhOp::autoDiff(IRGraph* graph,
 
     gradNodeMap[opNode] = N;
     graph->pushOpNode(N);
-    
+
     for (int i = 0; i < opNode->parentNum(); i++) {
 
         auto *tnode = (TensorNode *)(opNode->getParentNode(i));
@@ -162,7 +162,7 @@ void MatrixTanhOp::autoDiff(IRGraph* graph,
 }
 
 
-void MaxPoolOp::autoDiff(IRGraph* graph, 
+void MaxPoolOp::autoDiff(IRGraph* graph,
         IRNode* opNode,
         std::unordered_map<IRNode*, IRNode*>&gradNodeMap)
 {
@@ -179,7 +179,7 @@ void MaxPoolOp::autoDiff(IRGraph* graph,
 
     gradNodeMap[opNode] = N;
     graph->pushOpNode(N);
-    
+
     for (int i = 0; i < opNode->parentNum(); i++) {
 
         auto *tnode = (TensorNode *)(opNode->getParentNode(i));
@@ -197,7 +197,7 @@ void MaxPoolOp::autoDiff(IRGraph* graph,
 }
 
 
-void MatrixSoftmaxOp::autoDiff(IRGraph* graph, 
+void MatrixSoftmaxOp::autoDiff(IRGraph* graph,
         IRNode* opNode,
         std::unordered_map<IRNode*, IRNode*>&gradNodeMap)
 {
@@ -215,8 +215,8 @@ void MatrixSoftmaxOp::autoDiff(IRGraph* graph,
 
     gradNodeMap[opNode] = N;
     graph->pushOpNode(N);
-    
-    
+
+
     for (int i = 0; i < opNode->parentNum(); i++) {
 
         auto *tnode = (TensorNode *)(opNode->getParentNode(i));
@@ -235,7 +235,7 @@ void MatrixSoftmaxOp::autoDiff(IRGraph* graph,
 
 
 
-void Conv2dOp::autoDiff(IRGraph* graph, 
+void Conv2dOp::autoDiff(IRGraph* graph,
         IRNode* opNode,
         std::unordered_map<IRNode*, IRNode*>&gradNodeMap)
 {
@@ -254,7 +254,7 @@ void Conv2dOp::autoDiff(IRGraph* graph,
 
     gradNodeMap[opNode] = N;
     graph->pushOpNode(N);
-    
+
     for (int i = 0; i < opNode->parentNum(); i++) {
 
         auto *tnode = (TensorNode *)(opNode->getParentNode(i));
@@ -270,5 +270,3 @@ void Conv2dOp::autoDiff(IRGraph* graph,
         graph->pushTensorNode(N);
     }
 }
-
-

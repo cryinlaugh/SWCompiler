@@ -17,7 +17,7 @@
  using namespace swc::op;
 
 void MatrixMatrixFCBiasOp::lowering(IRGraph *graph, IRNode *node) {
-	SWLOG_DEBUG(4) << "Lowering MatrixMatrixFCBiasGradOp ..." << std::endl;
+	SWLOG_DEBUG(4) << "Lowering MatrixMatrixFCBiasOp ..." << std::endl;
 	this->einsumLowering(graph, node);
 }
 
@@ -27,11 +27,11 @@ void MatrixMatrixFCBiasGradOp::lowering(IRGraph *graph, IRNode *node) {
 }
 
 void MatrixMatrixFCOp::lowering(IRGraph *graph, IRNode *node) {
-	SWLOG_DEBUG(4) << "Lowering MatrixMatrixFCBiasGradOp ..." << std::endl;
+	SWLOG_DEBUG(4) << "Lowering MatrixMatrixFCOp ..." << std::endl;
 	this->einsumLowering(graph, node);
 }
 
 void MatrixMatrixFCGradOp::lowering(IRGraph *graph, IRNode *node) {
-	SWLOG_DEBUG(4) << "Lowering MatrixMatrixFCBiasGradOp ..." << std::endl;
+	SWLOG_DEBUG(4) << "Lowering MatrixMatrixFCGradOp ..." << std::endl;
 	this->einsumLowering(graph, node);
 }

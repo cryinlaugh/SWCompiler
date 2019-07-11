@@ -25,9 +25,9 @@ int main()
     conv0_w->setTraining(1);
     conv0_b->setTraining(1);
     vector<size_t> conv0_kernels{5, 5};
-	vector<size_t> conv0_strides{1, 1};
-	vector<size_t> conv0_pads{2, 2, 2, 2};
-	DYOP(conv0, Conv2dOp, conv0_kernels, conv0_strides, conv0_pads);
+    vector<size_t> conv0_strides{1, 1};
+    vector<size_t> conv0_pads{2, 2, 2, 2};
+    DYOP(conv0, Conv2dOp, conv0_kernels, conv0_strides, conv0_pads);
     LINKUPPER(conv0, data0, conv0_w, conv0_b);
     TENSOR(data1, 0);
     LINKUPPER(data1, conv0);
@@ -52,14 +52,14 @@ int main()
     conv1_w->setTraining(1);
     conv1_b->setTraining(1);
     vector<size_t> conv1_kernels{5, 5};
-	vector<size_t> conv1_strides{1, 1};
-	vector<size_t> conv1_pads{2, 2, 2, 2};
-	DYOP(conv1, Conv2dOp, conv1_kernels, conv1_strides, conv1_pads);
+    vector<size_t> conv1_strides{1, 1};
+    vector<size_t> conv1_pads{2, 2, 2, 2};
+    DYOP(conv1, Conv2dOp, conv1_kernels, conv1_strides, conv1_pads);
     LINKUPPER(conv1, data3, conv1_w, conv1_b);
-	TENSOR(data4, 0);
-	LINKUPPER(data4, conv1);
+    TENSOR(data4, 0);
+    LINKUPPER(data4, conv1);
 
-	vector<size_t> pool1_kernels{3, 3};
+    vector<size_t> pool1_kernels{3, 3};
     vector<size_t> pool1_strides{3, 3};
     vector<size_t> pool1_pads{0, 0, 0, 0};
     DYOP(pool1, MaxPoolOp, pool1_kernels, pool1_strides, pool1_pads);
@@ -96,7 +96,7 @@ int main()
     GpT(lenet, data0, conv0_w, conv0_b,
     		data1, data2,
     		data3, conv1_w, conv1_b,
-    		data4, data5, 
+    		data4, data5,
     		data6, fc0_w, fc0_b,
     		data7, label, prob);
     GpO(lenet, conv0, pool0, relu0,
@@ -129,7 +129,7 @@ int main()
     dotGen(lenet_train);
 
 
-   
+
     CodegenConfig config;
     config.train_mode = true;
     config.train_config.train_data_file = "mnist_labels_images.bin";
@@ -137,8 +137,10 @@ int main()
     config.train_config.data_bytes = BytesProto::FOUR_BYTES_AS_FLOAT;
     config.train_config.train_data_samples = 60000;
 
-    
-    
+    codegen::Codegen *cg = new codegen::Codegen(lenet_train, config);
+
+    string code = cg->generate();
+
 
 	return 0;
 }
