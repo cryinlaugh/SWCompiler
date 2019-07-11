@@ -109,6 +109,11 @@ int main()
 
     TRAIN(lenet, "sgd", 0.001, 0.001, 0.9, 8);
 
+    // TrainingConfig profile;
+    // profile.batch = data0->getDims()[0];
+    // IRGraph *lenet_train = getTrainNet(lenet, profile);
+
+
     TensorNode *data_input = (TensorNode *)lenet_train->getNodeByName("data0");
     TensorNode *label_input = (TensorNode *)lenet_train->getNodeByName("selected");
 
@@ -141,6 +146,7 @@ int main()
 
     string code = cg->generate();
 
+    cout << code << "\n";
 
-	return 0;
+    return 0;
 }

@@ -1090,6 +1090,13 @@ void Codegen::emitFuncCall(OpNode *op) {
                 << tensors_name_map_[C] << ", " << n << ");\n";
     }
 
+    if ((oplabel->getTypeNameLabel()).compare("Reshape") == 0) {
+        auto *A = ((TensorNode *)op->getParentNode(0))->getTensor();
+        auto *B = ((TensorNode *)op->getChildNode(0))->getTensor();
+
+        writer_ << tensors_name_map_[B] << " = " << tensors_name_map_[A] << ";\n";
+    }
+
     if ((oplabel->getTypeNameLabel()) == "BatchedAdd"  || (oplabel->getTypeNameLabel()) == "MatrixVectorAdd") {
         auto *A = ((TensorNode *)op->getParentNode(0))->getTensor();
         auto *B = ((TensorNode *)op->getParentNode(1))->getTensor();
@@ -1170,6 +1177,50 @@ void Codegen::emitFuncCall(OpNode *op) {
                 << padsVar << ", " << group << ");\n";
     }
 
+    if ((oplabel->getTypeNameLabel()) == "Conv2dGrad") {
+        auto *input = ((TensorNode *)op->getParentNode(0))->getTensor();
+        auto *filter = ((TensorNode *)op->getParentNode(1))->getTensor();
+        auto *bias = ((TensorNode *)op->getParentNode(2))->getTensor();
+        auto *out = ((TensorNode *)op->getParentNode(3))->getTensor();
+        auto *outputG = ((TensorNode *)op->getParentNode(4))->getTensor();
+
+        auto *inputG = ((TensorNode *)op->getChildNode(0))->getTensor();
+        auto *filterG = ((TensorNode *)op->getChildNode(1))->getTensor();
+        auto *biasG = ((TensorNode *)op->getChildNode(2))->getTensor();
+
+        auto *conv_op = (Conv2dGradOp *)op->getOp();
+        auto kernels = conv_op->getKernels();
+        auto strides = conv_op->getStrides();
+        auto pads = conv_op->getPads();
+        auto group = conv_op->getGroup();
+
+        auto iDims = op->name() + "_inDims";
+        auto oDims = op->name() + "_outDims";
+        auto fDims = op->name() + "_filterDims";
+        auto bDims = op->name() + "_biasDims";
+        auto kernelsVar = op->name() + "_filterSizes";
+        auto stridesVar = op->name() + "_strides";
+        auto padsVar = op->name() + "_pads";
+
+        writer_ << emitArrayDefAndInit(iDims, input->getDims());
+        writer_ << emitArrayDefAndInit(oDims, out->getDims());
+        writer_ << emitArrayDefAndInit(fDims, filter->getDims());
+        writer_ << emitArrayDefAndInit(bDims, bias->getDims());
+        writer_ << emitArrayDefAndInit(kernelsVar, kernels);
+        writer_ << emitArrayDefAndInit(stridesVar, strides);
+        writer_ << emitArrayDefAndInit(padsVar, pads);
+
+        writer_ << "conv2dGrad_" << dtype_flag << "(" << tensors_name_map_[inputG]
+                << ", " << tensors_name_map_[filterG] << ", "
+                << tensors_name_map_[biasG] << ", "
+                << tensors_name_map_[outputG] << ", "
+                << tensors_name_map_[input] << ", "
+                << tensors_name_map_[filter] << ", "
+                << oDims << ", " << iDims << ", " << fDims << ", "
+                << bDims << ", " << kernelsVar << ", " << stridesVar << ", "
+                << padsVar << ", " << group << ");\n";
+    }
+
     if ((oplabel->getTypeNameLabel()) == "BatchNormalization") {
         auto *input = ((TensorNode *)op->getParentNode(0))->getTensor();
         auto *scale = ((TensorNode *)op->getParentNode(1))->getTensor();
@@ -1229,6 +1280,40 @@ void Codegen::emitFuncCall(OpNode *op) {
         }
     }
 
+    if ((oplabel->getTypeNameLabel()) == "MaxPoolGrad") {
+        auto *input = ((TensorNode *)op->getParentNode(0))->getTensor();
+        auto *output = ((TensorNode *)op->getParentNode(1))->getTensor();
+        auto *outputG = ((TensorNode *)op->getParentNode(2))->getTensor();
+        auto *inputG = ((TensorNode *)op->getChildNode(0))->getTensor();
+
+        auto *pool_op = (MaxPoolGradOp *)op->getOp();
+        auto kernels = pool_op->getKernels();
+        auto strides = pool_op->getStrides();
+        auto pads = pool_op->getPads();
+
+        auto iDims = op->name() + "_inDims";
+        auto oDims = op->name() + "_outDims";
+        auto kernelsVar = op->name() + "_filterSizes";
+        auto stridesVar = op->name() + "_strides";
+        auto padsVar = op->name() + "_pads";
+
+        writer_ << emitArrayDefAndInit(iDims, input->getDims());
+        writer_ << emitArrayDefAndInit(oDims, output->getDims());
+        writer_ << emitArrayDefAndInit(kernelsVar, kernels);
+        writer_ << emitArrayDefAndInit(stridesVar, strides);
+        writer_ << emitArrayDefAndInit(padsVar, pads);
+
+
+        writer_ << "maxpoolGrad_" << dtype_flag << "("
+                << tensors_name_map_[inputG] << ", "
+                << tensors_name_map_[outputG] << ", "
+                << tensors_name_map_[input] << ", "
+                << iDims << ", " << oDims
+                << ", " << kernelsVar << ", " << stridesVar << ", "
+                << padsVar << ");\n";
+
+    }
+
     if ((oplabel->getTypeNameLabel()) == "Relu") {
         auto *input = ((TensorNode *)op->getParentNode(0))->getTensor();
         auto *out = ((TensorNode *)op->getChildNode(0))->getTensor();
@@ -1236,6 +1321,17 @@ void Codegen::emitFuncCall(OpNode *op) {
         size_t size = input->size();
         writer_ << "relu_" << dtype_flag << "(" << tensors_name_map_[input]
                 << ", " << tensors_name_map_[out] << ", " << size << ");\n";
+    }
+
+    if ((oplabel->getTypeNameLabel()) == "ReluGrad") {
+        auto *input = ((TensorNode *)op->getParentNode(0))->getTensor();
+        auto *outputG = ((TensorNode *)op->getParentNode(2))->getTensor();
+        auto *inputG = ((TensorNode *)op->getChildNode(0))->getTensor();
+
+        size_t size = input->size();
+        writer_ << "reluGrad_" << dtype_flag << "(" << tensors_name_map_[inputG]
+                << ", " << tensors_name_map_[input]
+                << ", " << tensors_name_map_[outputG] << ", " << size << ");\n";
     }
 
     if ((oplabel->getTypeNameLabel()) == "Transpose") {
