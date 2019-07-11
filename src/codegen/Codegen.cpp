@@ -1080,9 +1080,9 @@ void Codegen::emitFuncCall(OpNode *op) {
         auto *A = ((TensorNode *)op->getParentNode(0))->getTensor();
         auto *B = ((TensorNode *)op->getParentNode(1))->getTensor();
         auto *C = ((TensorNode *)op->getChildNode(0))->getTensor();
-        int m = C->getDim(0);
+        int m = A->getDim(0);
         int k = B->getDim(0);
-        int n = C->getDim(1);
+        int n = B->getDim(1);
 
         writer_ << "matrixMatrixMul_" << dtype_flag << "(" << m << ", " << n
                 << ", " << k << ", " << tensors_name_map_[A] << ", " << k
