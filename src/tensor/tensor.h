@@ -9,6 +9,7 @@
 #define _TENSOR_H
 
 #include "common.h"
+#include "SWLOG.h"
 #include <string>
 
 #include <cassert>
@@ -22,10 +23,20 @@ class TensorShape {
 
   public:
     TensorShape(std::vector<size_t> *shape);
+    TensorShape(const std::initializer_list<size_t> &shape) {
+        shape_ = new std::vector<size_t>();
+        for (auto i : shape) {
+            shape_->push_back(i);
+        }
+        _ndim = shape_->size();
+    }
+
     ~TensorShape() {}
     int getNDim() const;
     size_t getDim(int idx) const;
     size_t size() const;
+    TensorShape *
+    getShuffledTensorShape(const std::vector<size_t> &shuffle) const;
 };
 
 class TensorInitInfo {
@@ -85,6 +96,7 @@ class Tensor {
 
     void reset(TensorShape *shape, DataType dtype = DataType::Float_t) {
         shape_ = shape;
+        SWLOG_DEBUG(2) << "reset shape dims " << shape_->getNDim() << "\n";
         dataType_ = dtype;
     }
     Tensor *clone() const;
@@ -101,6 +113,8 @@ class Tensor {
             dims.push_back(getDim(i));
         return dims;
     }
+
+    std::pair<size_t, size_t> viewAs2D(int n);
 
     void setTensorInit(TensorInitType type, float value = 0);
     void setTensorInit(TensorInitType type, std::string file,

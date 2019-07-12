@@ -1,7 +1,7 @@
 /*************************************************************************
 	> File Name: tensor.cpp
-	> Author: cryinlaugh 
-	> Mail: cryinlaugh@gmail.com 
+	> Author: cryinlaugh
+	> Mail: cryinlaugh@gmail.com
 	> Created Time: 二 12/ 4 15:56:42 2018
  ************************************************************************/
 #include "tensor.h"
@@ -24,6 +24,18 @@ size_t TensorShape::size() const {
         size *= dim;
     return size;
 }
+
+TensorShape *
+TensorShape::getShuffledTensorShape(const std::vector<size_t> &shuffle) const {
+    std::vector<size_t> *shape = new std::vector<size_t>();
+    for (auto idx : shuffle) {
+        if (idx < shape_->size())
+            shape->push_back(shape_->at(idx));
+    }
+
+    return new TensorShape(shape);
+}
+
 
 Tensor *Tensor::clone() const {
     Tensor *t = new Tensor(shape_, dataType_);
@@ -90,6 +102,17 @@ Tensor::getShuffledTensorShape(const std::vector<size_t> &shuffle) const {
     }
 
     return new TensorShape(shape);
+}
+std::pair<size_t, size_t> Tensor::viewAs2D(int n) {
+    assert(n>=1 && n<=getNDim() && "illegal n");
+    size_t dim0 = getDim(0);
+    int i;
+    for(i=1; i<n; i++)
+        dim0 *= getDim(i);
+    size_t dim1 = 1;
+    for(; i<getNDim(); i++)
+        dim1 *= getDim(i);
+    return {dim0, dim1};
 }
 /*
 

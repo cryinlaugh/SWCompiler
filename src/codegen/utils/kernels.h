@@ -208,6 +208,84 @@ void conv2d_f(float *output, const float *input, const float *filter,
     }             // N
 }
 
+void conv2dGrad_f(float *inputG, float *filterG, float *biasG,
+                const float* outputG, const float *input, const float *filter,
+              const size_t *odims, const size_t *idims,
+              const size_t *fdims, const size_t *bdims, const size_t *kernels,
+              const size_t *strides, const size_t *pads, const size_t group) {
+    size_t batch = idims[0];
+    size_t inC = idims[3];
+    size_t oC = odims[3];
+    size_t inCG = inC / group;
+    size_t oCG = oC / group;
+
+    size_t kernel_h = kernels[0];
+    size_t kernel_w = kernels[1];
+    size_t stride_h = strides[0];
+    size_t stride_w = strides[1];
+    size_t pad_t = pads[0];
+    size_t pad_l = pads[1];
+
+    initTensorZero(inputG, idims[0] * idims[1] * idims[2] * idims[3]);
+    initTensorZero(filterG, fdims[0] * fdims[1] * fdims[2] * fdims[3]);
+    initTensorZero(biasG, oC);
+
+    // for each img
+    for (size_t n = 0; n < batch; n++) {
+
+
+        // for each group
+        for (size_t g = 0; g < group; g++) {
+
+            for (size_t co = g * oCG; co < (g + 1) * oCG; co++) {
+
+                for (size_t kx = 0; kx < kernel_h; kx++) {
+                    for (size_t ky = 0; ky < kernel_w; ky++) {
+
+                        // filter idx
+                        size_t fIdx_base =
+                            getIdx4d(fdims, co, kx, ky, g * inCG);
+
+                        // for each output (x, y)
+                        for (size_t ox = 0; ox < odims[1]; ox++) {
+                            for (size_t oy = 0; oy < odims[2]; oy++) {
+
+                                ssize_t ix =
+                                    (ssize_t)ox * stride_h - pad_t + kx;
+                                ssize_t iy =
+                                    (ssize_t)oy * stride_w - pad_l + ky;
+
+                                if (ix < 0 || ix >= (ssize_t)idims[1] ||
+                                    iy < 0 || iy >= (ssize_t)idims[2]) {
+                                    continue;
+                                }
+
+                                // input idx
+                                size_t iIdx_base =
+                                    getIdx4d(idims, n, ix, iy, g * inCG);
+                                // output idx
+                                size_t oIdx = getIdx4d(odims, n, ox, oy, co);
+
+                                // for each input channel per group
+                                for (size_t ci = 0; ci < inCG; ci++) {
+                                    inputG[iIdx_base + ci] += filter[fIdx_base + ci] * outputG[oIdx];
+                                    filterG[fIdx_base + ci] += input[iIdx_base + ci] * outputG[oIdx];
+                                }
+
+                                if(kx==0 && ky==0) {
+                                    biasG[co] += outputG[oIdx];
+                                }
+                            } // W
+                        }     // H
+                    }   //kw
+                } // kh
+            }     // Co
+        }         // group
+    }             // N
+}
+
+
+
 void maxpool_f(const float *input, float *output, const size_t *idims,
                const size_t *odims, const size_t *kernels,
                const size_t *strides, const size_t *pads) {
@@ -254,9 +332,76 @@ void maxpool_f(const float *input, float *output, const size_t *idims,
                             }
                         }
 
-                        output[oIdx] = max;
-                    } // C
-                }
+                    }
+
+                    output[oIdx] = max;
+
+                } // C
+            } // W
+        }     // H
+    }         // N
+}
+
+// 未记录maxpool输出对应原始输入的xy，因此必不可少重复maxpool的流程
+void maxpoolGrad_f(float *inputG, const float *outputG,
+               const float *input, const size_t *idims,/*idims = iGdims*/
+               const size_t *odims, const size_t *kernels,
+               const size_t *strides, const size_t *pads) {
+    size_t kernel_h = kernels[0];
+    size_t kernel_w = kernels[1];
+    size_t stride_h = strides[0];
+    size_t stride_w = strides[1];
+    size_t pad_t = pads[0];
+    size_t pad_l = pads[1];
+
+    initTensorZero(inputG, idims[0] * idims[1] * idims[2] * idims[3]);
+
+    // for each img in batch
+    for (size_t n = 0; n < idims[0]; n++) {
+        ssize_t ix_b = -(ssize_t)pad_t;
+
+        // for each output (x, y)
+        for (size_t ox = 0; ox < odims[1]; ix_b += stride_h, ox++) {
+
+            ssize_t iy_b = -(ssize_t)pad_l;
+            for (size_t oy = 0; oy < odims[2]; iy_b += stride_w, oy++) {
+
+                // for each channel
+                for (size_t c = 0; c < idims[3]; c++) {
+
+                    size_t oIdx = getIdx4d(odims, n, ox, oy, c);
+                    bool uninit = true;
+                    float max = 0;
+                    size_t max_ix = 0;
+                    size_t max_iy = 0;
+
+                    // for each filter (x,y)
+                    for (size_t kx = 0; kx < kernel_h; kx++) {
+                        for (size_t ky = 0; ky < kernel_w; ky++) {
+                            ssize_t ix = ix_b + kx;
+                            ssize_t iy = iy_b + ky;
+
+                            if (ix < 0 || ix >= (ssize_t)idims[1] || iy < 0 ||
+                                iy >= (ssize_t)idims[2]) {
+                                continue;
+                            }
+
+                            size_t iIdx = getIdx4d(idims, n, ix, iy, c);
+                            float value = input[iIdx];
+                            if (uninit || (value > max)) {
+                                max = value;
+                                max_ix = ix;
+                                max_iy = iy;
+                                uninit = false;
+                            }
+                        }
+                        // output[oIdx] = max;
+                    }
+
+                    size_t iIdx = getIdx4d(idims, n, max_ix, max_iy, c);
+                    inputG[iIdx] += outputG[oIdx];
+
+                } // C
             } // W
         }     // H
     }         // N
@@ -379,7 +524,7 @@ void batchedreduceadd_f(float *dest, const float *batch, size_t numSlice, size_t
         for (size_t i = 0; i < sliceSize; i++) {
             sum += batch[base+i];
         }
-        dest[n] = sum; 
+        dest[n] = sum;
     }
 }
 
@@ -389,14 +534,24 @@ void sgd_f(size_t size, float *out, float *w, float *dw, float *dw_mom, float lr
 
         float negDelta = (w[i]*decay + dw[i]) * neglr + dw_mom[i]*momentum;
         dw_mom[i] = negDelta;
-        out[i] += negDelta; 
-    } 
+        out[i] += negDelta;
+    }
 }
 
 void relu_f(const float *src, float *dest, size_t size) {
     // For each layer in the batch:
     for (size_t idx = 0; idx < size; idx++) {
         dest[idx] = (src[idx] > 0) ? src[idx] : 0;
+    }
+}
+
+// srcGrad: grad of original input
+// src: original input
+// destGrad: grad of original output
+// elementwise, if value of src[:] > 0, let destGrad pass, or 0
+void reluGrad_f(float *srcGrad, const float *src, const float *destGrad, size_t size) {
+    for(size_t i=0; i<size; i++) {
+        srcGrad[i] = (src[i] > 0) ? destGrad[i] : 0;
     }
 }
 

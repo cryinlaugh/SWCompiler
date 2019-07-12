@@ -234,13 +234,21 @@ void IRGraph::initTensorNodes() {
                 auto *node = (OpNode *)irNode;
                 auto *op = node->getOp();
                 if (dynamic_cast<MatrixMatrixFCOp *>(op) || dynamic_cast<MatrixMatrixFCBiasOp *>(op)) {
+                    auto *input = (TensorNode *)node->getParentNode(0);
                     auto idims =
                         ((TensorNode *)node->getParentNode(0))->getDims();
                     auto *weight = (TensorNode *)node->getParentNode(1);
                     auto wdims = weight->getDims();
-                    // TODO ref count for tensor to decide whether release
-                    // tensor
-                    weight->setTensor(new Tensor({idims[1], wdims[1]}));
+
+                    /*
+                    * wrong: this will cause tensor losing properties like training, initInfo_
+                    */
+                    // weight->setTensor(new Tensor({idims[1], wdims[1]}));
+
+                    auto dim2 = input->getTensor()->viewAs2D(1);
+                    SWLOG_DEBUG(6) << input->name() << " ndims = " << idims.size() << ", view as 2d " << dim2.first << " * " << dim2.second << " to fit MatrixMatrixMulOp\n";
+                    SWLOG_DEBUG(6) << node->name() << ", reset weight dim to " << dim2.second << ", " << wdims[1] << "\n";
+                    weight->getTensor()->reset(new TensorShape({dim2.second, wdims[1]}));
 
                     auto *out = (TensorNode *)node->getChildNode(0);
                     out->setTensor(new Tensor({idims[0], wdims[1]}));
@@ -278,7 +286,7 @@ void IRGraph::initTensorNodes() {
                     auto kernels = conv->getKernels();
                     auto strides = conv->getStrides();
                     auto pads = conv->getPads();
-                    std::vector<size_t> ohw = inferConvOutDims(idims[1], idims[2], kernels, strides, pads); 
+                    std::vector<size_t> ohw = inferConvOutDims(idims[1], idims[2], kernels, strides, pads);
 
                     auto *out = (TensorNode *)node->getChildNode(0);
                     out->setTensor(new Tensor({idims[0], idims[1]}));
@@ -289,7 +297,7 @@ void IRGraph::initTensorNodes() {
                     auto kernels = pool->getKernels();
                     auto strides = pool->getStrides();
                     auto pads = pool->getPads();
-                    std::vector<size_t> ohw = inferConvOutDims(idims[1], idims[2], kernels, strides, pads); 
+                    std::vector<size_t> ohw = inferConvOutDims(idims[1], idims[2], kernels, strides, pads);
 
                     auto *out = (TensorNode *)node->getChildNode(0);
                     out->setTensor(new Tensor({idims[0], idims[1]}));
@@ -409,7 +417,7 @@ void IRGraph::copyTo(IRGraph* graph) const {
             opn->exlinkUpperNode(parent);
         }
     }
-    
+
     graph->setDeviceLabel(_dev);
     graph->findInOut();
     graph->updateTopology();
