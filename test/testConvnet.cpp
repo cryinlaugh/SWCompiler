@@ -16,7 +16,6 @@ using namespace std;
 int main()
 {
     TENSOR(data0, 8, 28, 28, 1);
-    INIT(data0, TensorInitType::FILE, "mnist_images_8.bin");
 
     TENSOR(conv0_w, 16, 5, 5, 1);
     TENSOR(conv0_b, 16);
@@ -87,10 +86,13 @@ int main()
     Tensor *label_t = new Tensor({8}, DataType::Int32_t);
     TensorNode *label = new TensorNode("selected", label_t);
 
-    OP(softmax, MatrixSoftmaxOp);
+    // OP(softmax, MatrixSoftmaxOp);
+    OP(softmax, MatrixSoftmaxWithLossOp);
     LINKUPPER(softmax, data7, label);
     TENSOR(prob, 0);
     LINKUPPER(prob, softmax);
+    TENSOR(loss, 1);
+    LINKUPPER(loss, softmax);
 
     G(lenet);
     GpT(lenet, data0, conv0_w, conv0_b,
@@ -98,7 +100,7 @@ int main()
     		data3, conv1_w, conv1_b,
     		data4, data5,
     		data6, fc0_w, fc0_b,
-    		data7, label, prob);
+    		data7, label, prob, loss);
     GpO(lenet, conv0, pool0, relu0,
     	conv1, pool1, relu1,
     	fc0, softmax);

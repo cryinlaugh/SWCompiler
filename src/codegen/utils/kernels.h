@@ -102,11 +102,45 @@ void matrixSoftmax_f(int m, int n, const float *a, int lda, float *b, int ldb) {
     }
 }
 
+void matrixSoftmaxWithLoss_f(int m, int n, const float *a, int lda, float *b, int ldb, const int *selected, float* loss) {
+    *loss = 0;
+    for (int i = 0; i < m; i++) {
+        float max_ = A(i, 0);
+        for (int j = 0; j < n; j++) {
+            max_ = std::max(max_, A(i, j));
+        }
+        float sum = 0;
+        for (int j = 0; j < n; j++) {
+            B(i, j) = expf(A(i, j) - max_);
+            sum += B(i, j);
+        }
+        for (int j = 0; j < n; j++) {
+            B(i, j) = B(i, j) / sum;
+        }
+
+        int k = selected[i];
+        *loss += logf(sum * expf(max_)) - A(i, k);
+    }
+    //loss https://blog.csdn.net/Iriving_shu/article/details/78609409
+    // log(sigma(e^z_i)) - z_k (k-selected)
+    *loss /= m;
+}
+
 // a: grad of input
 // b: original out
 // selected: selected
 // 比如输出为[0.1, 0.6, 0.3]正确答案为1, 那么梯度就是[0.1, -0.4, 0.3]
 void matrixSoftmaxGrad_f(int m, int n, float *a, int lda, const float *b,
+                         int ldb, const int *selected) {
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < n; j++) {
+            float delta = (selected[i] == j);
+            A(i, j) = B(i, j) - delta;
+        }
+    }
+}
+
+void matrixSoftmaxWithLossGrad_f(int m, int n, float *a, int lda, const float *b,
                          int ldb, const int *selected) {
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < n; j++) {

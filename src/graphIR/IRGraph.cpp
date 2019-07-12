@@ -273,6 +273,14 @@ void IRGraph::initTensorNodes() {
                     auto *out = (TensorNode *)node->getChildNode(0);
                     out->setTensor(new Tensor({idims[0], idims[1]}));
                 }
+
+                if (dynamic_cast<MatrixSoftmaxWithLossOp *>(op)) {
+                    auto idims =
+                        ((TensorNode *)node->getParentNode(0))->getDims();
+                    auto *prob = (TensorNode *)node->getChildNode(0);
+                    prob->setTensor(new Tensor({idims[0], idims[1]}));
+                }
+
                 if (dynamic_cast<ScatterOp *>(op)) {
                     // child reinit
                     auto *out = (TensorNode *)node->getChildNode(0);
@@ -491,8 +499,10 @@ void IRGraph::setDeviceLabel(Device dev) {
     for (auto tnode : _tensors) {
         // suppose Device Graph, all TensorNodes(in degree=0)
         // should be mirror of cpu TensorNodes
-        if (tnode->isExternal())
-            SWLOG_DEBUG(4) << tnode->name() << " External skip\n";
+        if (tnode->isExternal()){
+            SWLOG_DEBUG(4) << tnode->name() << " isExternal=" << tnode->isExternal() << " skip\n";
+        }
+        
         if (!tnode->isExternal())
             tnode->getLabel()->setDeviceLabel(dev.type, dev.id);
     }
