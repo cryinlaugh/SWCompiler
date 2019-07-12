@@ -126,9 +126,21 @@ int main()
     RenamingNodePass renamingpass(lenet_train);
     LabelingPass labelingpass(lenet_train);
     LoweringPass loweringpass(lenet_train);
-    passManager.add((OptimizePass *)&renamingpass);
+    /*
+    * puzzle:
+    * 1. Labelingpass must before loweringpass (setLowerMark)
+    * 2. ? renamingpass must before labeling,  or setNodeNameLabel, labels may duplicate
+    * 3. renamingpass after loweringpass. because lowering may take dum names. "momentum", "xx_reshape"
+    * 4. labeling pass must after loweringpass. because new op need to be labeled.
+    * -----
+    * ???
+    * break the dependency between labeling and lowering.
+    * lowering->renaming->labeling?
+    */
+
     passManager.add((OptimizePass *)&labelingpass);
     passManager.add((OptimizePass *)&loweringpass);
+    passManager.add((OptimizePass *)&renamingpass);
     passManager.add((OptimizePass *)&labelingpass);
     passManager.run();
 
