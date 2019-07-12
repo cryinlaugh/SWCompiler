@@ -1364,6 +1364,34 @@ void Codegen::emitFuncCall(OpNode *op) {
         }
     }
 
+    if ((oplabel->getTypeNameLabel()) == "MatrixTranspose") {
+        auto *input = ((TensorNode *)op->getParentNode(0))->getTensor();
+        auto *out = ((TensorNode *)op->getChildNode(0))->getTensor();
+
+        std::vector<size_t> shuffle = {1, 0};
+
+        auto iDims = op->name() + "_inDims";
+        auto oDims = op->name() + "_outDims";
+        auto shuffleDims = op->name() + "_shuffle";
+
+        writer_ << emitArrayDefAndInit(iDims, input->getDims());
+        writer_ << emitArrayDefAndInit(oDims, out->getDims());
+        writer_ << emitArrayDefAndInit(shuffleDims, shuffle);
+
+        switch (input->getNDim()) {
+        case 2:
+            writer_ << "transpose2d_" << dtype_flag << "("
+                    << tensors_name_map_[input] << ", "
+                    << tensors_name_map_[out] << ", " << iDims << ", " << oDims
+                    << ", " << shuffleDims << ");\n";
+            break;
+        case 4:
+            writer_ << "transpose4d_" << dtype_flag << "("
+                    << tensors_name_map_[input] << ", "
+                    << tensors_name_map_[out] << ", " << iDims << ", " << oDims
+                    << ", " << shuffleDims << ");\n";
+        }
+    }
     if ((oplabel->getTypeNameLabel()).compare("MatrixTanh") == 0) {
         // TODO assert
         auto *A = ((TensorNode *)op->getParentNode(0))->getTensor();
