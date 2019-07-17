@@ -108,6 +108,9 @@ class Codegen {
                                     std::set<Tensor *> *visited);
     void emitSaveSnapshot();
 
+    /// print outputs(loss, prob etc.)
+    void emitPrintGraphOutputs();
+
     /// may need to allocate for specific tensornode (e.g. different data type)
     std::string emitTensorMemAlloc(TensorNode *tnode);
     //----------------------------------------------------------

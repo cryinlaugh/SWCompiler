@@ -349,7 +349,7 @@ template <typename T> void IRGraph::updateTopology(T node) {
 }
 
 void IRGraph::updateTopology() {
-    findInOut();
+    // findInOut();
 
     typename std::vector<TensorNode *>::iterator tnIter;
     typename std::vector<OpNode *>::iterator opIter;
@@ -502,7 +502,7 @@ void IRGraph::setDeviceLabel(Device dev) {
         if (tnode->isExternal()){
             SWLOG_DEBUG(4) << tnode->name() << " isExternal=" << tnode->isExternal() << " skip\n";
         }
-        
+
         if (!tnode->isExternal())
             tnode->getLabel()->setDeviceLabel(dev.type, dev.id);
     }

@@ -30,6 +30,9 @@ struct TrainingConfig {
     size_t snapshot{0};
     // For Dataload
     size_t max_epoch{1};
+    // interval for Graph output display
+    size_t display{0};
+
     BytesProto label_bytes{ONE_BYTE_AS_INT};
     BytesProto data_bytes{FOUR_BYTES_AS_FLOAT};
     std::string train_data_file;

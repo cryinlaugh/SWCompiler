@@ -771,6 +771,29 @@ void Codegen::emitSaveSnapshot() {
             << "\n";
 }
 
+void Codegen::emitPrintGraphOutputs() {
+    writer_ << "\n";
+    writer_ << "if(iter % " << config_.train_config.display<< " == 0) {\n";
+    writer_.indentInc();
+
+    writer_ << R"(std::cout << "iterations " << iter << "\n";)"
+            << "\n";
+    for(int i=0; i<graph_->outNodeNum(); i++) {
+        TensorNode * outnode = graph_->getOutNode(i);
+        Tensor* out = outnode->getTensor();
+        int m = out->getDim(0);
+        int n = out->getNDim()==2 ? out->getDim(1) : 1;
+        writer_ << "// OutNode " << i << ": " << outnode->name() << "\n";
+        writer_ << "std::cout << \"" << outnode->name() <<":\\n\";" << "\n";
+        writer_ << "printMatrix(" <<  tensors_name_map_[out] << ", "
+            << m << ", " << n << ");\n";
+    }
+
+    writer_.indentDec();
+    writer_ << "}"
+            << "\n";
+}
+
 std::string Codegen::emitTensorMemAlloc(TensorNode *tnode) {
     std::string bufferName =
         tnode->name(); // ensure IRNode name unique before Codegen
@@ -868,6 +891,10 @@ void Codegen::emitExecute() {
         writer_ << "iter++;\n";
         if (config_.train_config.snapshot) {
             emitSaveSnapshot();
+        }
+
+        if(config_.train_config.display) {
+            emitPrintGraphOutputs();
         }
 
         writer_.indentDec();
@@ -1425,7 +1452,7 @@ void Codegen::emitFuncCall(OpNode *op) {
 
         writer_ << "matrixSoftmaxWithLoss_" << dtype_flag << "(" << m << ", " << n
                 << ", " << tensors_name_map_[A] << ", " << n << ", "
-                << tensors_name_map_[prob] << ", " << n << ", " 
+                << tensors_name_map_[prob] << ", " << n << ", "
                 << tensors_name_map_[label] << ", "
                 << tensors_name_map_[loss] << ");\n";
     }
