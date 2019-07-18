@@ -38,12 +38,15 @@ class MatrixMatrixFCOp : public Op {
     ~MatrixMatrixFCOp() {}
     void destroy(){};
 
+    //void outTensorShapeGen(OpNode* node, size_t index, TensorShape* tShape);
+
     // for lowering
     void autoDiff(IRGraph* graph,
         IRNode* opNode,
         std::unordered_map<IRNode*, IRNode*>&gradNodeMap);
 
     void einsumLowering(IRGraph *graph, IRNode *node);
+
     // for common lowering
     void lowering(IRGraph *graph, IRNode *node);
 
@@ -115,10 +118,12 @@ class ReshapeOp: public Op {
         this->_inputNDims.push_back(4);
         this->_outputNDims.push_back(4);
         */
+        this->_einOp = 1;
     };
     ReshapeOp(std::vector<size_t> &shape)
         : Op(DL_OP, 1, 1, std::string("Reshape")) {
         oshape_.assign(shape.begin(), shape.end());
+        this->_einOp = 1;
     }
     std::vector<size_t> getOutShape() { return oshape_; }
     ~ReshapeOp();
@@ -130,6 +135,7 @@ class MatrixTanhOp : public Op {
     MatrixTanhOp() : Op(DL_OP, 1, 1, std::string("MatrixTanh")) {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
+        this->_einOp = 1;
     };
     ~MatrixTanhOp();
     void destroy(){};
@@ -147,8 +153,10 @@ class MatrixTanhGradOp : public Op {
 
 class MatrixSoftmaxOp : public Op {
   public:
-    MatrixSoftmaxOp() : Op(DL_OP, 1, 1, std::string("MatrixSoftmax")) {
+    MatrixSoftmaxOp() : Op(DL_OP, 2, 2, std::string("MatrixSoftmax")) {
         this->_inputNDims.push_back(2);
+        this->_inputNDims.push_back(2);
+        this->_outputNDims.push_back(2);
         this->_outputNDims.push_back(2);
     };
     ~MatrixSoftmaxOp();
@@ -338,6 +346,8 @@ class Conv2dOp : public Op {
     ~Conv2dOp();
     void destroy() {}
 
+    void outTensorShapeGen(OpNode* node, size_t index, TensorShape* tShape);
+    
     void autoDiff(IRGraph* graph,
         IRNode* opNode,
         std::unordered_map<IRNode*, IRNode*>&gradNodeMap);
@@ -397,6 +407,7 @@ class ReluOp : public Op {
         this->_outputNDims.push_back(4);
     }
     ~ReluOp();
+    void checkValid(OpNode *node);
     void destroy() {}
     void autoDiff(IRGraph* graph,
         IRNode* opNode,

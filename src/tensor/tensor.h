@@ -35,6 +35,20 @@ class TensorShape {
     int getNDim() const;
     size_t getDim(int idx) const;
     size_t size() const;
+    void setShape(const std::vector<size_t>& shape) {
+        _ndim = shape.size();
+        shape_->resize(_ndim);
+        for (int i = 0; i < _ndim; i++)
+            (*shape_)[i] = shape[i];
+    };
+
+    void showShape() const {
+        for (int i = 0; i < _ndim; i++) {
+            std::cout << "\t" << (*shape_)[i] << "\t";
+        }
+        std::cout << std::endl;
+    }
+
     TensorShape *
     getShuffledTensorShape(const std::vector<size_t> &shuffle) const;
 };

@@ -7,6 +7,8 @@
 
 #include "Op.h"
 
+#include "graphIR/TensorNode.h"
+#include "graphIR/OpNode.h"
 #include "tensor/tensor.h"
 
 using namespace swc::op;
@@ -26,3 +28,33 @@ bool Op::check() {
     }
     return true;
 }
+
+void Op::checkValid(OpNode *node) {
+
+    SWLOG_DEBUG(4) << "Checking connect validation for " 
+        << node->name() << std::endl;
+    
+    unsigned int i;
+    
+    for (i = 0; i < node->getParentNodes().size(); i++) {
+        TensorNode* parentIter = (TensorNode*)(node->getParentNode(i));
+
+        if (parentIter->getTensor()->getNDim() 
+                != node->getOp()->getInputDims(i)) {
+            std::cout << "FATAL ERROR: The "
+                << i << "th input tensor "
+                << parentIter->name()
+                << " with dim:"
+                << parentIter->getTensor()->getNDim()
+                << " while the current op "
+                << node->name()
+                << " with " << i << "th"
+                << " dim:"
+                << node->getOp()->getInputDims(i)
+                << std::endl;
+            abort();
+        }
+    }
+
+}
+

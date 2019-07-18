@@ -57,7 +57,16 @@ class OpNode : public IRNode {
         _op->autoDiff(graph, this, gradNodeMap);
     };
 
-    void checkValid();
+    void checkValid() {
+        Op *_op = op_;
+        _op->checkValid(this);
+        return;
+    };
+   
+    void outTensorShapeGen(size_t index, TensorShape* tShape) {
+        Op *_op = op_;
+        _op->outTensorShapeGen(this, index, tShape);
+    };
 
   private:
     Op *op_;

@@ -18,8 +18,10 @@ namespace swc {
 
 // Forward declarations
 class Tensor;
+class TensorShape;
 class IRGraph;
 class IRNode;
+class OpNode;
 
 namespace op {
 
@@ -63,9 +65,19 @@ class Op {
     inline int getnOutput() { return _nOutput; }
 
     // for lowering
-    virtual void lowering(IRGraph *graph, IRNode *node) {
-        SWLOG_DEBUG(100) << "Lowering unimplemented in base Op class" << std::endl;
+    virtual void lowering(IRGraph *graph, OpNode *node) {
+        SWLOG_DEBUG(100) << "Lowering unimplemented in base Op class"
+                        << std::endl;
     }
+
+    virtual void checkValid(OpNode* node);
+
+    virtual void outTensorShapeGen(OpNode* node, 
+                                    size_t index, 
+                                    TensorShape* tShape) {
+        SWLOG_DEBUG(100) << "Lowering unimplemented in base Op class" 
+                        << std::endl;
+    };
 
     /*
     Op *clone() const {
