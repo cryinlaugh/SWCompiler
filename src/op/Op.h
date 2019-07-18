@@ -41,7 +41,9 @@ class Op {
     virtual void destroy(){};
     virtual void autoDiff(IRGraph* graph,
             IRNode* opNode,
-            std::unordered_map<IRNode*, IRNode*> &gradNodeMap){};
+            std::unordered_map<IRNode*, IRNode*> &gradNodeMap) { 
+              SWLOG_DEBUG(100) << "OpType [" << this->getOpName() << "] autoDiff() unimplemented, pass" << std::endl; 
+            }
     virtual void einsumLowering(IRGraph *graph, IRNode *node) {
         SWLOG_DEBUG(100) << "EinsumLowering unimplemented in base Op class" << std::endl;
     }

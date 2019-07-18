@@ -16,7 +16,6 @@ using namespace std;
 int main()
 {
     TENSOR(data0, 8, 28, 28, 1);
-    INIT(data0, TensorInitType::FILE, "mnist_images_8.bin");
 
     TENSOR(conv0_w, 16, 5, 5, 1);
     TENSOR(conv0_b, 16);
@@ -87,10 +86,13 @@ int main()
     Tensor *label_t = new Tensor({8}, DataType::Int32_t);
     TensorNode *label = new TensorNode("selected", label_t);
 
-    OP(softmax, MatrixSoftmaxOp);
+    // OP(softmax, MatrixSoftmaxOp);
+    OP(softmax, MatrixSoftmaxWithLossOp);
     LINKUPPER(softmax, data7, label);
     TENSOR(prob, 0);
     LINKUPPER(prob, softmax);
+    TENSOR(loss, 1);
+    LINKUPPER(loss, softmax);
 
     G(lenet);
     GpT(lenet, data0, conv0_w, conv0_b,
@@ -98,7 +100,7 @@ int main()
     		data3, conv1_w, conv1_b,
     		data4, data5,
     		data6, fc0_w, fc0_b,
-    		data7, label, prob);
+    		data7, label, prob, loss);
     GpO(lenet, conv0, pool0, relu0,
     	conv1, pool1, relu1,
     	fc0, softmax);
@@ -124,9 +126,21 @@ int main()
     RenamingNodePass renamingpass(lenet_train);
     LabelingPass labelingpass(lenet_train);
     LoweringPass loweringpass(lenet_train);
-    passManager.add((OptimizePass *)&renamingpass);
+    /*
+    * puzzle:
+    * 1. Labelingpass must before loweringpass (setLowerMark)
+    * 2. ? renamingpass must before labeling,  or setNodeNameLabel, labels may duplicate
+    * 3. renamingpass after loweringpass. because lowering may take dum names. "momentum", "xx_reshape"
+    * 4. labeling pass must after loweringpass. because new op need to be labeled.
+    * -----
+    * ???
+    * break the dependency between labeling and lowering.
+    * lowering->renaming->labeling?
+    */
+
     passManager.add((OptimizePass *)&labelingpass);
     passManager.add((OptimizePass *)&loweringpass);
+    passManager.add((OptimizePass *)&renamingpass);
     passManager.add((OptimizePass *)&labelingpass);
     passManager.run();
 

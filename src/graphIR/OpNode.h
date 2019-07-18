@@ -52,7 +52,7 @@ class OpNode : public IRNode {
 
     void autoDiff(IRGraph* graph,
             std::unordered_map<IRNode*, IRNode*> &gradNodeMap){
-        SWLOG_DEBUG(4) << "OpNode begin to autodiff" << std::endl;
+        SWLOG_DEBUG(4) << "OpNode " << name() << " begin to autodiff" << std::endl;
         Op *_op = op_;
         _op->autoDiff(graph, this, gradNodeMap);
     };

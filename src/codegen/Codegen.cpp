@@ -1415,6 +1415,21 @@ void Codegen::emitFuncCall(OpNode *op) {
                 << tensors_name_map_[B] << ", " << n << ");\n";
     }
 
+    if ((oplabel->getTypeNameLabel()).compare("MatrixSoftmaxWithLoss") == 0) {
+        auto *A = ((TensorNode *)op->getParentNode(0))->getTensor();
+        auto *label = ((TensorNode *)op->getParentNode(1))->getTensor();
+        auto *prob = ((TensorNode *)op->getChildNode(0))->getTensor();
+        auto *loss = ((TensorNode *)op->getChildNode(1))->getTensor();
+        int m = A->getDim(0);
+        int n = A->getDim(1);
+
+        writer_ << "matrixSoftmaxWithLoss_" << dtype_flag << "(" << m << ", " << n
+                << ", " << tensors_name_map_[A] << ", " << n << ", "
+                << tensors_name_map_[prob] << ", " << n << ", " 
+                << tensors_name_map_[label] << ", "
+                << tensors_name_map_[loss] << ");\n";
+    }
+
     if ((oplabel->getTypeNameLabel()).compare("ArgMax") == 0) {
         auto *A = ((TensorNode *)op->getParentNode(0))->getTensor();
         auto *B = ((TensorNode *)op->getChildNode(0))->getTensor();
@@ -1432,9 +1447,10 @@ void Codegen::emitFuncCall(OpNode *op) {
     if ((oplabel->getTypeNameLabel()).compare("Debug") == 0) {
         auto *A = ((TensorNode *)op->getParentNode(0))->getTensor();
 
-        assert(A->getNDim() == 2);
+        // assert(A->getNDim() == 2);
         int m = A->getDim(0);
-        int n = A->getDim(1);
+        // int n = A->getDim(1);
+        int n = (A->getNDim() == 2) ? A->getDim(1) : 1;
 
         writer_ << "printMatrix"
                 << "(" << tensors_name_map_[A] << ", " << m << ", " << n
@@ -1455,6 +1471,7 @@ void Codegen::emitFuncCall(OpNode *op) {
                 << tensors_name_map_[output] << ", " << n << ", "
                 << tensors_name_map_[outputG] << ", " << n << ");\n";
     }
+    // TODO: depreciate this, do not link label to MatrixSoftmax
     if ((oplabel->getTypeNameLabel()).compare("MatrixSoftmaxGrad") == 0) {
         // TODO assert
         auto *input = ((TensorNode *)op->getParentNode(0))->getTensor();
@@ -1468,6 +1485,21 @@ void Codegen::emitFuncCall(OpNode *op) {
         writer_ << "matrixSoftmaxGrad_" << dtype_flag << "(" << m << ", " << n
                 << ", " << tensors_name_map_[inputG] << ", " << n << ", "
                 << tensors_name_map_[output] << ", " << n << ", "
+                << tensors_name_map_[label] << ");\n";
+    }
+
+    if ((oplabel->getTypeNameLabel()).compare("MatrixSoftmaxWithLossGrad") == 0) {
+        // TODO assert
+        auto *input = ((TensorNode *)op->getParentNode(0))->getTensor();
+        auto *label = ((TensorNode *)op->getParentNode(1))->getTensor();
+        auto *prob= ((TensorNode *)op->getParentNode(2))->getTensor();
+        auto *inputG = ((TensorNode *)op->getChildNode(0))->getTensor();
+        int m = input->getDim(0);
+        int n = input->getDim(1);
+
+        writer_ << "matrixSoftmaxWithLossGrad_" << dtype_flag << "(" << m << ", " << n
+                << ", " << tensors_name_map_[inputG] << ", " << n << ", "
+                << tensors_name_map_[prob] << ", " << n << ", "
                 << tensors_name_map_[label] << ");\n";
     }
 

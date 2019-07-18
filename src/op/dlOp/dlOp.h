@@ -32,7 +32,7 @@ class MatrixMatrixFCOp : public Op {
         this->_inputNDims.push_back(2);
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
-        
+
         this->_einOp = 0;
     }
     ~MatrixMatrixFCOp() {}
@@ -58,7 +58,7 @@ class MatrixMatrixFCGradOp : public Op {
   public:
     MatrixMatrixFCGradOp()
         : Op(DL_OP, 4, 2, std::string("MatrixMatrixFCGrad")) {
-            
+
         this->_einOp = 0;
     }
     ~MatrixMatrixFCGradOp() {}
@@ -166,10 +166,32 @@ class MatrixSoftmaxOp : public Op {
         std::unordered_map<IRNode*, IRNode*>&gradNodeMap);
 };
 
+
 class MatrixSoftmaxGradOp : public Op {
   public:
     MatrixSoftmaxGradOp() : Op(DL_OP, 3, 1, std::string("MatrixSoftmaxGrad")){};
     ~MatrixSoftmaxGradOp();
+    void destroy() {}
+};
+
+class MatrixSoftmaxWithLossOp : public Op {
+  public:
+    MatrixSoftmaxWithLossOp() : Op(DL_OP, 1, 2, std::string("MatrixSoftmaxWithLoss")) {
+        this->_inputNDims.push_back(2);
+        this->_outputNDims.push_back(2);
+        this->_outputNDims.push_back(2);
+    };
+    ~MatrixSoftmaxWithLossOp();
+    void destroy(){};
+    void autoDiff(IRGraph* graph,
+        IRNode* opNode,
+        std::unordered_map<IRNode*, IRNode*>&gradNodeMap);
+};
+
+class MatrixSoftmaxWithLossGradOp : public Op {
+  public:
+    MatrixSoftmaxWithLossGradOp() : Op(DL_OP, 4, 1, std::string("MatrixSoftmaxWithLossGrad")){};
+    ~MatrixSoftmaxWithLossGradOp();
     void destroy() {}
 };
 
