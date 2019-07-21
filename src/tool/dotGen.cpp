@@ -80,13 +80,13 @@ std::string dotGenTensorNode(TensorNode *tnode) {
     tensorInfo = tensorInfo + "label = \"{Name: " + tensorName + " |";
 
     std::ostringstream os;
-    os << "Tensor: " << std::hex << tnode->getTensor() << " |";
-    os << "isExternal: " << tnode->isExternal() << " |";
+    os << "Tensor: " << std::hex << tnode->getTensor() << "\\l";
+    os << "isExternal: " << tnode->isExternal() << "\\l";
     auto dev = tnode->getLabel()->getDeviceLabel();
-    os << "Dev: " << static_cast<int>(dev.type) << " " << dev.id << " |";
+    os << "Dev: " << static_cast<int>(dev.type) << " " << dev.id << "\\l";
     tensorInfo += os.str();
 
-    tensorInfo = tensorInfo + "NDim: " + std::to_string(NDim) + " |";
+    tensorInfo = tensorInfo + "NDim: " + std::to_string(NDim) + "\\l";
 
     // for (int i = 0; i < NDim; ++i) {
     //     if (i < NDim-1) {
@@ -103,7 +103,10 @@ std::string dotGenTensorNode(TensorNode *tnode) {
         if (i < NDim - 1)
             tensorInfo += ", ";
     }
-    tensorInfo += "]}\"];\n";
+    tensorInfo += "]\\l";
+    tensorInfo += "}\", ";
+    tensorInfo += "color=cyan4, penwidth = 2";
+    tensorInfo += "];\n";
 
     return dotGenIRNode(tnode, tensorInfo, ";\n");
 }
@@ -126,10 +129,12 @@ std::string dotGenOpNode(OpNode *opnode) {
     int nOutput = opnode->getOp()->getnOutput();
 
     // generate the opInfo
-    opInfo = opInfo + "label = \"Node's name: " + opNodeName +
+    opInfo += "label = \"Node's name: " + opNodeName +
              "\\nOperation: " + opName + "\\n";
-    opInfo = opInfo + "_nInput: " + std::to_string(nInput) + "\\n";
-    opInfo = opInfo + "_nOutput: " + std::to_string(nOutput) + "\"];\n";
+    opInfo += "_nInput: " + std::to_string(nInput) + "\\n";
+    opInfo += "_nOutput: " + std::to_string(nOutput) + "\", ";
+    opInfo += "color=darkorange1, penwidth = 2";
+    opInfo += "];\n";
 
     // return opInfo;
     return dotGenIRNode(opnode, " [shape = box];\n", opInfo);

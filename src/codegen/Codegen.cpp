@@ -744,6 +744,8 @@ void Codegen::emitSaveSnapshot() {
             writer_ << "addOp(net, \"" << name << "\", " << name << ", " << size
                     << ");"
                     << "\n";
+            SWLOG_DEBUG(8) << "[emitSaveSnapshot] " << name << " TensorInitType="
+                    << static_cast<int>(tensor->getTensorInitType()) << "\n";
             break;
         case TensorInitType::NONE:
         case TensorInitType::FILE:
