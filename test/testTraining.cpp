@@ -86,6 +86,7 @@ int main() {
     GpT(mlp, data3, data4, weight1, bias1, labeln);
     GpO(mlp, fc1, softmax);
 
+    mlp->findInOut();
     mlp->updateTopology();
 
     SWLOG_INFO << "Start doing optimization on mlp." << std::endl;

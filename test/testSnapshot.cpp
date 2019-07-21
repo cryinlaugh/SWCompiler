@@ -40,8 +40,6 @@ int main() {
     bias0_Tensor->setTensorInit(TensorInitType::CONSTANT, 0);
     weight0->setTraining(1);
     bias0->setTraining(1);
-    weight0->setExternal(true);
-    bias0->setExternal(true);
 
     OP(fc0, MatrixMatrixFCBiasOp);
     LINKUPPER(fc0, data0, weight0, bias0);
@@ -86,6 +84,7 @@ int main() {
     GpT(mlp, data3, data4, weight1, bias1, labeln);
     GpO(mlp, fc1, softmax);
 
+    mlp->findInOut();
     mlp->updateTopology();
 
     SWLOG_INFO << "Start doing optimization on mlp." << std::endl;

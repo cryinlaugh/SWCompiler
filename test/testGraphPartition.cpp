@@ -105,6 +105,7 @@ int main() {
     dev_gpu[1].type = DeviceType::GPU;
     dev_gpu[1].id = 1;
 
+    mlp->findInOut();
     mlp->updateTopology();
     pass::Optimizer *opt = new pass::Optimizer(mlp);
     opt->runOptimizer();
@@ -123,6 +124,7 @@ int main() {
 
             subG->setDeviceLabel(dev_gpu[dev_id++]);
 
+            subG->findInOut();
             subG->updateTopology();
             opt->setGraph(subG);
             opt->runOptimizer();

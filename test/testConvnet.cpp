@@ -107,6 +107,7 @@ int main()
 
     lenet->initTensorNodes();
 
+    lenet->findInOut();
     lenet->updateTopology();
 
     TRAIN(lenet, "sgd", 0.001, 0.001, 0.9, 8);
@@ -120,6 +121,8 @@ int main()
     TensorNode *label_input = (TensorNode *)lenet_train->getNodeByName("selected");
 
     lenet_train->setTrainDataNodes(label_input, data_input);
+
+    // keep in/OutNodes as Infer net, do not findInOut()
     lenet_train->updateTopology();
 
     PassManager passManager;
