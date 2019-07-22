@@ -59,29 +59,29 @@ int main() {
     GpT(mlp, data0, data2, weight0, bias0);
     GpO(mlp, cpu1, cpu2);
 
-    TENSOR(weight_1, 512, 10);
-    TENSOR(bias_1, 10);
-    weight_1_Tensor->setTensorInit(TensorInitType::FILE,
+    TENSOR(weight1, 512, 10);
+    TENSOR(bias1, 10);
+    weight1_Tensor->setTensorInit(TensorInitType::FILE,
                                    "input/mlp_weight1.bin");
-    bias_1_Tensor->setTensorInit(TensorInitType::FILE, "input/mlp_bias1.bin");
+    bias1_Tensor->setTensorInit(TensorInitType::FILE, "input/mlp_bias1.bin");
 
-    OP(fc_1, MatrixMatrixFCBiasOp);
-    LINKUPPER(fc_1, data2, weight_1, bias_1);
+    OP(fc1, MatrixMatrixFCBiasOp);
+    LINKUPPER(fc1, data2, weight1, bias1);
 
-    TENSOR(data_3, 8, 10);
-    LINKUPPER(data_3, fc_1);
+    TENSOR(data3, 8, 10);
+    LINKUPPER(data3, fc1);
 
     Tensor *labelt = new Tensor({8}, DataType::Int32_t);
     TensorNode *labeln = new TensorNode("selected", labelt);
 
     OP(softmax, MatrixSoftmaxOp);
-    LINKUPPER(softmax, data_3, labeln);
+    LINKUPPER(softmax, data3, labeln);
 
-    TENSOR(data_4, 8, 10);
-    LINKUPPER(data_4, softmax);
+    TENSOR(data4, 8, 10);
+    LINKUPPER(data4, softmax);
 
     OpNode *argmax = new OpNode("argmax", new ArgMaxOp(3));
-    argmax->exlinkUpperNode(data_4);
+    argmax->exlinkUpperNode(data4);
 
     TensorNode *top3_idx =
         new TensorNode("top3", new Tensor({8, 3}, DataType::Int32_t), argmax);
@@ -89,8 +89,8 @@ int main() {
     OpNode *print_top3 = new OpNode("print_top3", new DebugOp());
     print_top3->exlinkUpperNode(top3_idx);
 
-    GpT(mlp, data_3, data_4, weight_1, bias_1, labeln);
-    GpO(mlp, fc_1, softmax);
+    GpT(mlp, data3, data4, weight1, bias1, labeln);
+    GpO(mlp, fc1, softmax);
 
     mlp->pushOpNode(argmax, print_top3);
     mlp->pushTensorNode(top3_idx);
