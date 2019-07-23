@@ -42,6 +42,7 @@ class OpNode : public IRNode {
     OpNode *clone() const;
     OpNode *deepClone() const;
     std::string toString() const;
+
     void setRunOnce() { run_once_ = true; }
     bool runable() {
         bool run = run_;
@@ -49,6 +50,9 @@ class OpNode : public IRNode {
             run_ = false;
         return run;
     }
+
+    void setPolymorphic(bool flag) { polymorphic_ = flag; }
+    bool getPolymorphic() { return polymorphic_; }
 
     void autoDiff(IRGraph* graph,
             std::unordered_map<IRNode*, IRNode*> &gradNodeMap){
@@ -63,6 +67,7 @@ class OpNode : public IRNode {
     Op *op_;
     bool run_{true};
     bool run_once_{false};
+    bool polymorphic_{false};
 };
 
 } // namespace swc

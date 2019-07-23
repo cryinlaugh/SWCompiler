@@ -14,6 +14,7 @@
 #include <set>
 #include <sstream>
 #include <unordered_map>
+#include <map>
 
 namespace swc {
 class IRGraph;
@@ -86,23 +87,33 @@ class Codegen {
     /// build Tensor* -> <base, offset> map for L2(Device) subGraph
     void allocateMemAddr(IRGraph *graph_);
 
+    void allocateMemAddr(IRGraph *graph, int level);
+
     /// declare var before alloc for mpi (if needed)
     void emitVarDeclarations();
     /// allocate statement of cpu/gpu mem
     void emitMemAllocations();
 
+    void emitMemAllocations(IRGraph *graph, int level);
+
     /// initialize tensors for L1 IRGraph
 
     void emitTensorAddresses();
     /// initialize tensors for L2(Device) subGraph
-    void emitTensorAddresses(IRGraph *graph_, std::set<Tensor *> *visited);
+    void emitTensorAddresses(IRGraph *graph, std::set<Tensor *> *visited);
+
+    void emitTensorAddresses(IRGraph *graph, int level);
+    void emitTensorAddresses(IRGraph *graph, int level, std::set<Tensor *> *visited_tensors);
 
     /// data0 = cpu0_baseptr + addr;
     /// load(data0, 6272, 0, "mnist_images_8.bin");
     void emitTensorInitializations();
     /// initialize tensors for L2(Device) subGraph
-    void emitTensorInitializations(IRGraph *graph_,
+    void emitTensorInitializations(IRGraph *graph,
                                    std::set<Tensor *> *visited);
+
+   void emitTensorInitializations(IRGraph *graph, int level);
+   void emitTensorInitializations(IRGraph *graph, int level, std::set<Tensor *> *visited_tensors);
 
     void emitTensorInitFromSnapshot(IRGraph *graph_,
                                     std::set<Tensor *> *visited);
@@ -118,7 +129,9 @@ class Codegen {
     /// generate function calls for opNodes
     void emitFuncCalls();
     /// generate function calls for opNodes of L2(Device) subGraph
-    void emitFuncCalls(IRGraph *graph_);
+    void emitFuncCalls(IRGraph *graph);
+
+    void emitFuncCalls(IRGraph *graph, int level);
 
     /// generate function call for opNode
     void emitFuncCall(OpNode *op);
@@ -131,10 +144,13 @@ class Codegen {
     void switchFrom(IRGraph *subGraph);
 
     /// dispatch OpNode for memcpy or kernel func call
-    void dispathOpNode(OpNode *op);
+    void dispatchOpNode(OpNode *op);
     void emitMemcpyFromTo(Tensor *from, Device from_dev, size_t from_offset,
                           size_t size, Tensor *to, Device to_dev,
                           size_t to_offset);
+
+    void dispathPolyOpNode(OpNode *op);
+
     /// to be depreciated
     std::string dtype();
 
@@ -168,7 +184,8 @@ class Codegen {
     std::unordered_map<std::string, int> names_map_;
     std::vector<std::shared_ptr<MemoryAllocator>> mem_allocators_;
 
-    std::unordered_map<Tensor *, std::string> tensors_name_map_;
+    // std::unordered_map<Tensor *, std::string> tensors_name_map_;
+    std::map<Tensor *, std::string> tensors_name_map_;
     std::unordered_map<Tensor *, std::pair<std::string, uint64_t>>
         tensors_offset_map_;
     // std::unordered_map<Tensor*, std::string> tensors_base_map_;

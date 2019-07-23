@@ -102,12 +102,12 @@ int main() {
     Device dev_cpu2;
     dev_cpu2.id = 2;
 
-    //-----------CPU1-------------------------------------
+    //-----------CPU0-------------------------------------
     TensorNode *data0_rep0 = new TensorNode("data0");
     data0_rep0->setTensor(data0->getTensor());
     TensorNode *weight0_rep0 = new TensorNode("weight0");
     weight0_rep0->setTensor(weight0->getTensor());
-    TensorNode *bias0_rep0 = new TensorNode("bias_0");
+    TensorNode *bias0_rep0 = new TensorNode("bias0");
     bias0_rep0->setTensor(bias0->getTensor());
 
     OP(scatter00, ScatterOp);

@@ -111,7 +111,7 @@ class IRGraph {
     void updateTopology();
     void updateTopoNodeList();
     void copyTo(IRGraph* graph) const;
-    
+
     IRGraph *clone() const;
     void setDeviceLabel(Device dev);
     Device getDeviceLabel() { return _dev; }
@@ -122,6 +122,12 @@ class IRGraph {
     }
     TensorNode *getTrainLabelNode() { return _input_label_node; }
     TensorNode *getTrainDataNode() { return _input_data_node; }
+
+    void setLevel(int level) { _level = level; }
+    int getLevel() { return _level; }
+
+    void setName(std::string name) { _name = name; }
+    std::string getName() { return _name; }
 
   private:
     std::vector<TensorNode *> _tensors;
@@ -136,6 +142,9 @@ class IRGraph {
     TensorNode *_input_label_node{nullptr};
 
     Device _dev;
+
+    int _level {2};
+    std::string _name{"NULL"};
 };
 } // namespace swc
 

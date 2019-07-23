@@ -106,11 +106,16 @@ void Codegen::initMemoryAllocators() {
     Device cpu2;
     cpu2.id = 2;
 
+    Device cpux;
+    cpux.id = 999;
+
     auto m_cpu0 = std::make_shared<MemoryAllocator>(cpu0, "cpu0", 0xFFFFFFFF);
     auto m_cpu1 = std::make_shared<MemoryAllocator>(cpu1, "cpu1", 0xFFFFFFFF);
     auto m_cpu2 = std::make_shared<MemoryAllocator>(cpu2, "cpu2", 0xFFFFFFFF);
     auto m_gpu0 = std::make_shared<MemoryAllocator>(gpu0, "gpu0", 0xFFFFFFFF);
     auto m_gpu1 = std::make_shared<MemoryAllocator>(gpu1, "gpu1", 0xFFFFFFFF);
+
+    auto m_cpux = std::make_shared<MemoryAllocator>(cpux, "cpux", 0xFFFFFFFF);
 
     mem_allocators_.push_back(m_cpu0);
     mem_allocators_.push_back(m_cpu1);
@@ -118,15 +123,21 @@ void Codegen::initMemoryAllocators() {
     mem_allocators_.push_back(m_gpu0);
     mem_allocators_.push_back(m_gpu1);
 
+    mem_allocators_.push_back(m_cpux);
+
     dev_allocator_map_[cpu0] = m_cpu0.get();
     dev_allocator_map_[cpu1] = m_cpu1.get();
     dev_allocator_map_[cpu2] = m_cpu2.get();
     dev_allocator_map_[gpu0] = m_gpu0.get();
     dev_allocator_map_[gpu1] = m_gpu1.get();
 
+    dev_allocator_map_[cpux] = m_cpux.get();
+
     m_cpu0->setBasePtrName(UniqueName(deviceToStr(cpu0) + "_baseptr"));
     m_cpu1->setBasePtrName(UniqueName(deviceToStr(cpu1) + "_baseptr"));
     m_cpu2->setBasePtrName(UniqueName(deviceToStr(cpu2) + "_baseptr"));
+
+    m_cpux->setBasePtrName(UniqueName(deviceToStr(cpux) + "_baseptr"));
 
     m_gpu0->setBasePtrName(UniqueName(deviceToStr(gpu0) + "_baseptr"));
     m_gpu1->setBasePtrName(UniqueName(deviceToStr(gpu1) + "_baseptr"));
@@ -189,7 +200,16 @@ void Codegen::emitMPIInit() {
     }
 }
 
-std::string Codegen::UniqueName(std::string name) {
+std::string Codegen::UniqueName(std::string _name) {
+    std::string name;
+    for (const char c : _name) {
+        if (c == '/' || c == '.' || c == '-') {
+            name.push_back('_');
+        } else {
+            name.push_back(c);
+        }
+    }
+
     auto iter = names_map_.find(name);
     if (iter != names_map_.end()) {
         std::string uname = name;
@@ -310,22 +330,59 @@ std::string Codegen::generate() {
 
 void Codegen::emitMemAllocs() {
     SWLOG_DEBUG(4) << "genMemAllocs \n";
-
-    allocateMemAddr();
+    int level = config_.mpi ? 0 : 1;
+    // allocateMemAddr();
+    allocateMemAddr(graph_, level);
 
     emitVarDeclarations();
 
-    emitMemAllocations();
+    // emitMemAllocations();
+    emitMemAllocations(graph_, level);
 
-    emitTensorAddresses();
+    // emitTensorAddresses();
+    emitTensorAddresses(graph_, level);
 
     if (config_.train_mode)
         emitDataLoaderInit();
 
-    emitTensorInitializations();
+    // emitTensorInitializations();
+    emitTensorInitializations(graph_, level);
 }
+
+void Codegen::allocateMemAddr(IRGraph *graph, int level) {
+    SWLOG_DEBUG(4) << ">>>begin allocateMemAddr on level " << level << " Graph.\n";
+
+    // always allocate mem for current level
+    allocateMemAddr(graph);
+
+    if(level == 2) { // device graph
+        // allocateMemAddr(graph);
+    } else if( level == 1){ // node graph
+        for (int i = 0; i < graph_->opNodeNum(); i++) {
+            OpNode *opnode = graph_->getOpNode(i);
+            if (auto graphOp = dynamic_cast<SubGraphOp *>(opnode->getOp())) {
+                if (graphOp->getGraph()) {
+                    SWLOG_DEBUG(4) << ">>>allocateMemAddr on level 2 subGraph: " << opnode->name() << "\n";
+                    allocateMemAddr(graphOp->getGraph());
+                }
+            }
+        } // for loop
+    } else if( level == 0){ // node graph
+        for (int i = 0; i < graph_->opNodeNum(); i++) {
+            OpNode *opnode = graph_->getOpNode(i);
+            if (auto graphOp = dynamic_cast<ParallelSubGraphOp *>(opnode->getOp())) {
+                if (graphOp->getGraph()) {
+                    SWLOG_DEBUG(4) << "allocateMemAddr on level 1 ParallelSubGraph: " << opnode->name() << "\n";
+                    allocateMemAddr(graphOp->getGraph(), 1);
+                }
+            }
+        } // for loop
+    }
+    SWLOG_DEBUG(4) << "<<<end allocateMemAddr on level " << level << " Graph.\n";
+}
+
 void Codegen::allocateMemAddr() {
-    SWLOG_DEBUG(4) << "begin allocateMemAddr...\n";
+    SWLOG_DEBUG(4) << ">>>begin allocateMemAddr...\n";
 
     allocateMemAddr(graph_);
     for (int i = 0; i < graph_->opNodeNum(); i++) {
@@ -337,7 +394,7 @@ void Codegen::allocateMemAddr() {
             allocateMemAddr(graphOp->getGraph());
         }
     }
-    SWLOG_DEBUG(4) << "end allocateMemAddr...\n";
+    SWLOG_DEBUG(4) << "<<<end allocateMemAddr...\n";
 }
 void Codegen::allocateMemAddr(IRGraph *graph_) {
 
@@ -453,10 +510,82 @@ void Codegen::emitMemAllocations() {
     writer_ << "\n";
 }
 
+void Codegen::emitMemAllocations(IRGraph *graph, int level) {
+    SWLOG_DEBUG(4) << "begin emitMemAllocations for level " << level << " Graph on "
+                    << deviceToStr(graph->getDeviceLabel()) << ".\n";
+
+    Device dev = graph->getDeviceLabel();
+    MemoryAllocator *allocator = dev_allocator_map_[dev];
+    std::string base = allocator->getBasePtrName();
+    uint64_t size = allocator->getMemAllocated();
+    if (size > 0) {
+        if(level == 0) {
+            if (config_.mpi) {
+                writer_ << "if(rank == " << dev.id << ") {\n";
+                writer_.indentInc();
+            }
+
+            writer_ << base << " = (char*)malloc(" << size << ");\n";
+
+            if (config_.mpi) {
+                writer_.indentDec();
+                writer_ << "} // if rank\n";
+            }
+
+            writer_ << "if(rank != " << /*MASTER RANK*/0 << ") {\n";
+            writer_.indentInc();
+
+            for (int i = 0; i < graph_->opNodeNum(); i++) {
+                OpNode *opnode = graph_->getOpNode(i);
+                if (auto graphOp = dynamic_cast<ParallelSubGraphOp *>(opnode->getOp())) {
+                    if (graphOp->getGraph()) {
+                        emitMemAllocations(graphOp->getGraph(), 1);
+                    }
+                }
+            } // for loop
+
+            writer_.indentDec();
+            writer_ << "} // if rank\n";
+
+        } else if(level == 1) {
+            writer_ << base << " = (char*)malloc(" << size << ");\n";
+
+            for (int i = 0; i < graph_->opNodeNum(); i++) {
+                OpNode *opnode = graph_->getOpNode(i);
+                if (auto graphOp = dynamic_cast<SubGraphOp *>(opnode->getOp())) {
+                    if (graphOp->getGraph()) {
+                        emitMemAllocations(graphOp->getGraph(), 2);
+                    }
+                }
+            } // for loop
+
+        } else if(level == 2) {
+            switch (dev.type) {
+            case DeviceType::CPU:
+                // writer_ << base << " = (" << dtype << "*)malloc(" << size <<
+                // ");\n";
+                writer_ << base << " = (char*)malloc(" << size << ");\n";
+                break;
+            case DeviceType::GPU:
+                writer_ << "\n";
+                writer_ << "cudaSetDevice(" << dev.id << ");\n";
+                writer_ << "cudaMalloc(&" << base << ", " << size << ");\n";
+                break;
+            default:
+                SWLOG_ERROR << "Unknown DeviceType\n";
+                break;
+            }
+        }
+    }
+
+    SWLOG_DEBUG(4) << "end emitMemAllocations for level " << level << " Graph on "
+                    << deviceToStr(graph->getDeviceLabel()) << ".\n";
+}
+
 /// if config_.mpi=true this func deal with
 /// the MASTER(0) process
 void Codegen::emitTensorAddresses() {
-    SWLOG_DEBUG(4) << "begin emitTensorAddresse...\n";
+    SWLOG_DEBUG(4) << "begin emitTensorAddresses...\n";
 
     std::set<Tensor *> visited_tensors;
 
@@ -494,6 +623,62 @@ void Codegen::emitTensorAddresses() {
     }
 
     SWLOG_DEBUG(4) << "end emitTensorAddresses...\n";
+}
+
+void Codegen::emitTensorAddresses(IRGraph *graph, int level) {
+    SWLOG_DEBUG(4) << ">>>begin emitTensorAddresses...\n";
+
+    std::set<Tensor *> visited_tensors;
+    emitTensorAddresses(graph, level, &visited_tensors);
+
+    SWLOG_DEBUG(4) << "<<<end emitTensorAddresses...\n";
+}
+
+void Codegen::emitTensorAddresses(IRGraph *graph, int level, std::set<Tensor *> *visited_tensors) {
+    SWLOG_DEBUG(4) << "begin emitTensorAddresses for level " << level << " Graph on "
+                    << deviceToStr(graph->getDeviceLabel()) << ".\n";
+
+    if (level == 0) {
+        writer_ << "if(rank == 0) {\n";
+        writer_.indentInc();
+        emitTensorAddresses(graph, visited_tensors);
+
+        writer_.indentDec();
+        writer_ << "} // if rank\n";
+
+        writer_ << "if(rank != 0) {\n";
+        writer_.indentInc();
+
+        for (int i = 0; i < graph_->opNodeNum(); i++) {
+            OpNode *opnode = graph_->getOpNode(i);
+            if (auto graphOp = dynamic_cast<ParallelSubGraphOp *>(opnode->getOp())) {
+                if (graphOp->getGraph()) {
+                    emitTensorAddresses(graphOp->getGraph(), 1, visited_tensors);
+                }
+            }
+        }
+
+        writer_.indentDec();
+        writer_ << "} // if rank\n";
+    } else if(level == 1) {
+
+        emitTensorAddresses(graph, visited_tensors);
+
+        for (int i = 0; i < graph->opNodeNum(); i++) {
+            OpNode *opnode = graph->getOpNode(i);
+            if (auto graphOp = dynamic_cast<SubGraphOp *>(opnode->getOp())) {
+                if (auto ngraph = graphOp->getGraph()) {
+                    switchTo(ngraph);
+                    emitTensorAddresses(ngraph, visited_tensors);
+                    switchFrom(ngraph);
+                    writer_ << "\n";
+                }
+            }
+        }
+    }
+
+    SWLOG_DEBUG(4) << "end emitTensorAddresses for level " << level << " Graph on "
+                    << deviceToStr(graph->getDeviceLabel()) << ".\n";
 }
 
 void Codegen::emitTensorAddresses(IRGraph *graph_,
@@ -556,11 +741,71 @@ void Codegen::emitTensorInitializations() {
 
     SWLOG_DEBUG(4) << "end emitTensorInitializations...\n";
 }
+void Codegen::emitTensorInitializations(IRGraph *graph, int level) {
+    SWLOG_DEBUG(4) << ">>>begin emitTensorInitializations...\n";
 
-void Codegen::emitTensorInitializations(IRGraph *graph_,
+    std::set<Tensor *> visited_tensors;
+    emitTensorInitializations(graph, level, &visited_tensors);
+
+    SWLOG_DEBUG(4) << "<<<end emitTensorInitializations...\n";
+}
+
+void Codegen::emitTensorInitializations(IRGraph *graph, int level, std::set<Tensor *> *visited_tensors) {
+    SWLOG_DEBUG(4) << "begin emitTensorInitializations for level " << level << " Graph on "
+                    << deviceToStr(graph->getDeviceLabel()) << ".\n";
+
+    if (level == 0) {
+        writer_ << "if(rank == 0) {\n";
+        writer_.indentInc();
+
+        emitTensorInitializations(graph, 2, visited_tensors);
+
+        writer_.indentDec();
+        writer_ << "} // if rank\n";
+
+        for (int i = 0; i < graph_->opNodeNum(); i++) {
+            OpNode *opnode = graph_->getOpNode(i);
+            if (auto graphOp = dynamic_cast<ParallelSubGraphOp *>(opnode->getOp())) {
+                if (graphOp->getGraph()) {
+
+                    writer_ << "if(rank != 0) {\n";
+                    writer_.indentInc();
+
+                    emitTensorInitializations(graphOp->getGraph(), 1, visited_tensors);
+
+                    writer_.indentDec();
+                    writer_ << "} // if rank!=0\n";
+
+                }
+            }
+        }
+    } else if(level == 1) {
+
+        emitTensorInitializations(graph, 2, visited_tensors);
+
+        for (int i = 0; i < graph->opNodeNum(); i++) {
+            OpNode *opnode = graph->getOpNode(i);
+            if (auto graphOp = dynamic_cast<SubGraphOp *>(opnode->getOp())) {
+                if (auto ngraph = graphOp->getGraph()) {
+                    switchTo(ngraph);
+                    emitTensorInitializations(ngraph, 2, visited_tensors);
+                    switchFrom(ngraph);
+                    writer_ << "\n";
+                }
+            }
+        }
+    } else if (level == 2) {
+        emitTensorInitializations(graph, visited_tensors);
+    }
+
+    SWLOG_DEBUG(4) << "end emitTensorInitializations for level " << level << " Graph on "
+                    << deviceToStr(graph->getDeviceLabel()) << ".\n";
+}
+
+void Codegen::emitTensorInitializations(IRGraph *graph,
                                         std::set<Tensor *> *visited_tensors) {
-    for (int i = 0; i < graph_->tensorNodeNum(); i++) {
-        auto *tnode = graph_->getTensorNode(i);
+    for (int i = 0; i < graph->tensorNodeNum(); i++) {
+        auto *tnode = graph->getTensorNode(i);
         auto *tensor = tnode->getTensor();
 
         if (visited_tensors->count(tensor))
@@ -604,7 +849,7 @@ void Codegen::emitTensorInitializations(IRGraph *graph_,
         }
         case TensorInitType::PARENTOP: {
             auto *op = (OpNode *)tnode->getParentNode(0);
-            dispathOpNode(op);
+            dispatchOpNode(op);
             break;
         }
         default:
@@ -674,7 +919,7 @@ void Codegen::emitTensorInitFromSnapshot(IRGraph *graph_,
         }
         case TensorInitType::PARENTOP: {
             auto *op = (OpNode *)tnode->getParentNode(0);
-            dispathOpNode(op);
+            dispatchOpNode(op);
             break;
         }
         default:
@@ -835,7 +1080,7 @@ static std::string getBytesProtoString(BytesProto proto) {
     }
 }
 
-static std::string getInitialLizerString(const std::vector<size_t> &dims) {
+static std::string getInitializerString(const std::vector<size_t> &dims) {
     std::ostringstream os;
     os << "{";
     for (auto dim : dims)
@@ -860,8 +1105,8 @@ void Codegen::emitDataLoaderInit() {
     writer_ << getBytesProtoString(config_.train_config.data_bytes) << ", ";
     writer_ << config_.train_config.max_epoch << ", ";
     writer_ << config_.train_config.train_data_samples << ", ";
-    writer_ << getInitialLizerString(label->getDims()) << ", ";
-    writer_ << getInitialLizerString(data->getDims());
+    writer_ << getInitializerString(label->getDims()) << ", ";
+    writer_ << getInitializerString(data->getDims());
     writer_ << ");\n";
 
     writer_ << "size_t iter = 0; "
@@ -885,7 +1130,7 @@ void Codegen::emitExecute() {
         writer_.indentInc();
     }
 
-    emitFuncCalls();
+    emitFuncCalls(graph_, 0);
 
     if (config_.train_mode) {
 
@@ -924,7 +1169,7 @@ void Codegen::emitFuncCalls() {
                         writer_ << "\n";
                     }
                 } else {
-                    dispathOpNode(opnode);
+                    dispatchOpNode(opnode);
                 }
             }
         }
@@ -940,10 +1185,106 @@ void Codegen::emitFuncCalls(IRGraph *graph_) {
                 if (auto graphOp =
                         dynamic_cast<SubGraphOp *>(opnode->getOp())) {
                 } else {
-                    dispathOpNode(opnode);
+                    dispatchOpNode(opnode);
                 }
             }
         }
+}
+// void Codegen::emitFuncCalls(IRGraph *graph) {
+//     for (int i = 0; i < graph->topologyNum(); i++)
+//         for (int j = 0; j < graph->getNumInTopoLevel(i); j++) {
+//             auto node = graph->getNodeInTopo(i, j);
+//             if (node->nodeType() == OP_NODE) {
+//                 writer_ << "// topology(" << i << ", " << j
+//                         << "): " << node->name() << "\n";
+//                 auto opnode = (OpNode *)node;
+//                 if (auto graphOp = dynamic_cast<SubGraphOp *>(opnode->getOp()) ||
+//                     auto PgraphOp = dynamic_cast<ParallelSubGraphOp *>(opnode->getOp())) {
+//                     continue;
+//                 }
+//                 dispatchOpNode(opnode);
+//             }
+//         }
+// }
+
+void Codegen::emitFuncCalls(IRGraph *graph, int level) {
+    SWLOG_DEBUG(4) << ">>>begin emitFuncCalls for level " << level
+                    << " Graph on " << deviceToStr(graph->getDeviceLabel()) << "\n";
+    if(level == 0) {
+        writer_ << "if(rank == 0) {\n";
+        writer_.indentInc();
+
+        for (int i = 0; i < graph->topologyNum(); i++) {
+            for (int j = 0; j < graph->getNumInTopoLevel(i); j++) {
+                auto node = graph->getNodeInTopo(i, j);
+                if (node->nodeType() == OP_NODE) {
+                    writer_ << "// topology(" << i << ", " << j
+                            << "): " << node->name() << "\n";
+                    auto opnode = (OpNode *)node;
+
+                    if (auto graphOp =dynamic_cast<ParallelSubGraphOp *>(opnode->getOp())) {
+                        // yielding
+                        writer_.indentDec();
+                        writer_ << "}\n";
+
+                        writer_ << "if(rank != 0 ) {\n";
+                        writer_.indentInc();
+
+                        emitFuncCalls(graphOp->getGraph(), 1);
+
+                        writer_.indentDec();
+                        writer_ << "}\n";
+
+                        // restoring
+                        writer_ << "if(rank == 0) {\n";
+                        writer_.indentInc();
+
+                    } else {
+                        dispatchOpNode(opnode);
+                    }
+                }
+            }
+        }
+
+        writer_.indentDec();
+        writer_ << "}\n";
+
+    } else if(level == 1) {
+        for (int i = 0; i < graph->topologyNum(); i++) {
+            for (int j = 0; j < graph->getNumInTopoLevel(i); j++) {
+                auto node = graph->getNodeInTopo(i, j);
+                if (node->nodeType() == OP_NODE) {
+                    writer_ << "// topology(" << i << ", " << j
+                            << "): " << node->name() << "\n";
+                    auto opnode = (OpNode *)node;
+
+                    if (auto graphOp =
+                            dynamic_cast<SubGraphOp *>(opnode->getOp())) {
+                        emitFuncCalls(graphOp->getGraph(), 2);
+                    } else {
+                        dispatchOpNode(opnode);
+                    }
+
+                }
+            }
+        }
+    } else if(level == 2) {
+        for (int i = 0; i < graph->topologyNum(); i++) {
+            for (int j = 0; j < graph->getNumInTopoLevel(i); j++) {
+                auto node = graph->getNodeInTopo(i, j);
+                if (node->nodeType() == OP_NODE) {
+                    writer_ << "// topology(" << i << ", " << j
+                            << "): " << node->name() << "\n";
+                    auto opnode = (OpNode *)node;
+                    dispatchOpNode(opnode);
+                }
+            }
+        }
+    }
+
+    SWLOG_DEBUG(4) << "<<<end emitFuncCalls for level " << level
+                    << " Graph on " << deviceToStr(graph->getDeviceLabel()) << "\n";
+
 }
 
 void Codegen::switchTo(IRGraph *ngraph) {
@@ -959,9 +1300,17 @@ void Codegen::switchTo(IRGraph *ngraph) {
 
 void Codegen::switchFrom(IRGraph *ngraph) { (void)ngraph; }
 
-void Codegen::dispathOpNode(OpNode *op) {
+void Codegen::dispatchOpNode(OpNode *op) {
+
     if (!op->runable())
         return;
+
+    if(op->getPolymorphic()) {
+        dispathPolyOpNode(op);
+        return;
+    }
+
+    SWLOG_DEBUG(4) << "dispatchOpNode " << op->name() << "\n";
 
     Label *label = op->getLabel();
     Device dev = label->getDeviceLabel();
@@ -989,10 +1338,10 @@ void Codegen::dispathOpNode(OpNode *op) {
 
         emitMemcpyFromTo(from_tensor, dev, 0, size, to_tensor, to_dev, offset);
     } else {
-        if (config_.mpi) {
-            writer_ << "if(rank == " << dev.id << ") {\n";
-            writer_.indentInc();
-        }
+        // if (config_.mpi) {
+        //     writer_ << "if(rank == " << dev.id << ") {\n";
+        //     writer_.indentInc();
+        // }
 
         switch (dev.type) {
         case DeviceType::CPU:
@@ -1002,13 +1351,121 @@ void Codegen::dispathOpNode(OpNode *op) {
             emitFuncCallCUDA(op);
             break;
         default:
-            SWLOG_ERROR << "unknown device type in dispathOpNode\n";
+            SWLOG_ERROR << "unknown device type in dispatchOpNode\n";
         }
 
-        if (config_.mpi) {
-            writer_.indentDec();
-            writer_ << "} // if rank\n";
-        }
+        // if (config_.mpi) {
+        //     writer_.indentDec();
+        //     writer_ << "} // if rank\n";
+        // }
+    }
+}
+
+void Codegen::dispathPolyOpNode(OpNode *op) {
+    SWLOG_DEBUG(4) << "dispatchPolyOpNode " << op->name() << "\n";
+    if (auto scatter = dynamic_cast<ScatterOp *>(op->getOp())) {
+        auto *from = ((TensorNode *)op->getParentNode(0));
+        auto *from_tensor = from->getTensor();
+        Device from_dev = from->getLabel()->getDeviceLabel();
+        auto *to = ((TensorNode *)op->getChildNode(0));
+        auto *to_tensor = to->getTensor();
+
+        std::string fname = tensors_name_map_[from_tensor];
+        std::string tname = tensors_name_map_[to_tensor];
+
+        // TODO, non-continuous
+        int axis = scatter->getAxis();
+        int degree = scatter->getDegree();
+        size_t size = to_tensor->getSizeInBytes();
+        size_t offset = (axis == -1) ? 0 : to_tensor->size();
+
+
+        int tag = getMPISendRecvTag(to_tensor);
+
+        // yielding
+        writer_.indentDec();
+        writer_ << "}\n";
+
+        writer_ << "if(rank == " << from_dev.id << ") {\n";
+        writer_.indentInc();
+
+        writer_ << "for(int r=1; r<=" << degree <<"; r++) {\n";
+        writer_.indentInc();
+        writer_ << "MPI_Send(" << fname << "+(r-1)*" << offset << ", " << size
+                << ", "
+                << "MPI_CHAR, r, " << tag
+                << ",  MPI_COMM_WORLD);\n";
+        writer_.indentDec();
+        writer_ << "} //for \n";
+
+        writer_.indentDec();
+        writer_ << "} ";
+
+        writer_ << "else {\n";
+        writer_.indentInc();
+        writer_ << "MPI_Recv(" << tname << ", " << size
+                << ", "
+                << "MPI_CHAR, 0, "<< tag
+                << ",  MPI_COMM_WORLD, &status);\n";
+        writer_.indentDec();
+        writer_ << "} // if rank\n";
+
+        // restoring
+        writer_ << "if(rank != 0 ) {\n";
+        writer_.indentInc();
+
+    } else if (auto gather = dynamic_cast<GatherOp *>(op->getOp())) {
+        // yielding
+        writer_.indentDec();
+        writer_ << "}\n";
+
+        auto *from = ((TensorNode *)op->getParentNode(0));
+        auto *from_tensor = from->getTensor();
+        auto *to = ((TensorNode *)op->getChildNode(0));
+        auto *to_tensor = to->getTensor();
+        Device to_dev = to->getLabel()->getDeviceLabel();
+
+        std::string fname = tensors_name_map_[from_tensor];
+        std::string tname = tensors_name_map_[to_tensor];
+        SWLOG_DEBUG(2) << "gather\n";
+
+        // TODO, non-continuous
+        int axis = gather->getAxis();
+        int degree = gather->getDegree();
+        size_t size = from_tensor->getSizeInBytes();
+        size_t offset = (axis == -1) ? 0 : from_tensor->size();
+
+        SWLOG_DEBUG(2) << "GatherOp axis=" <<axis << " degree=" << degree << "\n";
+
+        int tag = getMPISendRecvTag(to_tensor);
+
+        writer_ << "if(rank == " << to_dev.id << ") {\n";
+        writer_.indentInc();
+
+        writer_ << "for(int r=1; r<=" << degree <<"; r++) {\n";
+        writer_.indentInc();
+        writer_ << "MPI_Recv(" << tname << "+(r-1)*" << offset <<", " << size
+                << ", "
+                << "MPI_CHAR, r, "<< tag
+                << ",  MPI_COMM_WORLD, &status);\n";
+        writer_.indentDec();
+        writer_ << "} //for \n";
+
+        writer_.indentDec();
+        writer_ << "} ";
+
+        writer_ << "else {\n";
+        writer_.indentInc();
+        writer_ << "MPI_Send(" << fname << ", " << size
+                << ", "
+                << "MPI_CHAR, 0, " << tag
+                << ",  MPI_COMM_WORLD);\n";
+        writer_.indentDec();
+        writer_ << "} // if rank\n";
+
+        // restoring
+        writer_ << "if(rank != 0 ) {\n";
+        writer_.indentInc();
     }
 }
 
@@ -1101,7 +1558,7 @@ void Codegen::emitFuncCall(OpNode *op) {
 
     Label *oplabel = op->getLabel();
     SWLOG_DEBUG(2) << "genKernelCall for " << oplabel->getTypeNameLabel()
-                   << std::endl;
+                   << " " << op->name() << "\n";
 
     // TODO assert legal dimensions
     if ((oplabel->getTypeNameLabel()).compare("MatrixMatrixMul") == 0) {
