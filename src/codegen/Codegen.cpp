@@ -13,6 +13,7 @@
 #include <iomanip>
 #include <string>
 #include <unordered_set>
+#include <limits>
 
 using namespace swc::op;
 
@@ -22,7 +23,10 @@ namespace codegen {
 static std::string deviceToStr(const Device &d) {
     std::ostringstream os;
     if (d.type == DeviceType::CPU) {
-        os << "cpu" << d.id;
+        if(d.id == INT_MAX)
+            os << "cpup";
+        else
+            os << "cpu" << d.id;
     } else if (d.type == DeviceType::GPU) {
         os << "gpu" << d.id;
     }
@@ -106,11 +110,15 @@ void Codegen::initMemoryAllocators() {
     Device cpu2;
     cpu2.id = 2;
 
+    Device cpup;
+    cpup.id = INT_MAX;
+
     auto m_cpu0 = std::make_shared<MemoryAllocator>(cpu0, "cpu0", 0xFFFFFFFF);
     auto m_cpu1 = std::make_shared<MemoryAllocator>(cpu1, "cpu1", 0xFFFFFFFF);
     auto m_cpu2 = std::make_shared<MemoryAllocator>(cpu2, "cpu2", 0xFFFFFFFF);
     auto m_gpu0 = std::make_shared<MemoryAllocator>(gpu0, "gpu0", 0xFFFFFFFF);
     auto m_gpu1 = std::make_shared<MemoryAllocator>(gpu1, "gpu1", 0xFFFFFFFF);
+    p_mem_alllocator_ = std::make_shared<MemoryAllocator>(cpup, "cpup", 0xFFFFFFFF);
 
     mem_allocators_.push_back(m_cpu0);
     mem_allocators_.push_back(m_cpu1);
@@ -123,20 +131,17 @@ void Codegen::initMemoryAllocators() {
     dev_allocator_map_[cpu2] = m_cpu2.get();
     dev_allocator_map_[gpu0] = m_gpu0.get();
     dev_allocator_map_[gpu1] = m_gpu1.get();
+    dev_allocator_map_[cpup] = p_mem_alllocator_.get();
 
     m_cpu0->setBasePtrName(UniqueName(deviceToStr(cpu0) + "_baseptr"));
     m_cpu1->setBasePtrName(UniqueName(deviceToStr(cpu1) + "_baseptr"));
     m_cpu2->setBasePtrName(UniqueName(deviceToStr(cpu2) + "_baseptr"));
+    p_mem_alllocator_->setBasePtrName(UniqueName(deviceToStr(cpup) + "_baseptr"));
 
     m_gpu0->setBasePtrName(UniqueName(deviceToStr(gpu0) + "_baseptr"));
     m_gpu1->setBasePtrName(UniqueName(deviceToStr(gpu1) + "_baseptr"));
 }
 void Codegen::codeGenInit() {
-    // todo clear of new vector and map
-    // names_map_.clear();
-    // tensors_name_map_.clear();
-    // tensors_offset_map_.clear();
-    this->active_graph_ = graph_;
     initMemoryAllocators();
 }
 
@@ -339,10 +344,10 @@ void Codegen::allocateMemAddr() {
     }
     SWLOG_DEBUG(4) << "end allocateMemAddr...\n";
 }
-void Codegen::allocateMemAddr(IRGraph *graph_) {
+void Codegen::allocateMemAddr(IRGraph *graph) {
 
-    for (int i = 0; i < graph_->tensorNodeNum(); i++) {
-        TensorNode *tnode = graph_->getTensorNode(i);
+    for (int i = 0; i < graph->tensorNodeNum(); i++) {
+        TensorNode *tnode = graph->getTensorNode(i);
         Tensor *tensor = tnode->getTensor();
 
         if (tensors_name_map_.count(tensor))
@@ -425,32 +430,45 @@ void Codegen::emitMemAllocations() {
             continue;
 
         if (config_.mpi) {
-            writer_ << "if(rank == " << dev.id << ") {\n";
+            writer_ << "if(rank == 0) {\n";
             writer_.indentInc();
         }
 
-        switch (dev.type) {
-        case DeviceType::CPU:
-            // writer_ << base << " = (" << dtype << "*)malloc(" << size <<
-            // ");\n";
-            writer_ << base << " = (char*)malloc(" << size << ");\n";
-            break;
-        case DeviceType::GPU:
-            writer_ << "\n";
-            writer_ << "cudaSetDevice(" << dev.id << ");\n";
-            writer_ << "cudaMalloc(&" << base << ", " << size << ");\n";
-            break;
-        default:
-            SWLOG_ERROR << "Unknown DeviceType\n";
-            break;
-        }
+        emitMemAllocation(base, size, dev);
 
         if (config_.mpi) {
             writer_.indentDec();
             writer_ << "} // if rank\n";
         }
     }
+    
+    if(p_mem_alllocator_->getMemAllocated()) {
+
+        auto dev = p_mem_alllocator_->getDevice();
+        std::string base = p_mem_alllocator_->getBasePtrName();
+        uint64_t size = p_mem_alllocator_->getMemAllocated();
+
+        emitMemAllocation(base, size, dev);
+    }
     writer_ << "\n";
+}
+void Codegen::emitMemAllocation(std::string buffer, size_t bytes, Device& dev) {
+    switch (dev.type) {
+    case DeviceType::CPU:
+        // writer_ << base << " = (" << dtype << "*)malloc(" << size <<
+        // ");\n";
+        writer_ << buffer << " = (char*)malloc(" << bytes << ");\n";
+        break;
+    case DeviceType::GPU:
+        writer_ << "\n";
+        writer_ << "cudaSetDevice(" << dev.id << ");\n";
+        writer_ << "cudaMalloc(&" << buffer << ", " << bytes << ");\n";
+        break;
+    default:
+        SWLOG_ERROR << "Unknown DeviceType\n";
+        break;
+    }
+    
 }
 
 /// if config_.mpi=true this func deal with
@@ -496,10 +514,10 @@ void Codegen::emitTensorAddresses() {
     SWLOG_DEBUG(4) << "end emitTensorAddresses...\n";
 }
 
-void Codegen::emitTensorAddresses(IRGraph *graph_,
+void Codegen::emitTensorAddresses(IRGraph *graph,
                                   std::set<Tensor *> *visited_tensors) {
-    for (int i = 0; i < graph_->tensorNodeNum(); i++) {
-        auto *tnode = graph_->getTensorNode(i);
+    for (int i = 0; i < graph->tensorNodeNum(); i++) {
+        auto *tnode = graph->getTensorNode(i);
         auto *tensor = tnode->getTensor();
 
         if (visited_tensors->count(tensor))
