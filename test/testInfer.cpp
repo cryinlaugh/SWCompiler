@@ -90,6 +90,7 @@ int main() {
     GpO(mlp, fc0, tanh0, fc1, softmax, argmax_o, print_o);
 
     //====================================================
+    mlp->findInOut();
     mlp->updateTopology();
     pass::Optimizer *opt = new pass::Optimizer(mlp);
     opt->runOptimizer();

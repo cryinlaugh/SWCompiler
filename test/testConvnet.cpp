@@ -107,6 +107,7 @@ int main()
 
     lenet->initTensorNodes();
 
+    lenet->findInOut();
     lenet->updateTopology();
 
     TRAIN(lenet, "sgd", 0.001, 0.001, 0.9, 8);
@@ -120,6 +121,8 @@ int main()
     TensorNode *label_input = (TensorNode *)lenet_train->getNodeByName("selected");
 
     lenet_train->setTrainDataNodes(label_input, data_input);
+
+    // keep in/OutNodes as Infer net, do not findInOut()
     lenet_train->updateTopology();
 
     PassManager passManager;
@@ -155,6 +158,8 @@ int main()
     config.train_config.label_bytes = BytesProto::ONE_BYTE_AS_INT;
     config.train_config.data_bytes = BytesProto::FOUR_BYTES_AS_FLOAT;
     config.train_config.train_data_samples = 60000;
+    config.train_config.snapshot = 1000;
+    config.train_config.display = 500;
 
     codegen::Codegen *cg = new codegen::Codegen(lenet_train, config);
 

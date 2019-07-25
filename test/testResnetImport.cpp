@@ -36,6 +36,7 @@ int main() {
     graph->pushOpNode(argmax_o, print_o);
     graph->pushTensorNode(top3_t);
 
+    graph->findInOut();
     graph->updateTopology();
 
     // Optimizer is a must because Codegen need label

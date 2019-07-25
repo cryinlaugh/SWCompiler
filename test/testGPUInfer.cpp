@@ -234,14 +234,17 @@ int main() {
     gpu0_Op->setGraph(subGraph0);
     gpu1_Op->setGraph(subGraph1);
 
+    mlp->findInOut();
     mlp->updateTopology();
     pass::Optimizer *opt = new pass::Optimizer(mlp);
     opt->runOptimizer();
 
+    subGraph0->findInOut();
     subGraph0->updateTopology();
     opt->setGraph(subGraph0);
     opt->runOptimizer();
 
+    subGraph1->findInOut();
     subGraph1->updateTopology();
     opt->setGraph(subGraph1);
     opt->runOptimizer();

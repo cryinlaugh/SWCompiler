@@ -83,6 +83,7 @@ int main() {
                              dataTensorNode_2);
     MLPLayer->pushOpNode(fcOpNode_0, tanhOpNode_1);
 
+    MLPLayer->findInOut();
     MLPLayer->updateTopology();
 
     printf("Generate MLP layer done!\n");

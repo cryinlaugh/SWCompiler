@@ -79,6 +79,9 @@ int main() {
     // initialize tensor dimensions
     mlp->initTensorNodes();
 
+    mlp->findInOut();
+    mlp->updateTopology();
+
     pass::Optimizer *opt = new pass::Optimizer(mlp);
     opt->runOptimizer();
     dotGen(mlp);
