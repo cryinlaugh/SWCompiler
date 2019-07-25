@@ -58,3 +58,16 @@ void Op::checkValid(OpNode *node) {
 
 }
 
+void Op::outTensorShapeGen(OpNode* node,
+                           size_t index, 
+                           TensorShape* tShape)
+{
+    TensorNode *inNode = (TensorNode*)node->getParentNode(0);
+    std::vector<size_t> shape;
+
+    TensorShape* inShape = inNode->getTensor()->getTensorShape();
+    for (int i = 0; i < inShape->getNDim(); i++) {
+        shape.push_back(inShape->getDim(i));
+    }
+    tShape->setShape(shape);
+}

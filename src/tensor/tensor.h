@@ -42,13 +42,6 @@ class TensorShape {
             (*shape_)[i] = shape[i];
     };
 
-    void showShape() const {
-        for (int i = 0; i < _ndim; i++) {
-            std::cout << "\t" << (*shape_)[i] << "\t";
-        }
-        std::cout << std::endl;
-    }
-
     TensorShape *
     getShuffledTensorShape(const std::vector<size_t> &shuffle) const;
 };

@@ -38,8 +38,8 @@ class MatrixMatrixFCOp : public Op {
     ~MatrixMatrixFCOp() {}
     void destroy(){};
 
-    //void outTensorShapeGen(OpNode* node, size_t index, TensorShape* tShape);
-
+    void checkValid(OpNode *node);
+    void outTensorShapeGen(OpNode* node, size_t index, TensorShape* tShape);
     // for lowering
     void autoDiff(IRGraph* graph,
         IRNode* opNode,
@@ -84,6 +84,8 @@ class MatrixMatrixFCBiasOp : public Op {
     ~MatrixMatrixFCBiasOp() {}
     void destroy(){};
 
+    void checkValid(OpNode *node);
+    void outTensorShapeGen(OpNode* node, size_t index, TensorShape* tShape);
     // for lowering
     void autoDiff(IRGraph* graph,
         IRNode* opNode,
@@ -153,13 +155,12 @@ class MatrixTanhGradOp : public Op {
 
 class MatrixSoftmaxOp : public Op {
   public:
-    MatrixSoftmaxOp() : Op(DL_OP, 2, 2, std::string("MatrixSoftmax")) {
+    MatrixSoftmaxOp() : Op(DL_OP, 1, 1, std::string("MatrixSoftmax")) {
         this->_inputNDims.push_back(2);
-        this->_inputNDims.push_back(2);
-        this->_outputNDims.push_back(2);
         this->_outputNDims.push_back(2);
     };
     ~MatrixSoftmaxOp();
+    void checkValid(OpNode *node);
     void destroy(){};
     void autoDiff(IRGraph* graph,
         IRNode* opNode,
@@ -176,12 +177,14 @@ class MatrixSoftmaxGradOp : public Op {
 
 class MatrixSoftmaxWithLossOp : public Op {
   public:
-    MatrixSoftmaxWithLossOp() : Op(DL_OP, 1, 2, std::string("MatrixSoftmaxWithLoss")) {
+    MatrixSoftmaxWithLossOp() : Op(DL_OP, 2, 2, std::string("MatrixSoftmaxWithLoss")) {
+        this->_inputNDims.push_back(2);
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
-        this->_outputNDims.push_back(2);
+        this->_outputNDims.push_back(1);
     };
     ~MatrixSoftmaxWithLossOp();
+    void checkValid(OpNode *node);
     void destroy(){};
     void autoDiff(IRGraph* graph,
         IRNode* opNode,
@@ -471,6 +474,8 @@ class MaxPoolOp : public Op {
     std::vector<size_t> getStrides() { return strides_; }
     void destroy() {}
 
+    void outTensorShapeGen(OpNode* node, size_t index, TensorShape* tShape);
+    
     void autoDiff(IRGraph* graph,
         IRNode* opNode,
         std::unordered_map<IRNode*, IRNode*>&gradNodeMap);

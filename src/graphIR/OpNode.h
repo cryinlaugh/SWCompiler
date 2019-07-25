@@ -68,6 +68,8 @@ class OpNode : public IRNode {
         _op->outTensorShapeGen(this, index, tShape);
     };
 
+    void genOutTensor();
+
   private:
     Op *op_;
     bool run_{true};

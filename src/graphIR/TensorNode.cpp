@@ -141,8 +141,12 @@ void TensorNode::checkValid() {
         
         parent->outTensorShapeGen(i, this->getTensor()->getTensorShape());
     
-        SWLOG_DEBUG(4) << "Infer tensor shape by:" << std::endl;
-        this->getTensor()->getTensorShape()->showShape();
+        TensorShape* tshapeGen = this->getTensor()->getTensorShape();
+        std::stringstream ss;
+        for (int i = 0; i < tshapeGen->getNDim(); i++) {
+            ss << " " << tshapeGen->getDim(i) << " ";
+        }
+        SWLOG_DEBUG(4) << "Infer tensor shape by:" << ss.str() << std::endl;
     }
 
     if (parent->getOp()->getOutputDims(i) 

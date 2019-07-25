@@ -76,11 +76,7 @@ class Op {
 
     virtual void outTensorShapeGen(OpNode* node, 
                                     size_t index, 
-                                    TensorShape* tShape) {
-        SWLOG_DEBUG(100) << "Lowering unimplemented in base Op class" 
-                        << std::endl;
-    };
-
+                                    TensorShape* tShape);
     /*
     Op *clone() const {
         return new Op(_opType, _nInput, _nOutput, _opClassName);
