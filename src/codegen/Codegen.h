@@ -13,7 +13,7 @@
 #include "common.h"
 #include <set>
 #include <sstream>
-#include <unordered_map>
+#include <map>
 
 namespace swc {
 class IRGraph;
@@ -34,12 +34,6 @@ class Codegen {
     /// to be depreciated
     Codegen(IRGraph *graph, CodegenConfig &config) : graph_(graph) {
         config_ = config;
-        /*
-        flag_multiGPU = config.flag_multiGPU;
-        flag_multiStream = config.flag_multiStream;
-        flag_MPI = config.flag_MPI;
-        flag_use_cublas = config.flag_use_cublas;
-        */
     }
     ~Codegen() { destroy(); }
 
@@ -90,6 +84,7 @@ class Codegen {
     void emitVarDeclarations();
     /// allocate statement of cpu/gpu mem
     void emitMemAllocations();
+    void emitMemAllocation(std::string buffer, size_t bytes, Device& dev); 
 
     /// initialize tensors for L1 IRGraph
 
@@ -155,27 +150,25 @@ class Codegen {
     CodeWriter writer_;
     MakefileBuilder makefile_builder_;
     IRGraph *graph_;
-    IRGraph *active_graph_;
 
     CodegenConfig config_;
-    /*
-    bool flag_multiGPU{false};
-    bool flag_multiStream{false};
-    bool flag_MPI{true};
-    bool flag_use_cublas{false};
-    */
 
     std::unordered_map<std::string, int> names_map_;
-    std::vector<std::shared_ptr<MemoryAllocator>> mem_allocators_;
 
-    std::unordered_map<Tensor *, std::string> tensors_name_map_;
-    std::unordered_map<Tensor *, std::pair<std::string, uint64_t>>
+    std::vector<std::shared_ptr<MemoryAllocator>> mem_allocators_;
+    /// For parallel
+    std::shared_ptr<MemoryAllocator> p_mem_alllocator_;
+
+    std::map<Tensor *, std::string> tensors_name_map_;
+    std::map<Tensor *, std::pair<std::string, uint64_t>>
         tensors_offset_map_;
+
     // std::unordered_map<Tensor*, std::string> tensors_base_map_;
     std::vector<Tensor *> mpi_sendRecv_tags_;
 
+    /// to use Device as key, we implement std::hash() of Device in common.h
+    /// if implemented with std::map, we must define comparison of Device
     std::unordered_map<Device, MemoryAllocator *> dev_allocator_map_;
-    std::unordered_map<MemoryAllocator *, std::string> allocator_membase_map_;
 };
 
 } // namespace codegen

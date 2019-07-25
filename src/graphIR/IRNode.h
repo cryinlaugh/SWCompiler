@@ -145,6 +145,9 @@ class IRNode {
     virtual IRNode *clone() const = 0;
     virtual IRNode *deepClone() const = 0;
 
+    void setPolymorphic(bool poly) { _polymorphic = poly; }
+    bool isPolymorphic() { return _polymorphic; }
+
   private:
     std::vector<IRNode *> _parentNodes;
     std::vector<IRNode *> _childNodes;
@@ -154,6 +157,7 @@ class IRNode {
     int _topologyId;
     Label *_label;
     bool _isExternal{false};
+    bool _polymorphic{false};
 };
 
 } // namespace swc
