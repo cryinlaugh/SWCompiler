@@ -7,11 +7,12 @@
 #        Create: 2019-07-05 15:51:37
 # Last Modified: 2019-07-05 15:51:37
 ***********************************************/
+#include "common.h"
 #include "OptimizePass.h"
 #include "graphIR/OpNode.h"
 #include "graphIR/TensorNode.h"
 #include "parallel/TilingLabel.h"
-//#include "string"
+#include "parallel/ParallelPattern.h"
 namespace swc {
 namespace pass {
 class ParallelingPass;
@@ -20,84 +21,125 @@ class ParallelingPass;
 class swc::pass::ParallelingPass: public swc::pass::OptimizePass {
     using OptimizePass::_graph;
 public:
-    ParallelingPass(IRGraph *graph): OptimizePass(graph) {};
+    ParallelingPass(IRGraph *graph): OptimizePass(graph) {
+    };
     ~ParallelingPass() {};
-
-    std::vector<int> getStrategy(OpNode * op, int num) {
-
-        std::vector<int> test(num,1);
-        return test;
-        
-        //return {0, -1, 0};//for test
-    }
-
     void runParalleling(int parallelnum) {
-        //int nOpNodes = _graph->opNodeNum();
-        //int nTensorNodes =  _graph->tensorNodeNum();
+
+        std::vector<TensorNode * > topoTensorNodes;
+        std::vector<OpNode *> topoOpNodes;
+
         for (int i = 0; i < _graph->topologyNum(); i++) {
             for (int j = 0; j < _graph->getNumInTopoLevel(i); j++) {
+                IRNode * irnode = _graph->getNodeInTopo(i, j);
+                if(irnode->nodeType() == TENSOR_NODE) {
+                    std::cout << "tensornode :" << i << "," << j << "-" << irnode->name() << std::endl;
+                    topoTensorNodes.push_back(dynamic_cast<TensorNode *>(irnode));
+                } else if(irnode->nodeType() == OP_NODE) {
+                    std::cout << "opnode: " << i << "," << j << "-" << irnode->name() << std::endl;
+                    topoOpNodes.push_back(dynamic_cast<OpNode*>(irnode));
+                }
 
-                std::cout<<i<<","<<j<<std::endl;
-                IRNode * node = _graph->getNodeInTopo(i, j);
-                if(dynamic_cast<OpNode*>(node) != nullptr) {
-                    std::vector<TensorNode* > tilingTensorNodes;
+            }
+        }
+        //init tiling label
+        for(unsigned long  i = 0; i < topoTensorNodes.size(); ++i) {
+            TensorNode * originNode = topoTensorNodes[i];
+            TilingLabel * tlabel =  new TilingLabel();
+            originNode->setLabel(tlabel);
+        }
+        //
+        for(unsigned long i = 0; i < topoOpNodes.size(); i++) {
+            OpNode* curOpNode = topoOpNodes[i];
 
-                    for (int k = 0; k < node->parentNum(); ++k) {
-                        tilingTensorNodes.push_back((TensorNode*)node->getParentNode(k));
-                    }
-                    for (int k = 0; k < node->childNum(); ++k) {
-                        tilingTensorNodes.push_back((TensorNode*)node->getChildNode(k));
-                    }
-
-
-                    int tilingTensorNum = tilingTensorNodes.size();
-                    std::vector<int> strategy = getStrategy(dynamic_cast<OpNode*>(node),tilingTensorNum);
-                    for(int k = 0; k < tilingTensorNum; k++) {
-                        
-
-                        // std::cout<<tilingTensorNum<<std::endl;
-                        // std::cout<<strategy.size()<<std::endl;
-                        // std::cout<<k<<std::endl;
-
-                        std::cout<< tilingTensorNodes[k]->name() <<std::endl;
-                        Label  * tlabel = tilingTensorNodes[k]->getLabel();
-
+            StrategyLabel* slabel = dynamic_cast<StrategyLabel *> (curOpNode->getLabel());
+            std::vector<int> opstrategy = slabel->getStrategy();
+            int strategyindex = 0;
 
 
-                        std::cout<<"test"<<std::endl;
+
+            std::vector<TensorNode*> tempinput;
+            for(int j = 0; j < curOpNode->parentNum(); j++) {
+                TensorNode * inputNode = dynamic_cast<TensorNode*>(curOpNode->getParentNode(j));
+                std::cout << inputNode->name() << std::endl;
+                tempinput.push_back(inputNode);
+            }
+            for(unsigned long j = 0; j < tempinput.size(); j++) {
+
+                TensorNode * originNode = tempinput[j];
+                TilingLabel * tlabel = dynamic_cast<TilingLabel*>(originNode->getLabel());
+                int strategy =  opstrategy[strategyindex];
+                strategyindex++;
+
+                if(!tlabel->isApplied()) {
+                    ForkPattern* forkpattern = new ForkPattern(originNode, parallelnum);
+                    forkpattern->apply(strategy, _graph);
+                    curOpNode ->destroyUpperNode(originNode);
+                    curOpNode -> exlinkUpperNode(tlabel->getCurrentNode());
+
+                } else if(strategy != tlabel->getCurrentStrategy()) {
+                    // transfrom pattern
+
+                    TransformPattern * transformpattern = new TransformPattern(originNode, parallelnum);
+                    transformpattern->apply(strategy, _graph);
+                    curOpNode -> destroyUpperNode(originNode);
+                    curOpNode ->exlinkUpperNode(tlabel->getCurrentNode());
 
 
-                        if(!tlabel->isAssign()) {
+                } else {
 
-                            //int ndim=tilingTensorNodes[k]->getTensor()->getNDim();
-                            TensorTilingLabel * tensortilinglabel = new TensorTilingLabel(2);
-                            if(strategy[k] >= 0)
-                                tensortilinglabel->addTileBydim(strategy[k], parallelnum);
-                            else if(strategy[k] == -1 )
-                                tensortilinglabel->replicate(parallelnum);
-                            else if(strategy[k] == -2)
-                                tensortilinglabel->reduce(parallelnum);
+                    curOpNode -> destroyUpperNode(originNode);
+                    curOpNode->exlinkUpperNode(tlabel->getCurrentNode());
+                    //directly link with current tiling
+                }
 
-                            tensortilinglabel->assign();
-                            tlabel->assign();
-                            tilingTensorNodes[k]->setLabel(tensortilinglabel);
-                            std::cout<<"test2"<<std::endl;
-                        }
-
-                    }
-                   
-                    OpTilingLabel * opTilingLabel = new OpTilingLabel();
-                    node->setLabel(opTilingLabel);
-
-                   
+            }
 
 
+            //for Output
+            std::vector<TensorNode*> tempoutput;
+            for(int j = 0; j < curOpNode->childNum(); j++) {
+                TensorNode * outputNode = dynamic_cast<TensorNode*>(curOpNode->getChildNode(j));
+                std::cout << outputNode->name() << std::endl;
+                tempoutput.push_back(outputNode);
+            }
+            for(unsigned long  j = 0; j < tempoutput.size(); j++) {
+
+                TensorNode * originNode = tempoutput[j];
+
+                TilingLabel * tlabel = dynamic_cast<TilingLabel * >(originNode->getLabel());
+
+                int strategy = opstrategy[strategyindex];
+                strategyindex++;
+                if(!tlabel->isApplied()) {
+                    JoinPattern* joinpattern = new JoinPattern(originNode, parallelnum);
+                    joinpattern->apply(strategy, _graph);
+                    originNode->destroyUpperNode(curOpNode);
+                    tlabel->getCurrentNode()->exlinkUpperNode(curOpNode);
+                    //join pattern
+
+                } else if(strategy != tlabel -> getCurrentStrategy()) {
+                    TransformPattern * transformpattern = new TransformPattern(originNode, parallelnum);
+                    transformpattern->apply(strategy, _graph);
+                    originNode->destroyUpperNode(curOpNode);
+                    tlabel->getCurrentNode()->exlinkUpperNode(curOpNode);
+                    //transform pattern
+                } else {
+                    originNode->destroyUpperNode(curOpNode);
+                    tlabel->getCurrentNode()->exlinkUpperNode(curOpNode);
+                    //directly link with current tiling node
                 }
 
             }
 
         }
+
     }
+
+
+// construct parallel zone
+
+
 
     void run() {
         //SWLOG_DEBUG(4) << "Start Paralleling Pass." << std::endl;

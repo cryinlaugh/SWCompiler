@@ -16,7 +16,6 @@
 #include "graphIR/TensorNode.h"
 
 using namespace swc::op;
-
 void MatrixMatrixFCOp::lowering(IRGraph *graph, IRNode *node) {
     SWLOG_DEBUG(4) << "Lowering MatrixMatrixFCOp ..." << std::endl;
 

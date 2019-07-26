@@ -24,7 +24,7 @@
 #define TENSOR(name, args...)                                                  \
     TensorNode *name = new TensorNode(#name);                                  \
     TensorShape *name##_TensorShape =                                          \
-        new TensorShape(new vector<unsigned long>({args}));                    \
+        new TensorShape(new vector<size_t>({args}));                    \
     Tensor *name##_Tensor = new Tensor(name##_TensorShape);                    \
     name->setTensor(name##_Tensor)
 

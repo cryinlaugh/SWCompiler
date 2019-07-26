@@ -25,6 +25,20 @@ size_t TensorShape::size() const {
     return size;
 }
 
+TensorShape* TensorShape::getTiledShape(int index, int n) {
+        int ndim = getNDim();
+        std::vector<size_t>* tileVector = new std::vector<size_t>();
+        for(int i = 0; i < ndim; i++) {
+            if(i == index)
+                tileVector->push_back(getDim(i)/n);
+            else
+                tileVector->push_back(getDim(i));
+        }
+        TensorShape* result= new TensorShape(tileVector);
+        return result;
+}
+
+
 Tensor *Tensor::clone() const {
     Tensor *t = new Tensor(shape_, dataType_);
     t->setTraining(train_);

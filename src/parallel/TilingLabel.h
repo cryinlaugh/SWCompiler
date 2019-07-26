@@ -18,76 +18,78 @@
 #include <vector>
 namespace swc {
 
-class TensorTilingLabel : public Label {
+class TilingLabel : public Label {
 private:
-    int _tilenum; //
-    std::vector<int> _tiles;
+    //int _tilenum; //
+    //std::vector<int> _tiles;
+    
+    TensorNode * _currentnode;
+    int _currentstrategy;
+    //bool _state;
+    bool  _isApplied;
+
 public:
-    TensorTilingLabel(int ndim) : Label(){
-        _tiles.reserve(ndim);
-        _tilenum = 1;
+
+    TilingLabel() : Label() {
+        _isApplied = false;
     };
-    ~TensorTilingLabel() {};
 
-    void addTileBydim(int dim, int spiltnum) {
-        // simple implement
-        // don't allow tile by same dim
-
-
-
-        //_tiles[dim] *= spiltnum;
-        // recalculate tilenum
-        _tilenum = _tilenum * spiltnum;
+    void init(){
+        _isApplied = false;
+    }
+    void setCurrentNode(TensorNode* tensornode){
+        _currentnode = tensornode;
     }
 
-    void replicate(int num) {
-        _tilenum = _tilenum * num;
+
+    TensorNode *  getCurrentNode(){
+        return _currentnode;
+    }
+    void setCurrentStrategy(int EinSum){
+        _currentstrategy = EinSum;
     }
 
-    void reduce(int num ) {
-        _tilenum = _tilenum * num;
+    int  getCurrentStrategy(){
+        return _currentstrategy;
     }
-    int getTotalTileNum() {
-        return _tilenum;
+    ~TilingLabel() {};
+    bool isApplied() {
+        //std::cout<<"test1"<<std::endl;
+        return _isApplied;
+    }
+    void setApplied() {
+        _isApplied = true;
     }
 
-    int getTileNumByDim(int dim) {
-        return _tiles[dim];
+    void test(){
+        std::cout<<"test Tiling Label"<<std::endl;
     }
+
 
 };
 
-class OpTilingLabel : public Label {
+
+class  StrategyLabel :public Label{
 
 private:
-    // Label* _label;
-    int  _type; // withreduce or without reduce
-    int _replicatenum;//pattern : simple num, map-n-reduce , map-n-without reduce ,filter
 
+    std::vector<int> _strategy;
 public:
-    OpTilingLabel() : Label() {};
 
-    ~OpTilingLabel() {};
-
-    void setReplicateNum(int num) {
-        _replicatenum = num;
+    StrategyLabel():Label(){};
+    StrategyLabel(std::vector<int> strategy):Label(){
+        _strategy=strategy;
     }
-
-    int getReplicateNum() {
-        return _replicatenum;
+    ~StrategyLabel(){};
+    
+    void setStrategy(std::vector<int> strategy){
+    
+        _strategy= strategy;
     }
-
-    void setPattern(int type) {
-        _type = type;
+    std::vector<int> getStrategy(){
+        return _strategy;
     }
-
-    int getPattern() {
-        return _type;
-    }
-
-    // map-n-without-reduce
 };
-
 } // namespace swc
 
 #endif

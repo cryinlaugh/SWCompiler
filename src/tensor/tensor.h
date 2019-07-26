@@ -10,7 +10,7 @@
 
 #include "common.h"
 #include <string>
-
+#include <iostream>
 #include <cassert>
 
 namespace swc {
@@ -26,6 +26,7 @@ class TensorShape {
     int getNDim() const;
     size_t getDim(int idx) const;
     size_t size() const;
+    TensorShape* getTiledShape( int index, int n);
 };
 
 class TensorInitInfo {

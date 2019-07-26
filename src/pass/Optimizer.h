@@ -12,6 +12,7 @@
 #include "LabelingPass.h"
 #include "LoweringPass.h"
 #include "RenamingNodePass.h"
+#include "ParallelingPass.h"
 #include <queue>
 namespace swc {
 namespace pass {
