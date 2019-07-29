@@ -39,15 +39,7 @@ class Op {
     ~Op(){};
 
     virtual void destroy(){};
-    virtual void autoDiff(IRGraph* graph,
-            IRNode* opNode,
-            std::unordered_map<IRNode*, IRNode*> &gradNodeMap) { 
-              SWLOG_DEBUG(100) << "OpType [" << this->getOpName() << "] autoDiff() unimplemented, pass" << std::endl; 
-            }
-    virtual void einsumLowering(IRGraph *graph, IRNode *node) {
-        SWLOG_DEBUG(100) << "EinsumLowering unimplemented in base Op class" << std::endl;
-    }
-
+    
     void addInputTensor(Tensor *inputTensor) {
         _inputTensors.push_back(inputTensor);
         _nInputTensor++;
@@ -67,12 +59,23 @@ class Op {
     inline int getnOutput() { return _nOutput; }
 
     // for lowering
-    virtual void lowering(IRGraph *graph, OpNode *node) {
+    virtual void lowering(IRGraph *graph, IRNode *node) {
         SWLOG_DEBUG(100) << "Lowering unimplemented in base Op class"
                         << std::endl;
     }
 
     virtual void checkValid(OpNode* node);
+
+    virtual void autoDiff(IRGraph* graph,
+            IRNode* opNode,
+            std::unordered_map<IRNode*, IRNode*> &gradNodeMap) { 
+              SWLOG_DEBUG(100) << "OpType [" 
+                  << this->getOpName() << "] autoDiff() unimplemented, pass" << std::endl; 
+    }
+    
+    virtual void einsumLowering(IRGraph *graph, IRNode *node) {
+        SWLOG_DEBUG(100) << "EinsumLowering unimplemented in base Op class" << std::endl;
+    }
 
     virtual void outTensorShapeGen(OpNode* node, 
                                     size_t index, 

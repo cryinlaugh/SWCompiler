@@ -70,10 +70,10 @@ void MatrixMatrixFCOp::checkValid(OpNode *node)
             << ", " << dim2.second << "}" << std::endl;
         
         
-        COP(des, data->name()+"_des", TensorDescendOp, 4, 2, 4);
-        LINKUPPER(des, data);
+        //COP(des, data->name()+"_des", TensorDescendOp, 4, 2, 4);
+        //LINKUPPER(des, data);
 
-        CTENSOR(datades, data->name()+"_desData", new TensorShape({dim2.first, dim2.second}), des);
+        //CTENSOR(datades, data->name()+"_desData", new TensorShape({dim2.first, dim2.second}), des);
         
     }
     if (weight->getTensor()->getNDim() != 2) {
@@ -109,10 +109,10 @@ void MatrixMatrixFCBiasOp::checkValid(OpNode *node)
             << ", " << dim2.second << "}" << std::endl;
         
         
-        COP(des, data->name()+"_des", TensorDescendOp, 4, 2, 4);
-        LINKUPPER(des, data);
+        //COP(des, data->name()+"_des", TensorDescendOp, 4, 2, 4);
+        //LINKUPPER(des, data);
 
-        CTENSOR(datades, data->name()+"_desData", new TensorShape({dim2.first, dim2.second}), des);
+        //CTENSOR(datades, data->name()+"_desData", new TensorShape({dim2.first, dim2.second}), des);
         
     }
     if (weight->getTensor()->getNDim() != 2) {
@@ -132,29 +132,15 @@ void MatrixSoftmaxOp::checkValid(OpNode *node)
     
     SWLOG_DEBUG(4) << "Checking connect validation for " 
         << node->name() << std::endl;
-    assert(node->parentNum() == 2 &&
-            "Softmax input should be 2: data and label");
+    assert(node->parentNum() == 1 &&
+            "Softmax input should be 1: data");
     
     TensorNode* data = (TensorNode*)(node->getParentNode(0));
-    TensorNode* label = (TensorNode*)(node->getParentNode(1));
 
 
     if (data->getTensor()->getNDim() != 2) {
         std::cout << "FATAL ERROR: the SoftMax data dimension is not 2" << std::endl;
         abort();
-    }
-    if (label->getTensor()->getNDim() != 2) {
-
-        SWLOG_DEBUG(5) << "Reshape  label tensor dimension"
-            << " to data input dimension{" 
-            << data->getTensor()->getDim(0)
-            << ", " << data->getTensor()->getDim(1)
-            << "}" << std::endl;
-
-        std::vector<size_t> shape;
-        shape.push_back(data->getTensor()->getDim(0));
-        shape.push_back(data->getTensor()->getDim(1));
-        label->getTensor()->getTensorShape()->setShape(shape);
     }
 }
 
@@ -164,7 +150,7 @@ void MatrixSoftmaxWithLossOp::checkValid(OpNode *node)
     SWLOG_DEBUG(4) << "Checking connect validation for " 
         << node->name() << std::endl;
     assert(node->parentNum() == 2 &&
-            "Softmax input should be 2: data and label");
+            "SoftmaxWithLoss input should be 2: data and label");
     
     TensorNode* data = (TensorNode*)(node->getParentNode(0));
     TensorNode* label = (TensorNode*)(node->getParentNode(1));

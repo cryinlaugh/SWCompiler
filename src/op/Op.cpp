@@ -32,7 +32,7 @@ bool Op::check() {
 void Op::checkValid(OpNode *node) {
 
     SWLOG_DEBUG(4) << "Checking connect validation for " 
-        << node->name() << std::endl;
+        << node->name() << "by general" << std::endl;
     
     unsigned int i;
     

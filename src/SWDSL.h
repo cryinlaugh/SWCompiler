@@ -56,7 +56,6 @@
 // link FATHER
 #define LINKPARENT(self, parent...)                                     \
     self->pushParentNode(parent);                                       \
-    self->checkValid()
 
 // link CHILD
 #define LINKCHILD(self, child...) self->pushChildNode(child)
@@ -64,7 +63,6 @@
 // exlink FATHER
 #define LINKUPPER(self, upperNode...)                                   \
         self->exlinkUpperNode(upperNode);                               \
-        self->checkValid()
 
 // ex destroy FATHER
 #define DESTROYUPPER(self, upperNode...)                                \

@@ -249,12 +249,11 @@ int main(){
     TENSOR(label, 256, 10);
     INIT(label, TensorInitType::FILE, "mnist_images_8_label.bin");
     
-    OP(softmax0, MatrixSoftmaxOp);
-    LINKUPPER(softmax0, data11);
-    LINKUPPER(softmax0, label);
+    OP(softmax0, MatrixSoftmaxWithLossOp);
+    LINKUPPER(softmax0, data11, label);
 
     TENSOR(prob, 256, 10);
-    TENSOR(loss, 1, 1);
+    TENSOR(loss, 1);
     LINKUPPER(prob, softmax0);
     LINKUPPER(loss, softmax0);
 
