@@ -22,10 +22,10 @@ namespace codegen {
 
 static std::string deviceToStr(const Device &d) {
     std::ostringstream os;
+    if(d.rank == INT_MAX) {
+        return "para";
+    }
     if (d.type == DeviceType::CPU) {
-        if(d.id == INT_MAX)
-            os << "cpup";
-        else
             os << "cpu" << d.id;
     } else if (d.type == DeviceType::GPU) {
         os << "gpu" << d.id;
@@ -111,7 +111,7 @@ void Codegen::initMemoryAllocators() {
     cpu2.id = 2;
 
     Device cpup;
-    cpup.id = INT_MAX;
+    cpup.rank = INT_MAX;
 
     auto m_cpu0 = std::make_shared<MemoryAllocator>(cpu0, "cpu0", 0xFFFFFFFF);
     auto m_cpu1 = std::make_shared<MemoryAllocator>(cpu1, "cpu1", 0xFFFFFFFF);
@@ -189,8 +189,7 @@ void Codegen::emitMPIInit() {
         writer_ << "MPI_Comm_size(MPI_COMM_WORLD, &nprocs);\n";
         writer_ << "MPI_Comm_rank(MPI_COMM_WORLD, &rank);\n";
         writer_ << "MPI_Get_processor_name(proc_name,&proc_name_len);\n";
-        writer_ << "std::cout << \"process \" << rank << \" of \" << nprocs \
-			<< \" run on \" << proc_name << std::endl;\n";
+        writer_ << "std::cout << \"process \" << rank << \" of \" << nprocs << \" run on \" << proc_name << std::endl;\n";
     }
 }
 
@@ -361,7 +360,8 @@ void Codegen::allocateMemAddr(IRGraph *graph) {
         Device dev = label->getDeviceLabel();
 
         SWLOG_DEBUG(1) << "allocateMemAddr " << tnode->name() << " " << size
-                       << " on dev(" << static_cast<int>(dev.type) << ", "
+                       << " on dev(" << dev.rank << ", "
+                       << static_cast<int>(dev.type) << ", "
                        << dev.id << ")."
                        << "\n";
 
@@ -420,6 +420,7 @@ void Codegen::emitVarDeclarations() {
 /// may not be a good idea.
 /// TODO: deal with node-cpu-device abstraction
 void Codegen::emitMemAllocations() {
+    SWLOG_DEBUG(4) << "begin emitMemAllocations...\n";
     // std::string dtype = this->dtype();
     for (auto m : mem_allocators_) {
         MemoryAllocator *allocator = m.get();
@@ -441,7 +442,7 @@ void Codegen::emitMemAllocations() {
             writer_ << "} // if rank\n";
         }
     }
-    
+
     if(p_mem_alllocator_->getMemAllocated()) {
 
         auto dev = p_mem_alllocator_->getDevice();
@@ -451,6 +452,7 @@ void Codegen::emitMemAllocations() {
         emitMemAllocation(base, size, dev);
     }
     writer_ << "\n";
+    SWLOG_DEBUG(4) << "end emitMemAllocations...\n";
 }
 void Codegen::emitMemAllocation(std::string buffer, size_t bytes, Device& dev) {
     switch (dev.type) {
@@ -468,13 +470,13 @@ void Codegen::emitMemAllocation(std::string buffer, size_t bytes, Device& dev) {
         SWLOG_ERROR << "Unknown DeviceType\n";
         break;
     }
-    
+
 }
 
 /// if config_.mpi=true this func deal with
 /// the MASTER(0) process
 void Codegen::emitTensorAddresses() {
-    SWLOG_DEBUG(4) << "begin emitTensorAddresse...\n";
+    SWLOG_DEBUG(4) << "begin emitTensorAddresses...\n";
 
     std::set<Tensor *> visited_tensors;
 
@@ -622,7 +624,7 @@ void Codegen::emitTensorInitializations(IRGraph *graph_,
         }
         case TensorInitType::PARENTOP: {
             auto *op = (OpNode *)tnode->getParentNode(0);
-            dispathOpNode(op);
+            dispatchOpNode(op);
             break;
         }
         default:
@@ -692,7 +694,7 @@ void Codegen::emitTensorInitFromSnapshot(IRGraph *graph_,
         }
         case TensorInitType::PARENTOP: {
             auto *op = (OpNode *)tnode->getParentNode(0);
-            dispathOpNode(op);
+            dispatchOpNode(op);
             break;
         }
         default:
@@ -942,7 +944,7 @@ void Codegen::emitFuncCalls() {
                         writer_ << "\n";
                     }
                 } else {
-                    dispathOpNode(opnode);
+                    dispatchOpNode(opnode);
                 }
             }
         }
@@ -958,7 +960,7 @@ void Codegen::emitFuncCalls(IRGraph *graph_) {
                 if (auto graphOp =
                         dynamic_cast<SubGraphOp *>(opnode->getOp())) {
                 } else {
-                    dispathOpNode(opnode);
+                    dispatchOpNode(opnode);
                 }
             }
         }
@@ -977,7 +979,7 @@ void Codegen::switchTo(IRGraph *ngraph) {
 
 void Codegen::switchFrom(IRGraph *ngraph) { (void)ngraph; }
 
-void Codegen::dispathOpNode(OpNode *op) {
+void Codegen::dispatchOpNode(OpNode *op) {
     if (!op->runable())
         return;
 
@@ -1020,7 +1022,7 @@ void Codegen::dispathOpNode(OpNode *op) {
             emitFuncCallCUDA(op);
             break;
         default:
-            SWLOG_ERROR << "unknown device type in dispathOpNode\n";
+            SWLOG_ERROR << "unknown device type in dispatchOpNode\n";
         }
 
         if (config_.mpi) {
@@ -1118,8 +1120,7 @@ void Codegen::emitFuncCall(OpNode *op) {
     }
 
     Label *oplabel = op->getLabel();
-    SWLOG_DEBUG(2) << "genKernelCall for " << oplabel->getTypeNameLabel()
-                   << std::endl;
+    SWLOG_DEBUG(2) << "begin genKernelCall for " << op->name() << "\n";
 
     // TODO assert legal dimensions
     if ((oplabel->getTypeNameLabel()).compare("MatrixMatrixMul") == 0) {
@@ -1571,6 +1572,7 @@ void Codegen::emitFuncCall(OpNode *op) {
                 << ", " << tensors_name_map_[momen] << ", " << lr << ", "
                 << decay << ", " << momentum << ", " << batch << ");\n ";
     }
+    SWLOG_DEBUG(2) << "end genKernelCall for " << op->name() << "\n";
 }
 
 // TODO depreciate this function

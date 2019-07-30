@@ -73,28 +73,28 @@ class Codegen {
      */
     void emitMemAllocs();
     /// emit free memory codes
-    void emitMemFree();
+    virtual void emitMemFree();
 
     /// build Tensor* -> <base, offset> map for L1 Graph
-    void allocateMemAddr();
+    virtual void allocateMemAddr();
     /// build Tensor* -> <base, offset> map for L2(Device) subGraph
     void allocateMemAddr(IRGraph *graph_);
 
     /// declare var before alloc for mpi (if needed)
-    void emitVarDeclarations();
+    virtual void emitVarDeclarations();
     /// allocate statement of cpu/gpu mem
-    void emitMemAllocations();
-    void emitMemAllocation(std::string buffer, size_t bytes, Device& dev); 
+    virtual void emitMemAllocations();
+    void emitMemAllocation(std::string buffer, size_t bytes, Device& dev);
 
     /// initialize tensors for L1 IRGraph
 
-    void emitTensorAddresses();
+    virtual void emitTensorAddresses();
     /// initialize tensors for L2(Device) subGraph
     void emitTensorAddresses(IRGraph *graph_, std::set<Tensor *> *visited);
 
     /// data0 = cpu0_baseptr + addr;
     /// load(data0, 6272, 0, "mnist_images_8.bin");
-    void emitTensorInitializations();
+    virtual void emitTensorInitializations();
     /// initialize tensors for L2(Device) subGraph
     void emitTensorInitializations(IRGraph *graph_,
                                    std::set<Tensor *> *visited);
@@ -111,7 +111,7 @@ class Codegen {
     //----------------------------------------------------------
     void emitExecute();
     /// generate function calls for opNodes
-    void emitFuncCalls();
+    virtual void emitFuncCalls();
     /// generate function calls for opNodes of L2(Device) subGraph
     void emitFuncCalls(IRGraph *graph_);
 
@@ -126,7 +126,7 @@ class Codegen {
     void switchFrom(IRGraph *subGraph);
 
     /// dispatch OpNode for memcpy or kernel func call
-    void dispathOpNode(OpNode *op);
+    void dispatchOpNode(OpNode *op);
     void emitMemcpyFromTo(Tensor *from, Device from_dev, size_t from_offset,
                           size_t size, Tensor *to, Device to_dev,
                           size_t to_offset);
@@ -142,7 +142,7 @@ class Codegen {
     int getMPISendRecvTag(Tensor *);
     bool delMPISendRecvTag(Tensor *);
 
-  private:
+protected:
     void destroy();
 
     std::string getTypeString(Tensor *);
@@ -169,6 +169,28 @@ class Codegen {
     /// to use Device as key, we implement std::hash() of Device in common.h
     /// if implemented with std::map, we must define comparison of Device
     std::unordered_map<Device, MemoryAllocator *> dev_allocator_map_;
+};
+
+
+class ParallelCodegen : public Codegen {
+public:
+    ParallelCodegen(IRGraph *graph, CodegenConfig &config) : Codegen(graph, config) { }
+    void allocateMemAddr() override;
+    void emitVarDeclarations() override;
+    void emitMemAllocations() override;
+    void emitMemFree() override;
+    void emitMemFree(std::string name, Device dev);
+    void emitTensorAddresses() override;
+    void emitTensorInitializations() override;
+    void emitTensorInitialization(TensorNode* tnode);
+    void emitFuncCalls() override;
+    void dispatchOpNode(OpNode *op, int side/*0:master, ~0: worker*/);
+private:
+    std::vector<TensorNode *> _master_tensors;
+    std::vector<TensorNode *> _parallel_tensors;
+    // std::vector<OpNode*> _scheduled_opnodes;
+    void masterWorkerDispatcher(OpNode *op, int side/*master:0, worker:1*/);
+    std::vector<OpNode*> schedule();
 };
 
 } // namespace codegen
