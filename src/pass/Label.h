@@ -36,7 +36,9 @@ class Label {
     void setNodeNameLabel(std::string s) { _nodeNameLabel = s; }
     void setTypeNameLabel(std::string s) { _typeNameLabel = s; }
     void setTensorInitTypeLabel(TensorInitType type) { _initTypeLabel = type; }
-    void setDeviceLabel(DeviceType type, int id = 0) {
+    void setDeviceLabel(Device dev) { _dev = dev; }
+    void setDeviceLabel(int rank, DeviceType type, int id) {
+        _dev.rank = rank;
         _dev.type = type;
         _dev.id = id;
     }

@@ -71,19 +71,21 @@ enum class DeviceType : int { CPU, GPU };
 enum class PrintStreamType { COUT, FILE };
 
 struct Device {
+    int rank{0};
     DeviceType type;
-    int id;
-    Device(DeviceType t = DeviceType::CPU, int i = 0) : type(t), id(i) {}
+    int id{0};
+    Device(int r = 0, DeviceType t = DeviceType::CPU, int i = 0) : rank{r}, type(t), id(i) {}
     friend bool operator==(const Device &x, const Device &y) {
-        return x.type == y.type && x.id == y.id;
+        return x.rank == y.rank && x.type == y.type && x.id == y.id;
     }
 };
 namespace std {
 template <> struct hash<Device> {
     size_t operator()(const Device &d) const {
+        auto h0 = std::hash<int>{}(d.rank);
         auto h1 = std::hash<int>{}(static_cast<int>(d.type));
         auto h2 = std::hash<int>{}(d.id);
-        return h1 ^ h2;
+        return h0 ^ h1 ^ h2;
     }
 };
 } // namespace std

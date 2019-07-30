@@ -35,15 +35,15 @@ class IRNode {
     ~IRNode() { printf("free:%s\n", _name.c_str()); }
 
     virtual void destroy(){};
-    virtual void autoDiff(IRGraph* graph, 
+    virtual void autoDiff(IRGraph* graph,
                         std::unordered_map<IRNode*, IRNode*> &gradNodeMap){};
 
-    virtual void autoDiff(IRGraph* graph, 
+    virtual void autoDiff(IRGraph* graph,
                         std::unordered_map<IRNode*, IRNode*> &gradNodeMap,
                         void* methodParams,
                         pass::METHOD_TYPE methodType){};
-    
-    
+
+
     void pushParentNode(){};
     template <typename T, typename... Types>
     void pushParentNode(const T &firstArg, const Types &... args) {
@@ -91,7 +91,7 @@ class IRNode {
         firstArg->delChildNode(this);
         destroyUpperNode(args...);
     }
-        
+
     const std::vector<IRNode *> &getParentNodes() const { return _parentNodes; }
     const std::vector<IRNode *> &getChildNodes() const { return _childNodes; }
 
@@ -145,9 +145,6 @@ class IRNode {
     virtual IRNode *clone() const = 0;
     virtual IRNode *deepClone() const = 0;
 
-    void setPolymorphic(bool poly) { _polymorphic = poly; }
-    bool isPolymorphic() { return _polymorphic; }
-
   private:
     std::vector<IRNode *> _parentNodes;
     std::vector<IRNode *> _childNodes;
@@ -157,7 +154,6 @@ class IRNode {
     int _topologyId;
     Label *_label;
     bool _isExternal{false};
-    bool _polymorphic{false};
 };
 
 } // namespace swc

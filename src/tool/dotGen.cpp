@@ -83,7 +83,7 @@ std::string dotGenTensorNode(TensorNode *tnode) {
     os << "Tensor: " << std::hex << tnode->getTensor() << "\\l";
     os << "isExternal: " << tnode->isExternal() << "\\l";
     auto dev = tnode->getLabel()->getDeviceLabel();
-    os << "Dev: " << static_cast<int>(dev.type) << " " << dev.id << "\\l";
+    os << "Dev: (" << dev.rank << ", " << static_cast<int>(dev.type) << ", " << dev.id << ")\\l";
     tensorInfo += os.str();
 
     tensorInfo = tensorInfo + "NDim: " + std::to_string(NDim) + "\\l";

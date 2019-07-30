@@ -55,11 +55,11 @@ void MatrixMatrixFCOp::einsumLowering(IRGraph *graph, IRNode *node)
     COP(O1, node->name() + "_mm", MatrixMatrixMulOp,
             input, weight);
 
-    O1->getLabel()->setDeviceLabel(dev.type, dev.id);
+    O1->getLabel()->setDeviceLabel(dev);
     
     LINKUPPER(output, O1);
 
-    O1->getLabel()->setDeviceLabel(dev.type, dev.id);
+    O1->getLabel()->setDeviceLabel(dev);
 
     // break parent links
     DESTROYUPPER(node, input, weight);
@@ -195,15 +195,15 @@ void MatrixMatrixFCBiasOp::einsumLowering(IRGraph *graph, IRNode *node)
     std::string mm_out_name = mm_name + "_out";
     auto *O1_out = new TensorNode(mm_out_name, {idims[0], wdims[1]}, O1);
 
-    O1->getLabel()->setDeviceLabel(dev.type, dev.id);
-    O1_out->getLabel()->setDeviceLabel(dev.type, dev.id);
+    O1->getLabel()->setDeviceLabel(dev);
+    O1_out->getLabel()->setDeviceLabel(dev);
 
     // define Add Op
     std::string madd_name = node->name() + "_add";
     auto *madd_op = new MatrixVectorAddOp();
     auto *O2 = new OpNode(madd_name, madd_op);
 
-    O2->getLabel()->setDeviceLabel(dev.type, dev.id);
+    O2->getLabel()->setDeviceLabel(dev);
 
     // link parent nodes
     // LINKUPPER(O1, input, weight);

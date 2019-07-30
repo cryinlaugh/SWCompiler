@@ -504,10 +504,10 @@ void IRGraph::setDeviceLabel(Device dev) {
         }
 
         if (!tnode->isExternal())
-            tnode->getLabel()->setDeviceLabel(dev.type, dev.id);
+            tnode->getLabel()->setDeviceLabel(dev.rank, dev.type, dev.id);
     }
     for (auto opnode : _ops) {
-        opnode->getLabel()->setDeviceLabel(dev.type, dev.id);
+        opnode->getLabel()->setDeviceLabel(dev.rank, dev.type, dev.id);
     }
 }
 } // namespace swc
