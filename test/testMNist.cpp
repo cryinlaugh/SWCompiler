@@ -203,8 +203,6 @@ int main(){
     OP(mlp0, MatrixMatrixFCBiasOp);
     LINKUPPER(mlp0, data6des, weight2, bias2);
 
-    mlp0->checkValid();
-
     TENSOR(data7, 256, 120);
     LINKUPPER(data7, mlp0);
 
@@ -273,14 +271,21 @@ int main(){
             mlp0, mlp1, mlp2,
             softmax0);
 
+    
+    SETOUT(lenet5, prob);
+    
+    lenet5->findInOut();
     lenet5->updateTopology();
 
-    TRAIN(lenet5, "SGD");
+    swc::pass::EliminationPass elim;
+    elim.run(lenet5);
 
-    lenet5_train->updateTopology();
+    //TRAIN(lenet5, "SGD");
+
+    //lenet5_train->updateTopology();
     
-    dotGen(lenet5_train);
-    //dotGen(lenet5);
+    //dotGen(lenet5_train);
+    dotGen(lenet5);
 
     SWLOG_INFO<<"Start generating graph..."<<endl;
 

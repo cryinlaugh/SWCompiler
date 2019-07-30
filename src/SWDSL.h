@@ -108,6 +108,15 @@
     auto_diff_path.getMethods(parameters);                            \
     auto_diff_path.show();                                            \
     G(graph##_train);                                                 \
-    auto_diff_path.run(graph##_train);
+    auto_diff_path.run(graph##_train)
+
+
+
+// The DSL to mark out node to avoid to be eliminated
+// by EliminationPass
+#define SETOUT(graph, nodes...)                                       \
+    graph->pushOutNode(nodes);                                        \
+    graph->setOutMark()
+
 
 #endif /* !SWDSL_H */

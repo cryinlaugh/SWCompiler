@@ -26,7 +26,7 @@ class OpNode : public IRNode {
     ~OpNode(){};
 
     void destroy() {
-        // printf("free OpNode:%s\n", name().c_str());
+        printf("free OpNode:%s\n", name().c_str());
 
         getOp()->destroy();
         getLabel()->destroy();

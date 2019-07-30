@@ -32,6 +32,8 @@ class TensorShape {
     }
 
     ~TensorShape() {}
+    void destroy() {}
+
     int getNDim() const;
     size_t getDim(int idx) const;
     size_t size() const;
@@ -99,7 +101,11 @@ class Tensor {
         initType_ = TensorInitType::NONE;
     }
 
-    ~Tensor(){};
+    ~Tensor(){ destroy(); };
+
+    void destroy() {
+        getTensorShape()->destroy();
+    }
 
     void reset(TensorShape *shape, DataType dtype = DataType::Float_t) {
         shape_ = shape;

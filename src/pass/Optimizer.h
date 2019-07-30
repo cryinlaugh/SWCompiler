@@ -14,6 +14,7 @@
 #include "LoweringPass.h"
 #include "RenamingNodePass.h"
 #include "AutodiffPass.h"
+#include "EliminationPass.h"
 
 namespace swc {
 

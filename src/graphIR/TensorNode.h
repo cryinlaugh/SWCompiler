@@ -33,9 +33,13 @@ class TensorNode : public IRNode {
         tensor_ = new Tensor(shape);
     }
 
-    ~TensorNode(){};
+    ~TensorNode(){ destroy(); };
 
-    void destroy() { printf("free TensorNode:%s\n", name().c_str()); };
+    void destroy() { 
+        printf("free TensorNode:%s\n", name().c_str()); 
+        getLabel()->destroy();
+        getTensor()->destroy();
+    };
 
     void setTensor(Tensor *tensor) { tensor_ = tensor; }
     Tensor *getTensor() { return tensor_; }

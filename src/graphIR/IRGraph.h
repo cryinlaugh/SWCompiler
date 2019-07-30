@@ -98,6 +98,10 @@ class IRGraph {
         pushOutNode(args...);
     }
 
+    // To mark out node to avoid to be eliminated
+    // by EliminationPass
+    void setOutMark();
+    
     inline int tensorNodeNum() const { return _tensors.size(); }
     inline int opNodeNum() const { return _ops.size(); }
     inline int inNodeNum() const { return _inNodes.size(); }
