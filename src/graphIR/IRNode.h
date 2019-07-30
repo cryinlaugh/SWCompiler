@@ -157,6 +157,7 @@ class IRNode {
     NodeType _nodeType;
     int _topologyId;
     Label *_label;
+
     bool _isExternal{false};
 };
 

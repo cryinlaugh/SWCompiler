@@ -18,6 +18,9 @@
 
 namespace swc {
 
+//Forward declaration
+class TilingLabel;
+
 class TensorNode : public IRNode {
   public:
     TensorNode() : tensor_(NULL){};
@@ -62,8 +65,15 @@ class TensorNode : public IRNode {
 
     void checkValid();
 
+    void setTilingLabel(TilingLabel* tilinglabel){
+        _tilingLabel = tilinglabel;
+    }
+    TilingLabel* getTilingLabel() { return _tilingLabel; }
+    
   private:
     Tensor *tensor_{nullptr};
+    
+    TilingLabel* _tilingLabel;
 };
 
 } // namespace swc

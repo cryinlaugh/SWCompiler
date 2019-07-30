@@ -11,7 +11,7 @@
 #include "common.h"
 #include "SWLOG.h"
 #include <string>
-
+#include <iostream>
 #include <cassert>
 
 namespace swc {
@@ -37,6 +37,7 @@ class TensorShape {
     int getNDim() const;
     size_t getDim(int idx) const;
     size_t size() const;
+    
     void setShape(const std::vector<size_t>& shape) {
         _ndim = shape.size();
         shape_->resize(_ndim);
@@ -46,6 +47,8 @@ class TensorShape {
 
     TensorShape *
     getShuffledTensorShape(const std::vector<size_t> &shuffle) const;
+    
+    TensorShape* getTiledShape( int index, int n);
 };
 
 class TensorInitInfo {

@@ -31,6 +31,7 @@ class Label {
     
     TensorInitType _initTypeLabel;
     Device _dev;
+    
 
   public:
     Label() : _toLower(0), _isOut(0), _initTypeLabel(TensorInitType::NONE){};
@@ -59,6 +60,8 @@ class Label {
     std::string getTypeNameLabel() const { return _typeNameLabel; }
     TensorInitType getTensorInitTypeLabel() const { return _initTypeLabel; }
     Device getDeviceLabel() const { return _dev; }
+    
+    
 };
 
 } // namespace swc

@@ -17,6 +17,9 @@ using namespace swc::op;
 
 namespace swc {
 
+//Forward declaration
+class StrategyLabel;
+
 class OpNode : public IRNode {
   public:
     OpNode() : op_(NULL){};
@@ -70,10 +73,17 @@ class OpNode : public IRNode {
 
     void genOutTensor() const;
 
+    void setStrategyLabel(StrategyLabel* strategyLabel){
+        _strategyLabel = strategyLabel;
+    }
+    StrategyLabel* getStrategyLabel() { return _strategyLabel; }
+  
   private:
     Op *op_;
     bool run_{true};
     bool run_once_{false};
+
+    StrategyLabel* _strategyLabel{NULL};
 };
 
 } // namespace swc

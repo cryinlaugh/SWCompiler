@@ -42,7 +42,6 @@ void ReluOp::checkValid(OpNode *node)
     }
 }
 
-
 /***************************************
  * 
  *      This check will add descend op

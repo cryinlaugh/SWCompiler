@@ -36,7 +36,7 @@ class MatrixMatrixFCOp : public Op {
         this->_einOp = 0;
     }
     ~MatrixMatrixFCOp() {}
-    void destroy(){};
+    void destroy() {};
 
     void checkValid(OpNode *node);
     void outTensorShapeGen(OpNode* node, size_t index, TensorShape* tShape);
@@ -49,12 +49,12 @@ class MatrixMatrixFCOp : public Op {
 
     // for common lowering
     void lowering(IRGraph *graph, IRNode *node);
-
+    void paralleling(IRGraph *graph, IRNode * node);
 };
 
 class MatrixMatrixFCGradOp : public Op {
-    // input, wieght, orig_output, orig_output_grad
-    // input_grad, weight_grad
+    // input, wieght, bias, orig_output, orig_output_grad
+    // input_grad, weight_grad, bias_grad
   public:
     MatrixMatrixFCGradOp()
         : Op(DL_OP, 4, 2, std::string("MatrixMatrixFCGrad")) {
@@ -109,6 +109,7 @@ class MatrixMatrixFCBiasGradOp : public Op {
     void einsumLowering(IRGraph *graph, IRNode *node);
     // for common lowering
     void lowering(IRGraph *graph, IRNode *node);
+    void paralleling();
 };
 
 class ReshapeOp: public Op {
@@ -169,8 +170,8 @@ class MatrixSoftmaxOp : public Op {
 
 
 class MatrixSoftmaxGradOp : public Op {
-  public:
-    MatrixSoftmaxGradOp() : Op(DL_OP, 3, 1, std::string("MatrixSoftmaxGrad")){};
+public:
+    MatrixSoftmaxGradOp() : Op(DL_OP, 3, 1, std::string("MatrixSoftmaxGrad")) {};
     ~MatrixSoftmaxGradOp();
     void destroy() {}
 };
@@ -206,138 +207,162 @@ class SGDOp : public Op {
     float momentum_{0.9};
     size_t batch_{1};
 
-  public:
+public:
     SGDOp() : Op(DL_OP, 3, 1, std::string("SGD")) {}
     SGDOp(float lr, float decay, float momentum, size_t batch)
         : Op(DL_OP, 2, 1, std::string("SGD")), lr_(lr), decay_(decay),
           momentum_(momentum), batch_(batch) {}
     ~SGDOp();
-    float getLR() { return lr_; }
-    float getDecay() { return decay_; }
-    float getMomentum() { return momentum_; }
-    size_t getBatch() { return batch_; }
+    float getLR() {
+        return lr_;
+    }
+    float getDecay() {
+        return decay_;
+    }
+    float getMomentum() {
+        return momentum_;
+    }
+    size_t getBatch() {
+        return batch_;
+    }
     void destroy() {}
 };
 
 class MatrixLogNegLossOp : public Op {
-  public:
+public:
     MatrixLogNegLossOp() : Op(DL_OP, 1, 1, std::string("MatrixLogNegLoss")) {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(0);
     };
     ~MatrixLogNegLossOp();
-    void destroy(){};
+    void destroy() {};
 };
 
 class MatrixTransOp : public Op {
-  public:
+public:
     MatrixTransOp() : Op(DL_OP, 1, 1, std::string("MatrixTrans")) {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
     };
     ~MatrixTransOp();
-    void destroy(){};
+    void destroy() {};
 };
 
 class MatrixAddOp : public Op {
-  public:
+public:
     MatrixAddOp() : Op(DL_OP, 2, 1, std::string("MatrixAdd")) {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
     };
     ~MatrixAddOp();
-    void destroy(){};
+    void destroy() {};
 };
 
 class ElementAddOp : public Op {
-  public:
+public:
     ElementAddOp() : Op(DL_OP, 2, 1, std::string("ElementAdd")) {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
     };
     ~ElementAddOp();
-    void destroy(){};
+    void destroy() {};
 };
 
 class ElementSubOp : public Op {
-  public:
+public:
     ElementSubOp() : Op(DL_OP, 2, 1, std::string("ElementSub")) {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
     };
     ~ElementSubOp();
-    void destroy(){};
+    void destroy() {};
 };
 
 class ElementMulOp : public Op {
-  public:
+public:
     ElementMulOp() : Op(DL_OP, 2, 1, std::string("ElementMul")) {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
     };
     ~ElementMulOp();
-    void destroy(){};
+    void destroy() {};
 };
 
 class ElementDivOp : public Op {
-  public:
+public:
     ElementDivOp() : Op(DL_OP, 2, 1, std::string("ElementDiv")) {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
     };
     ~ElementDivOp();
-    void destroy(){};
+    void destroy() {};
 };
 
 class PrintMatrixOp : public Op {
     PrintStreamType type_;
     std::string outfile_;
 
-  public:
+public:
     PrintMatrixOp() : Op(DL_OP, 1, 0, std::string("PrintMatrix")) {
         this->_inputNDims.push_back(2);
     };
     ~PrintMatrixOp();
-    void destroy(){};
+    void destroy() {};
     void setPrintStream(PrintStreamType type, std::string file = "") {
         type_ = type;
         outfile_ = file;
     }
-    PrintStreamType getPrintStreamType() { return type_; }
-    std::string getOutFile() { return outfile_; }
+    PrintStreamType getPrintStreamType() {
+        return type_;
+    }
+    std::string getOutFile() {
+        return outfile_;
+    }
 };
 
 class ScatterOp : public Op {
     size_t offset_;
 
-  public:
+public:
     ScatterOp() : Op(DL_OP, 0, 0, "Scatter"), offset_(0) {}
     ScatterOp(size_t offset) : Op(DL_OP, 0, 0, "Scatter"), offset_(offset) {}
     ~ScatterOp();
 
-    void setOffset(size_t offset) { offset_ = offset; }
-    size_t getOffset() { return offset_; }
+    void setOffset(size_t offset) {
+        offset_ = offset;
+    }
+    size_t getOffset() {
+        return offset_;
+    }
 };
 
 class GatherOp : public Op {
     size_t offset_;
 
-  public:
+public:
     GatherOp() : Op(DL_OP, 0, 0, "Gather"), offset_(0) {}
     GatherOp(size_t offset) : Op(DL_OP, 0, 0, "Gather"), offset_(offset) {}
     ~GatherOp();
-    void setOffset(size_t offset) { offset_ = offset; }
-    size_t getOffset() { return offset_; }
+    void setOffset(size_t offset) {
+        offset_ = offset;
+    }
+    size_t getOffset() {
+        return offset_;
+    }
 };
 
 class SubGraphOp : public Op {
     IRGraph *graph_;
 
-  public:
+public:
     SubGraphOp() : Op(DL_OP, 0, 0, "SubGraph") {}
     ~SubGraphOp();
-    void setGraph(IRGraph *graph) { graph_ = graph; }
-    IRGraph *getGraph() { return graph_; }
+    void setGraph(IRGraph *graph) {
+        graph_ = graph;
+    }
+    IRGraph *getGraph() {
+        return graph_;
+    }
 };
 
 class Conv2dOp : public Op {
@@ -346,7 +371,7 @@ class Conv2dOp : public Op {
     std::vector<size_t> pads_;
     int group_{1};
 
-  public:
+public:
     Conv2dOp() : Op(DL_OP, 3, 1, std::string("Conv2d")) {
         this->_inputNDims.push_back(4);
         this->_inputNDims.push_back(4);
@@ -364,10 +389,18 @@ class Conv2dOp : public Op {
         this->_inputNDims.push_back(1);
         this->_outputNDims.push_back(4);
     }
-    std::vector<size_t> getPads() { return pads_; }
-    std::vector<size_t> getKernels() { return kernels_; }
-    std::vector<size_t> getStrides() { return strides_; }
-    size_t getGroup() { return group_; }
+    std::vector<size_t> getPads() {
+        return pads_;
+    }
+    std::vector<size_t> getKernels() {
+        return kernels_;
+    }
+    std::vector<size_t> getStrides() {
+        return strides_;
+    }
+    size_t getGroup() {
+        return group_;
+    }
     ~Conv2dOp();
     void destroy() {}
 
@@ -414,19 +447,21 @@ class Conv2dGradOp : public Op {
 class BatchNormalizationOp : public Op {
     float epsilon_;
 
-  public:
+public:
     BatchNormalizationOp(float eps)
         : Op(DL_OP, 5, 1, std::string("BatchNormalization")) {
         epsilon_ = eps;
         // TODO : dims of input
     }
-    float getEpsilon() { return epsilon_; }
+    float getEpsilon() {
+        return epsilon_;
+    }
     ~BatchNormalizationOp();
     void destroy() {}
 };
 
 class ReluOp : public Op {
-  public:
+public:
     ReluOp() : Op(DL_OP, 1, 1, std::string("Relu")) {
         this->_inputNDims.push_back(4);
         this->_outputNDims.push_back(4);
@@ -454,7 +489,7 @@ class MaxPoolOp : public Op {
     std::vector<size_t> strides_;
     std::vector<size_t> pads_;
 
-  public:
+public:
     MaxPoolOp() : Op(DL_OP, 1, 1, std::string("MaxPool")) {
         this->_inputNDims.push_back(4);
         this->_outputNDims.push_back(4);
@@ -469,9 +504,15 @@ class MaxPoolOp : public Op {
         this->_outputNDims.push_back(4);
     }
     ~MaxPoolOp();
-    std::vector<size_t> getPads() { return pads_; }
-    std::vector<size_t> getKernels() { return kernels_; }
-    std::vector<size_t> getStrides() { return strides_; }
+    std::vector<size_t> getPads() {
+        return pads_;
+    }
+    std::vector<size_t> getKernels() {
+        return kernels_;
+    }
+    std::vector<size_t> getStrides() {
+        return strides_;
+    }
     void destroy() {}
 
     void outTensorShapeGen(OpNode* node, size_t index, TensorShape* tShape);
@@ -512,7 +553,7 @@ class AvgPoolOp : public Op {
     std::vector<size_t> strides_;
     std::vector<size_t> pads_;
 
-  public:
+public:
     AvgPoolOp() : Op(DL_OP, 1, 1, std::string("AveragePool")) {
         this->_inputNDims.push_back(4);
         this->_outputNDims.push_back(4);
@@ -527,14 +568,20 @@ class AvgPoolOp : public Op {
         this->_outputNDims.push_back(4);
     }
     ~AvgPoolOp();
-    std::vector<size_t> getPads() { return pads_; }
-    std::vector<size_t> getKernels() { return kernels_; }
-    std::vector<size_t> getStrides() { return strides_; }
+    std::vector<size_t> getPads() {
+        return pads_;
+    }
+    std::vector<size_t> getKernels() {
+        return kernels_;
+    }
+    std::vector<size_t> getStrides() {
+        return strides_;
+    }
     void destroy() {}
 };
 /*
 class BatchedAddOp : public Op {
-  public:
+public:
     BatchedAddOp() : Op(DL_OP, 2, 1, std::string("BatchedAdd")) {
         this->_inputNDims.push_back(2);
         this->_inputNDims.push_back(1);
@@ -548,7 +595,7 @@ BatchedAddOp should be MatrixVectorAddOp, remove
 */
 
 class BatchedReduceAddOp : public Op {
-  public:
+public:
     BatchedReduceAddOp() : Op(DL_OP, 1, 1, std::string("BatchedReduceAdd")) {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(1);
@@ -561,7 +608,7 @@ class BatchedReduceAddOp : public Op {
 class TransposeOp : public Op {
     std::vector<size_t> shuffle_;
 
-  public:
+public:
     TransposeOp(const std::initializer_list<size_t> &shuffle)
         : Op(DL_OP, 1, 1, std::string("Transpose")) {
         this->_inputNDims.push_back(4);
@@ -570,7 +617,9 @@ class TransposeOp : public Op {
             shuffle_.push_back(i);
     }
     ~TransposeOp();
-    std::vector<size_t> getShuffle() { return shuffle_; }
+    std::vector<size_t> getShuffle() {
+        return shuffle_;
+    }
     void destroy() {}
 };
 //this may be a tensor op;
@@ -578,12 +627,14 @@ class TransposeOp : public Op {
 class ArgMaxOp : public Op {
     int topK_;
 
-  public:
+public:
     ArgMaxOp(int topK) : Op(DL_OP, 1, 1, std::string("ArgMax")) {
         topK_ = topK;
     }
     ~ArgMaxOp() {}
-    int getTopK() { return topK_; }
+    int getTopK() {
+        return topK_;
+    }
     void destroy() {}
 };
 
@@ -591,7 +642,7 @@ class ArgMaxOp : public Op {
  *  \brief currently deubg means print 2D Tensor
  */
 class DebugOp : public Op {
-  public:
+public:
     DebugOp() : Op(DL_OP, 1, 1, std::string("Debug")) {}
     ~DebugOp() {}
     void destroy() {}
@@ -608,33 +659,33 @@ class DebugOp : public Op {
 //=====================================================
 
 class VectorTanhOp : public Op {
-  public:
+public:
     VectorTanhOp() : Op(DL_OP, 1, 1, std::string("VectorTanh")) {
         this->_inputNDims.push_back(1);
         this->_outputNDims.push_back(1);
     };
     ~VectorTanhOp();
-    void destroy(){};
+    void destroy() {};
 };
 
 class VectorSoftmaxOp : public Op {
-  public:
+public:
     VectorSoftmaxOp() : Op(DL_OP, 1, 1, std::string("VectorSoftmax")) {
         this->_inputNDims.push_back(1);
         this->_outputNDims.push_back(1);
     };
     ~VectorSoftmaxOp();
-    void destroy(){};
+    void destroy() {};
 };
 
 class VectorLogNegLossOp : public Op {
-  public:
+public:
     VectorLogNegLossOp() : Op(DL_OP, 1, 1, std::string("VectorLogNegLoss")) {
         this->_inputNDims.push_back(1);
         this->_outputNDims.push_back(0);
     };
     ~VectorLogNegLossOp();
-    void destroy(){};
+    void destroy() {};
 };
 
 //=====================================================
@@ -645,13 +696,13 @@ class VectorLogNegLossOp : public Op {
 //=====================================================
 
 class ScalarTanhOp : public Op {
-  public:
+public:
     ScalarTanhOp() : Op(DL_OP, 1, 1, std::string("ScalarTanh")) {
         this->_inputNDims.push_back(0);
         this->_outputNDims.push_back(0);
     };
     ~ScalarTanhOp();
-    void destroy(){};
+    void destroy() {};
 };
 } // namespace op
 } // namespace swc
