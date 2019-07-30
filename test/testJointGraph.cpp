@@ -53,9 +53,9 @@ int main() {
                                   "input/mlp_weight0.bin");
     bias0_Tensor->setTensorInit(TensorInitType::FILE, "input/mlp_bias0.bin");
 
-    OP(scatter0, ScatterOp);
-    OP(scatter1, ScatterOp);
-    OP(scatter2, ScatterOp);
+    DYOP(scatter0, ScatterOp, 0, 2);
+    DYOP(scatter1, ScatterOp, -1, 2);
+    DYOP(scatter2, ScatterOp, -1, 2);
     scatter1->setRunOnce();
     scatter2->setRunOnce();
     LINKUPPER(scatter0, data0);
@@ -89,7 +89,7 @@ int main() {
     TENSOR(data2_p, 4, 512);
     LINKUPPER(data2_p, tanh0_p);
 
-    OP(gather0, GatherOp);
+    DYOP(gather0, GatherOp, 0, 2);
     LINKUPPER(gather0, data2_p);
 
 
@@ -133,26 +133,21 @@ int main() {
             data0_p, weight0_p, bias0_p,
             fc0_p_mm_out,
             data1_p, data2_p,
-            data2, data3, weight1, bias1, 
+            data2, data3, weight1, bias1,
             data4, label, top3_idx);
 
-    std::vector<TensorNode*> polymorphics{data0_p, weight0_p, bias0_p,
+    std::vector<TensorNode*> parallel_tnodes{data0_p, weight0_p, bias0_p,
             fc0_p_mm_out, data1_p, data2_p};
-    for(auto *tn : polymorphics) {
-        tn->setPolymorphic(true);
-        tn->getLabel()->setDeviceLabel(DeviceType::CPU, INT_MAX);
+    for(auto *tn : parallel_tnodes) {
+        tn->getLabel()->setDeviceLabel(INT_MAX, DeviceType::CPU, 0);
     }
 
     GpO(mlp, scatter0, scatter1, scatter2,
-            /*fc0_p,*/ 
             fc0_p_mm, fc0_p_add,
             tanh0_p, gather0,
             fc1, softmax, argmax, print_top3);
 
-
     //====================================================
-    Device dev_cpu0;
-
     mlp->findInOut();
     mlp->updateTopology();
     pass::Optimizer *opt = new pass::Optimizer(mlp);
@@ -162,7 +157,7 @@ int main() {
     //====================================================
     CodegenConfig config;
     config.mpi = true;
-    codegen::Codegen *cg = new codegen::Codegen(mlp, config);
+    codegen::ParallelCodegen *cg = new codegen::ParallelCodegen(mlp, config);
     string code = cg->generate();
     cout << code;
 

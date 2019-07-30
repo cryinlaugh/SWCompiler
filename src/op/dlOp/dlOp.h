@@ -297,26 +297,47 @@ class PrintMatrixOp : public Op {
 };
 
 class ScatterOp : public Op {
-    size_t offset_;
+    size_t offset_{0};
+
+    int axis_{-1};
+    int degree_{1};
 
   public:
     ScatterOp() : Op(DL_OP, 0, 0, "Scatter"), offset_(0) {}
     ScatterOp(size_t offset) : Op(DL_OP, 0, 0, "Scatter"), offset_(offset) {}
+    ScatterOp(int axis, int degree) : Op(DL_OP, 0, 0, "Scatter"), axis_(axis), degree_(degree) {}
     ~ScatterOp();
 
     void setOffset(size_t offset) { offset_ = offset; }
     size_t getOffset() { return offset_; }
+
+    void setAxis(int axis) { axis_ = axis; }
+    int getAxis() { return axis_; }
+
+    void setDegree(int degree) { degree_ = degree; }
+    int getDegree() { return degree_; }
 };
 
 class GatherOp : public Op {
-    size_t offset_;
+    size_t offset_{0};
+
+    int axis_{-1};
+    int degree_{1};
 
   public:
     GatherOp() : Op(DL_OP, 0, 0, "Gather"), offset_(0) {}
     GatherOp(size_t offset) : Op(DL_OP, 0, 0, "Gather"), offset_(offset) {}
+    GatherOp(int axis, int degree) : Op(DL_OP, 0, 0, "Gather"), axis_(axis), degree_(degree) {}
     ~GatherOp();
+    
     void setOffset(size_t offset) { offset_ = offset; }
     size_t getOffset() { return offset_; }
+
+    void setAxis(int axis) { axis_ = axis; }
+    int getAxis() { return axis_; }
+
+    void setDegree(int degree) { degree_ = degree; }
+    int getDegree() { return degree_; }
 };
 
 class SubGraphOp : public Op {
