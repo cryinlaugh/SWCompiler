@@ -29,7 +29,8 @@ class OpNode : public IRNode {
     ~OpNode(){};
 
     void destroy() {
-        printf("free OpNode:%s\n", name().c_str());
+        // printf("free OpNode:%s\n", name().c_str());
+        SWLOG_DEBUG(1) << "Destroy OpNodeL: " << name() << "\n"; 
 
         getOp()->destroy();
         getLabel()->destroy();
@@ -65,7 +66,7 @@ class OpNode : public IRNode {
         _op->checkValid(this);
         return;
     };
-   
+
     void outTensorShapeGen(size_t index, TensorShape* tShape) {
         Op *_op = op_;
         _op->outTensorShapeGen(this, index, tShape);
@@ -77,7 +78,7 @@ class OpNode : public IRNode {
         _strategyLabel = strategyLabel;
     }
     StrategyLabel* getStrategyLabel() { return _strategyLabel; }
-  
+
   private:
     Op *op_;
     bool run_{true};

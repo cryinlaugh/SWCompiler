@@ -1,5 +1,5 @@
 file(GLOB files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} utils/*)
-file(GLOB TEST_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
+file(GLOB_RECURSE TEST_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 foreach(TESTSRC ${TEST_SOURCES})
    get_filename_component(TESTNAME ${TESTSRC} NAME_WE) # file name without directories or longest extension
    add_executable(${TESTNAME} ${TESTSRC})

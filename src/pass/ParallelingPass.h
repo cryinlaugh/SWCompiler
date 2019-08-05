@@ -33,11 +33,11 @@ public:
             for (int j = 0; j < _graph->getNumInTopoLevel(i); j++) {
                 IRNode * irnode = _graph->getNodeInTopo(i, j);
                 if(irnode->nodeType() == TENSOR_NODE) {
-                    SWLOG_DEBUG(4) << "tensornode :" << i 
+                    SWLOG_DEBUG(4) << "tensornode :" << i
                         << "," << j << "-" << irnode->name() << std::endl;
                     topoTensorNodes.push_back(dynamic_cast<TensorNode *>(irnode));
                 } else if(irnode->nodeType() == OP_NODE) {
-                    SWLOG_DEBUG(4) << "opnode: " << i 
+                    SWLOG_DEBUG(4) << "opnode: " << i
                         << "," << j << "-" << irnode->name() << std::endl;
                     topoOpNodes.push_back(dynamic_cast<OpNode*>(irnode));
                 }
@@ -50,7 +50,7 @@ public:
             TilingLabel * tlabel =  new TilingLabel();
             originNode->setTilingLabel(tlabel);
         }
-        
+
         //
         for(unsigned long i = 0; i < topoOpNodes.size(); i++) {
             OpNode* curOpNode = topoOpNodes[i];
@@ -65,7 +65,12 @@ public:
             std::vector<int> opstrategy = slabel->getStrategy();
             int strategyindex = 0;
 
-
+            std::ostringstream ss_strategy;
+            for(auto s : opstrategy) {
+                ss_strategy << s << " ";
+            }
+            SWLOG_DEBUG(4) << "Dealing with OpNode " << curOpNode->name()
+            << " strategy: " << ss_strategy.str() << "\n";
 
             std::vector<TensorNode*> tempinput;
             for(int j = 0; j < curOpNode->parentNum(); j++) {

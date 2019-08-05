@@ -28,6 +28,7 @@ public:
     ~ForkPattern() {};
 
     void apply(int strategy, IRGraph * irgraph) {
+        SWLOG_DEBUG(4) << "ForkPattern on tensor " << _tensornode->name() << ", strategy= " << strategy << "\n";
         TilingLabel * tlabel = _tensornode->getTilingLabel();
         TensorShape * originshape = _tensornode->getTensor()->getTensorShape();
         TensorNode *tilenode;
@@ -38,22 +39,22 @@ public:
             tilenode = new TensorNode(_tensornode->name() + "_replicate", new Tensor(originshape));
         } else
             tilenode = new TensorNode(_tensornode->name() + "_unknown", new Tensor(originshape));
-        
-        
+
+
         OpNode *opnode = new OpNode(_tensornode->name() + "_fork");
         opnode->setOp(new ScatterOp());
-        
+
         tilenode->exlinkUpperNode(opnode);
         opnode->exlinkUpperNode(_tensornode);
 
 
 
-        
+
         irgraph->pushTensorNode(tilenode);
         irgraph->pushOpNode(opnode);
         irgraph->updateTopology();
 
-        
+
         tlabel->setCurrentNode(tilenode);
         tlabel->setCurrentStrategy(strategy);
         tlabel->setApplied();
@@ -75,6 +76,7 @@ public:
     };
     ~TransformPattern() {};
     void apply(int strategy, IRGraph * irgraph) {
+        SWLOG_DEBUG(4) << "TransformPattern on tensor " << _tensornode->name() << ", strategy= " << strategy << "\n";
         TilingLabel * tlabel = _tensornode->getTilingLabel();
         TensorShape * originshape = _tensornode->getTensor()->getTensorShape();
         TensorNode *tilenode;
@@ -85,7 +87,7 @@ public:
             tilenode = new TensorNode(_tensornode->name() + "_replicate", new Tensor(originshape));
         } else
             tilenode = new TensorNode(_tensornode->name() + "_unknown", new Tensor(originshape));
-        
+
         OpNode *opnode = new OpNode(_tensornode->name() + "_transform");
         opnode->setOp(new ScatterOp());
         tilenode->exlinkUpperNode(opnode);
@@ -116,12 +118,13 @@ public:
     ~JoinPattern();
 
     void apply(int strategy, IRGraph * irgraph) {
+        SWLOG_DEBUG(4) << "JoinPattern on tensor " << _tensornode->name() << ", strategy= " << strategy << "\n";
         TilingLabel * tlabel = _tensornode->getTilingLabel();
 
         TensorShape * originshape = _tensornode->getTensor()->getTensorShape();
         TensorNode *tilenode;
         if(strategy >= 0) {
-            
+
             TensorShape* tileTensorShape = originshape->getTiledShape(strategy, _num);
             tilenode = new TensorNode(_tensornode->name() + "_tile", new Tensor(tileTensorShape));
         } else if (strategy == -2) {

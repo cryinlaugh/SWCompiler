@@ -25,7 +25,6 @@ class UniqueName {
 
   public:
     std::string operator()(const std::string &inputName) {
-        SWLOG_DEBUG(1) << "originalName " << inputName << "\n";
         assert(!inputName.empty() && "inputName empty");
         std::string name;
         for (const char c : inputName) {
@@ -46,7 +45,7 @@ class UniqueName {
             }
             name = uname;
         }
-        SWLOG_DEBUG(1) << "uniqueName " << name << "\n\n";
+        SWLOG_DEBUG(1) << "orig_name " << inputName << "--> uniq_name " << name << "\n";
         names_map_[name] = 0;
         return name;
     }
@@ -81,7 +80,7 @@ class RenamingNodePass : public OptimizePass {
             std::string uname = uniqueName(node->name());
             node->setName(uname);
         }
-        SWLOG_DEBUG(4) << "end RenamingNodePass ...\n";
+        SWLOG_DEBUG(4) << "end RenamingNodePass ...\n\n";
     }
 };
 

@@ -53,9 +53,9 @@ class swc::pass::LoweringPass : public OptimizePass {
     }
 
     void run() {
-        SWLOG_DEBUG(4) << "Start Lowering Pass." << std::endl;
+        SWLOG_DEBUG(4) << "Start Lowering Pass.\n";
         runLowering();
-        SWLOG_DEBUG(4) << "Finish lowering pass. " << std::endl;
+        SWLOG_DEBUG(4) << "Finish lowering pass.\n\n";
     }
 };
 #endif

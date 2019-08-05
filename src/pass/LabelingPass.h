@@ -103,11 +103,11 @@ class swc::pass::LabelingPass : public swc::pass::OptimizePass {
     }
 
     void run() {
-        SWLOG_DEBUG(4) << "Start Labeling Pass." << std::endl;
+        SWLOG_DEBUG(4) << "Start Labeling Pass.\n";
         initLabelingPass();
         setLoweringMark();
         setTraining();
-        SWLOG_DEBUG(4) << "Finish Labeling Pass." << std::endl;
+        SWLOG_DEBUG(4) << "Finish Labeling Pass.\n\n";
     }
 };
 #endif

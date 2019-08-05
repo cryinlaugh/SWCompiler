@@ -200,7 +200,7 @@ void Codegen::emitHeader() {
 
     //------------------TODO:BEGIN-------------------------------
     // TODO: mv mpi and cuda specific statements to derived class
-    // UPDATE: mpi removed 
+    // UPDATE: mpi removed
 
     if (config_.cuda) {
         headerWriter_ << "#include <cuda.h>\n"
@@ -231,7 +231,7 @@ std::string Codegen::generate() {
 
     emitHeader();
 
-    writer_ << "\n\n"
+    writer_ << "\n"
             << "int main(int argc, char** argv) {\n";
     writer_.indentInc();
 
@@ -320,7 +320,7 @@ void Codegen::allocateMemAddr(IRGraph *graph) {
                 Device dev = label->getDeviceLabel();
 
                 SWLOG_DEBUG(1) << "allocateMemAddr topo(" << i
-                               <<", " << j << ") " 
+                               <<", " << j << ") "
                                << tnode->name() << " " << size
                                << " on dev(" << dev.rank << ", "
                                << static_cast<int>(dev.type) << ", "
@@ -338,7 +338,7 @@ void Codegen::allocateMemAddr(IRGraph *graph) {
                 tensors_name_map_[tensor] = bufferName;
                 // TODO data type
                 tensors_offset_map_[tensor] = std::make_pair(base, addr);
-            }  // if tensor node 
+            }  // if tensor node
         } // for topo j
     } // for topo i
 }
