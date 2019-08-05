@@ -67,28 +67,6 @@ std::string Codegen::getTypeString(Tensor *tensor) {
     }
 }
 
-int Codegen::getMPISendRecvTag(Tensor *tensor) {
-    int idx = 0;
-    for (auto &t : mpi_sendRecv_tags_) {
-        if (t == tensor)
-            return idx;
-        idx++;
-    }
-    mpi_sendRecv_tags_.push_back(tensor);
-    return idx;
-}
-
-bool Codegen::delMPISendRecvTag(Tensor *tensor) {
-    for (auto it = mpi_sendRecv_tags_.begin(); it != mpi_sendRecv_tags_.end();
-         it++) {
-        if (*it == tensor) {
-            mpi_sendRecv_tags_.erase(it);
-            return true;
-        }
-    }
-    return false;
-}
-
 void Codegen::destroy() {
     graph_ = nullptr;
     names_map_.clear();
@@ -105,37 +83,24 @@ void Codegen::initMemoryAllocators() {
     gpu1.type = DeviceType::GPU;
     gpu1.id = 1;
 
-    Device cpu1;
-    cpu1.id = 1;
-    Device cpu2;
-    cpu2.id = 2;
-
     Device cpup;
     cpup.rank = INT_MAX;
 
     auto m_cpu0 = std::make_shared<MemoryAllocator>(cpu0, "cpu0", 0xFFFFFFFF);
-    auto m_cpu1 = std::make_shared<MemoryAllocator>(cpu1, "cpu1", 0xFFFFFFFF);
-    auto m_cpu2 = std::make_shared<MemoryAllocator>(cpu2, "cpu2", 0xFFFFFFFF);
     auto m_gpu0 = std::make_shared<MemoryAllocator>(gpu0, "gpu0", 0xFFFFFFFF);
     auto m_gpu1 = std::make_shared<MemoryAllocator>(gpu1, "gpu1", 0xFFFFFFFF);
     p_mem_alllocator_ = std::make_shared<MemoryAllocator>(cpup, "cpup", 0xFFFFFFFF);
 
     mem_allocators_.push_back(m_cpu0);
-    mem_allocators_.push_back(m_cpu1);
-    mem_allocators_.push_back(m_cpu2);
     mem_allocators_.push_back(m_gpu0);
     mem_allocators_.push_back(m_gpu1);
 
     dev_allocator_map_[cpu0] = m_cpu0.get();
-    dev_allocator_map_[cpu1] = m_cpu1.get();
-    dev_allocator_map_[cpu2] = m_cpu2.get();
     dev_allocator_map_[gpu0] = m_gpu0.get();
     dev_allocator_map_[gpu1] = m_gpu1.get();
     dev_allocator_map_[cpup] = p_mem_alllocator_.get();
 
     m_cpu0->setBasePtrName(UniqueName(deviceToStr(cpu0) + "_baseptr"));
-    m_cpu1->setBasePtrName(UniqueName(deviceToStr(cpu1) + "_baseptr"));
-    m_cpu2->setBasePtrName(UniqueName(deviceToStr(cpu2) + "_baseptr"));
     p_mem_alllocator_->setBasePtrName(UniqueName(deviceToStr(cpup) + "_baseptr"));
 
     m_gpu0->setBasePtrName(UniqueName(deviceToStr(gpu0) + "_baseptr"));
@@ -143,6 +108,15 @@ void Codegen::initMemoryAllocators() {
 }
 void Codegen::codeGenInit() {
     initMemoryAllocators();
+    initMakefileBuilder();
+}
+
+void Codegen::emitEnvInit() {
+    emitCUDAInit();
+}
+
+void Codegen::emitEnvFinalize() {
+    writer_ << "return 0;\n";
 }
 
 void Codegen::emitCUDAInit() {
@@ -175,23 +149,6 @@ void Codegen::emitCUDAInit() {
     }
 }
 
-void Codegen::emitMPIInit() {
-    if (config_.mpi) {
-        writer_
-            << "// ========================================================\n";
-        writer_ << "// MPI INIT\n";
-        writer_ << "int rank, nprocs;\n";
-        writer_ << "char proc_name[MPI_MAX_PROCESSOR_NAME];\n";
-        writer_ << "int proc_name_len;\n";
-        writer_ << "MPI_Status status;\n";
-
-        writer_ << "MPI_Init(&argc, &argv);\n";
-        writer_ << "MPI_Comm_size(MPI_COMM_WORLD, &nprocs);\n";
-        writer_ << "MPI_Comm_rank(MPI_COMM_WORLD, &rank);\n";
-        writer_ << "MPI_Get_processor_name(proc_name,&proc_name_len);\n";
-        writer_ << "std::cout << \"process \" << rank << \" of \" << nprocs << \" run on \" << proc_name << std::endl;\n";
-    }
-}
 
 std::string Codegen::UniqueName(std::string name) {
     auto iter = names_map_.find(name);
@@ -208,93 +165,8 @@ std::string Codegen::UniqueName(std::string name) {
     return name;
 }
 
-std::string Codegen::generate() {
-    codeGenInit();
-
-    std::ostringstream ss;
-    ss << "/*******************************************************************"
-          "******\n"
-       << "  > File Name: graph.cpp\n"
-       // << "  > Author: none\n"
-       // << "  > Mail:  \n"
-       // << "  > Created Time: "
-       << "  > IRGraph\n"
-       << "  > |-TensorNode " << graph_->tensorNodeNum() << "\n"
-       << "  > |-opNode     " << graph_->opNodeNum() << "\n"
-       << " *******************************************************************"
-          "*****/\n";
-
-    writer_ << "#include <iostream>\n"
-            << "#include <random>\n"
-            << "#include <stdlib.h>\n"
-            << "#include <math.h>\n"
-            << "#include \"utils/image.h\"\n";
-
-    if (config_.mpi) {
-        writer_ << "#include <mpi.h>\n";
-    }
-
-    if (config_.cuda) {
-        writer_ << "#include <cuda.h>\n"
-                << "#include <cublas_v2.h>\n";
-        // #include "utils/cuda_kernels.cu"
-        // writer_ << CUDA_CODE;
-        writer_ << "#include \"utils/cuda_kernels.h\"\n";
-    }
-
-    // #include "kernels.h"
-    // writer_ << KERNELS_CODE;
-    writer_ << "#include \"utils/kernels.h\"\n"
-            << "#include \"utils/DataLoader.h\"\n"
-            << "#include \"utils/utils.h\"\n";
-
-    if (config_.train_mode) {
-        writer_ << "#include \"gflags/gflags.h\"\n"
-                << "#include <google/protobuf/io/coded_stream.h>\n"
-                << "#include <google/protobuf/io/zero_copy_stream_impl.h>\n\n";
-
-        emitGflagsDef();
-    }
-
-    writer_ << "\n\n"
-            << "int main(int argc, char** argv) {\n";
-    writer_.indentInc();
-
-    if (config_.train_mode) {
-        writer_ << "gflags::ParseCommandLineFlags(&argc, &argv, true);\n";
-    }
-
-    emitCUDAInit();
-    emitMPIInit();
-
-    writer_ << "\n// variable declaration and initiation\n";
-    emitMemAllocs();
-
-    writer_ << "\n// call op routine functions\n";
-    emitExecute();
-    // emitFuncCalls();
-
-    writer_ << "\n// free memory\n";
-    emitMemFree();
-
-    emitMPIFinalize();
-
-    writer_ << "return 0;\n";
-
-    writer_.indentDec();
-    writer_ << "}\n";
-
-    std::ofstream fout("Graph.cpp", std::fstream::out);
-    fout << ss.str() + writer_.get_code();
-    fout.close();
-
-    fout.flush();
-    // TODO : NVCC
-    if (config_.mpi) {
-        makefile_builder_.setCXXCompiler("mpic++");
-    } else {
-        makefile_builder_.setCXXCompiler("/usr/bin/c++");
-    }
+void Codegen::initMakefileBuilder() {
+   makefile_builder_.setCXXCompiler("/usr/bin/c++");
 
     makefile_builder_.addCXXSrc("Graph.cpp");
     makefile_builder_.addCXXSrc("utils/DataLoader.cpp");
@@ -305,11 +177,96 @@ std::string Codegen::generate() {
     makefile_builder_.addLib("protobuf");
     makefile_builder_.addLib("gflags");
 
+}
+
+void Codegen::emitHeader() {
+    headerWriter_ << "/*******************************************************************"
+          "******\n"
+       << "  > File Name: Graph.cpp\n"
+       // << "  > Author: none\n"
+       // << "  > Mail:  \n"
+       // << "  > Created Time: "
+       << "  > IRGraph\n"
+       << "  > |-TensorNode " << graph_->tensorNodeNum() << "\n"
+       << "  > |-opNode     " << graph_->opNodeNum() << "\n"
+       << " *******************************************************************"
+          "*****/\n";
+
+    headerWriter_<< "#include <iostream>\n"
+            << "#include <random>\n"
+            << "#include <stdlib.h>\n"
+            << "#include <math.h>\n"
+            << "#include \"utils/image.h\"\n";
+
+    //------------------TODO:BEGIN-------------------------------
+    // TODO: mv mpi and cuda specific statements to derived class
+    // UPDATE: mpi removed 
+
+    if (config_.cuda) {
+        headerWriter_ << "#include <cuda.h>\n"
+                << "#include <cublas_v2.h>\n";
+        // #include "utils/cuda_kernels.cu"
+        // headerWriter_ << CUDA_CODE;
+        headerWriter_ << "#include \"utils/cuda_kernels.h\"\n";
+    }
+    //------------------TODO:END---------------------------------
+    // #include "kernels.h"
+    // headerWriter_ << KERNELS_CODE;
+    headerWriter_ << "#include \"utils/kernels.h\"\n"
+            << "#include \"utils/DataLoader.h\"\n"
+            << "#include \"utils/utils.h\"\n";
+
+    if (config_.train_mode) {
+        headerWriter_ << "#include \"gflags/gflags.h\"\n"
+                << "#include <google/protobuf/io/coded_stream.h>\n"
+                << "#include <google/protobuf/io/zero_copy_stream_impl.h>\n\n";
+
+        emitGflagsDef();
+    }
+
+}
+
+std::string Codegen::generate() {
+    codeGenInit();
+
+    emitHeader();
+
+    writer_ << "\n\n"
+            << "int main(int argc, char** argv) {\n";
+    writer_.indentInc();
+
+    if (config_.train_mode) {
+        writer_ << "gflags::ParseCommandLineFlags(&argc, &argv, true);\n";
+    }
+
+    emitEnvInit();
+
+    writer_ << "\n// variable declaration and initiation\n";
+    emitMemAllocs();
+
+    writer_ << "\n// call op routine functions\n";
+    emitExecute();
+
+    writer_ << "\n// free memory\n";
+    emitMemFree();
+
+    emitEnvFinalize();
+
+    writer_.indentDec();
+    writer_ << "}\n";
+
+    std::ofstream fout("Graph.cpp", std::fstream::out);
+    fout << headerWriter_.get_code() + writer_.get_code();
+    fout.close();
+
+    fout.flush();
+
+
     fout.open("G_Makefile", std::fstream::out);
     fout << makefile_builder_.generate();
     fout.close();
 
-    return ss.str() + writer_.get_code();
+    return headerWriter_.get_code() + writer_.get_code();
 }
 
 void Codegen::emitMemAllocs() {
@@ -345,41 +302,45 @@ void Codegen::allocateMemAddr() {
 }
 void Codegen::allocateMemAddr(IRGraph *graph) {
 
-    for (int i = 0; i < graph->tensorNodeNum(); i++) {
-        TensorNode *tnode = graph->getTensorNode(i);
-        Tensor *tensor = tnode->getTensor();
+	for (int i = 0; i < graph->topologyNum(); i++) {
+        for (int j = 0; j < graph->getNumInTopoLevel(i); j++) {
+            auto node = graph->getNodeInTopo(i, j);
+            if (node->nodeType() == TENSOR_NODE) {
+                auto *tnode = (TensorNode *)node;
+                Tensor *tensor = tnode->getTensor();
 
-        if (tensors_name_map_.count(tensor))
-            continue;
+                if (tensors_name_map_.count(tensor))
+                    continue;
 
-        std::string bufferName = UniqueName(tnode->name());
+                std::string bufferName = UniqueName(tnode->name());
 
-        size_t size = tensor->getSizeInBytes();
+                size_t size = tensor->getSizeInBytes();
 
-        Label *label = tnode->getLabel();
-        Device dev = label->getDeviceLabel();
+                Label *label = tnode->getLabel();
+                Device dev = label->getDeviceLabel();
 
-        SWLOG_DEBUG(1) << "allocateMemAddr " << tnode->name() << " " << size
-                       << " on dev(" << dev.rank << ", "
-                       << static_cast<int>(dev.type) << ", "
-                       << dev.id << ")."
-                       << "\n";
+                SWLOG_DEBUG(1) << "allocateMemAddr topo(" << i
+                               <<", " << j << ") " 
+                               << tnode->name() << " " << size
+                               << " on dev(" << dev.rank << ", "
+                               << static_cast<int>(dev.type) << ", "
+                               << dev.id << ")."
+                               << "\n";
 
-        auto *allocator = dev_allocator_map_.at(dev);
-        if (!allocator) {
-            SWLOG_ERROR << "allocator" << static_cast<int>(dev.type) << " "
-                        << dev.id << " not found\n";
-        }
-        uint64_t addr = allocator->allocate(tensor, size);
-        std::string base = allocator->getBasePtrName();
+                auto *allocator = dev_allocator_map_.at(dev);
+                if (!allocator) {
+                    SWLOG_ERROR << "allocator" << static_cast<int>(dev.type) << " "
+                                << dev.id << " not found\n";
+                }
+                uint64_t addr = allocator->allocate(tensor, size);
+                std::string base = allocator->getBasePtrName();
 
-        tensors_name_map_[tensor] = bufferName;
-        // TODO data type
-        // tensors_offset_map_[tensor] = std::make_pair(base, addr /
-        // sizeof(float));
-        tensors_offset_map_[tensor] = std::make_pair(base, addr);
-        // tensors_base_map_[tensor] = base;
-    }
+                tensors_name_map_[tensor] = bufferName;
+                // TODO data type
+                tensors_offset_map_[tensor] = std::make_pair(base, addr);
+            }  // if tensor node 
+        } // for topo j
+    } // for topo i
 }
 
 void Codegen::emitVarDeclarations() {
@@ -430,17 +391,8 @@ void Codegen::emitMemAllocations() {
         if (size == 0)
             continue;
 
-        if (config_.mpi) {
-            writer_ << "if(rank == 0) {\n";
-            writer_.indentInc();
-        }
-
         emitMemAllocation(base, size, dev);
 
-        if (config_.mpi) {
-            writer_.indentDec();
-            writer_ << "} // if rank\n";
-        }
     }
 
     if(p_mem_alllocator_->getMemAllocated()) {
@@ -473,40 +425,19 @@ void Codegen::emitMemAllocation(std::string buffer, size_t bytes, Device& dev) {
 
 }
 
-/// if config_.mpi=true this func deal with
-/// the MASTER(0) process
 void Codegen::emitTensorAddresses() {
     SWLOG_DEBUG(4) << "begin emitTensorAddresses...\n";
 
     std::set<Tensor *> visited_tensors;
 
-    if (config_.mpi) {
-        writer_ << "if(rank == 0) {\n";
-        writer_.indentInc();
-    }
-
     emitTensorAddresses(graph_, &visited_tensors);
-
-    if (config_.mpi) {
-        writer_.indentDec();
-        writer_ << "} // if rank\n";
-    }
 
     for (int i = 0; i < graph_->opNodeNum(); i++) {
         OpNode *opnode = graph_->getOpNode(i);
         if (auto graphOp = dynamic_cast<SubGraphOp *>(opnode->getOp())) {
             if (auto ngraph = graphOp->getGraph()) {
                 switchTo(ngraph);
-                Device dev = ngraph->getDeviceLabel();
-                if (config_.mpi && dev.type == DeviceType::CPU) {
-                    writer_ << "if(rank ==" << dev.id << ") {\n";
-                    writer_.indentInc();
-                }
                 emitTensorAddresses(ngraph, &visited_tensors);
-                if (config_.mpi && dev.type == DeviceType::CPU) {
-                    writer_.indentDec();
-                    writer_ << "} // if rank\n";
-                }
                 switchFrom(ngraph);
                 writer_ << "\n";
             }
@@ -546,20 +477,11 @@ void Codegen::emitTensorInitializations() {
 
     std::set<Tensor *> visited_tensors;
 
-    if (config_.mpi) {
-        writer_ << "if(rank == 0) {\n";
-        writer_.indentInc();
-    }
 
     if (config_.train_mode) {
         emitTensorInitFromSnapshot(graph_, &visited_tensors);
     } else {
         emitTensorInitializations(graph_, &visited_tensors);
-    }
-
-    if (config_.mpi) {
-        writer_.indentDec();
-        writer_ << "} // if rank\n";
     }
 
     for (int i = 0; i < graph_->opNodeNum(); i++) {
@@ -594,8 +516,6 @@ void Codegen::emitTensorInitializations(IRGraph *graph_,
         std::string base;
         uint64_t offset;
         std::tie(base, offset) = tensors_offset_map_[tensor];
-        // writer_ << name << " = reinterpret_cast<" << dtype
-        //        << "*>(" << base << " + " << offset << ");\n";
 
         TensorInitInfo info = tensor->getTensorInitInfo();
         switch (tensor->getTensorInitType()) {
@@ -967,7 +887,6 @@ void Codegen::emitFuncCalls(IRGraph *graph_) {
 }
 
 void Codegen::switchTo(IRGraph *ngraph) {
-    // Device host = this->graph_->getDeviceLabel();
     Device dev = ngraph->getDeviceLabel();
     if (dev.type == DeviceType::CPU) {
         // TODO MPI
@@ -1009,11 +928,6 @@ void Codegen::dispatchOpNode(OpNode *op) {
 
         emitMemcpyFromTo(from_tensor, dev, 0, size, to_tensor, to_dev, offset);
     } else {
-        if (config_.mpi) {
-            writer_ << "if(rank == " << dev.id << ") {\n";
-            writer_.indentInc();
-        }
-
         switch (dev.type) {
         case DeviceType::CPU:
             emitFuncCall(op);
@@ -1023,11 +937,6 @@ void Codegen::dispatchOpNode(OpNode *op) {
             break;
         default:
             SWLOG_ERROR << "unknown device type in dispatchOpNode\n";
-        }
-
-        if (config_.mpi) {
-            writer_.indentDec();
-            writer_ << "} // if rank\n";
         }
     }
 }
@@ -1066,31 +975,6 @@ void Codegen::emitMemcpyFromTo(Tensor *from, Device from_dev,
                     << ", " << size << ", "
                     << "cudaMemcpyDeviceToHost);\n";
         }
-    }
-
-    if (from_dev.type == DeviceType::CPU && to_dev.type == DeviceType::CPU &&
-        from_dev.id != to_dev.id) {
-        if (!config_.mpi)
-            return;
-
-        int tag = getMPISendRecvTag(to);
-        writer_ << "if(rank == " << from_dev.id << ") {\n";
-        writer_.indentInc();
-        writer_ << "MPI_Send(" << fname << "+" << from_offset << ", " << size
-                << ", "
-                << "MPI_CHAR, " << to_dev.id << ", " << tag
-                << ",  MPI_COMM_WORLD);\n";
-        writer_.indentDec();
-        writer_ << "} // if rank\n";
-
-        writer_ << "if(rank == " << to_dev.id << ") {\n";
-        writer_.indentInc();
-        writer_ << "MPI_Recv(" << tname << "+" << to_offset << ", " << size
-                << ", "
-                << "MPI_CHAR, " << from_dev.id << ", " << tag
-                << ",  MPI_COMM_WORLD, &status);\n";
-        writer_.indentDec();
-        writer_ << "} // if rank\n";
     }
 }
 
@@ -1590,11 +1474,6 @@ void Codegen::emitMemFree() {
         if (size == 0)
             continue;
 
-        if (config_.mpi) {
-            writer_ << "if(rank == " << dev.id << ") {\n";
-            writer_.indentInc();
-        }
-
         switch (dev.type) {
         case DeviceType::CPU:
             writer_ << "free(" << base << ");\n";
@@ -1608,13 +1487,7 @@ void Codegen::emitMemFree() {
             SWLOG_ERROR << "Unknown DeviceType\n";
             break;
         }
-
-        if (config_.mpi) {
-            writer_.indentDec();
-            writer_ << "} // if rank\n";
-        }
     }
-
     writer_ << "\n";
 }
 
@@ -1692,10 +1565,6 @@ void Codegen::emitFuncCallCUDA(OpNode *op) {
     }
 }
 
-void Codegen::emitMPIFinalize() {
-    if (config_.mpi)
-        writer_ << "MPI_Finalize();\n";
-}
 
 } // namespace codegen
 } // namespace swc

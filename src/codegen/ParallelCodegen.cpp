@@ -33,6 +33,64 @@ bool isParallel(OpNode * node) {
         return (dev_p0.rank == INT_MAX);
 }
 
+int ParallelCodegen::getMPISendRecvTag(Tensor *tensor) {
+    int idx = 0;
+    for (auto &t : mpi_sendRecv_tags_) {
+        if (t == tensor)
+            return idx;
+        idx++;
+    }
+    mpi_sendRecv_tags_.push_back(tensor);
+    return idx;
+}
+
+bool ParallelCodegen::delMPISendRecvTag(Tensor *tensor) {
+    for (auto it = mpi_sendRecv_tags_.begin(); it != mpi_sendRecv_tags_.end();
+         it++) {
+        if (*it == tensor) {
+            mpi_sendRecv_tags_.erase(it);
+            return true;
+        }
+    }
+    return false;
+}
+
+void ParallelCodegen::initMakefileBuilder() {
+    Codegen::initMakefileBuilder();
+    makefile_builder_.setCXXCompiler("mpic++");
+}
+
+void ParallelCodegen::emitHeader() {
+    Codegen::emitHeader();
+    headerWriter_ << "#include <mpi.h>\n";
+}
+
+void ParallelCodegen::emitEnvInit() {
+    emitMPIInit();
+}
+void ParallelCodegen::emitEnvFinalize() {
+    emitMPIFinalize();
+}
+
+void ParallelCodegen::emitMPIInit() {
+    writer_
+        << "// ========================================================\n";
+    writer_ << "// MPI INIT\n";
+    writer_ << "int rank, nprocs;\n";
+    writer_ << "char proc_name[MPI_MAX_PROCESSOR_NAME];\n";
+    writer_ << "int proc_name_len;\n";
+    writer_ << "MPI_Status status;\n";
+
+    writer_ << "MPI_Init(&argc, &argv);\n";
+    writer_ << "MPI_Comm_size(MPI_COMM_WORLD, &nprocs);\n";
+    writer_ << "MPI_Comm_rank(MPI_COMM_WORLD, &rank);\n";
+    writer_ << "MPI_Get_processor_name(proc_name,&proc_name_len);\n";
+    writer_ << "std::cout << \"process \" << rank << \" of \" << nprocs << \" run on \" << proc_name << std::endl;\n";
+}
+void ParallelCodegen::emitMPIFinalize() {
+    writer_ << "MPI_Finalize();\n";
+}
+
 void ParallelCodegen::allocateMemAddr() {
 	SWLOG_DEBUG(4) << "begin allocateMemAddr...\n";
 	for (int i = 0; i < graph_->topologyNum(); i++) {

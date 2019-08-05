@@ -48,7 +48,8 @@ class Codegen {
             << "\n";
     }
 
-    void emitDataLoaderInit();
+    /// init Makefile wrt. CodegenConfig
+    virtual void initMakefileBuilder();
 
     /// initialization before code emitting
     void codeGenInit();
@@ -56,12 +57,16 @@ class Codegen {
     /// emit CUDA related code. e.g. cuBlas handle, cudaStream creating
     void emitCUDAInit();
 
+    /// Dataloader for batch executions
+    void emitDataLoaderInit();
+
     /// create allocators for devices according to config
     /// and set baseptr name
     /// build device-allocator map
     void initMemoryAllocators();
 
     /// generate code for IRGraph
+    virtual void emitHeader();
     std::string generate();
 
     //----------------------------------------------------------
@@ -72,6 +77,7 @@ class Codegen {
      *   step3: emit tensor variable declarations and initializations
      */
     void emitMemAllocs();
+
     /// emit free memory codes
     virtual void emitMemFree();
 
@@ -87,7 +93,6 @@ class Codegen {
     void emitMemAllocation(std::string buffer, size_t bytes, Device& dev);
 
     /// initialize tensors for L1 IRGraph
-
     virtual void emitTensorAddresses();
     /// initialize tensors for L2(Device) subGraph
     void emitTensorAddresses(IRGraph *graph_, std::set<Tensor *> *visited);
@@ -99,6 +104,7 @@ class Codegen {
     void emitTensorInitializations(IRGraph *graph_,
                                    std::set<Tensor *> *visited);
 
+    /// snapshot
     void emitTensorInitFromSnapshot(IRGraph *graph_,
                                     std::set<Tensor *> *visited);
     void emitSaveSnapshot();
@@ -136,19 +142,22 @@ class Codegen {
     /// finish codegen
     void finish() {}
 
-    void emitMPIInit();
-    void emitMPIFinalize();
+    virtual void emitEnvInit();
+    virtual void emitEnvFinalize();
 
-    int getMPISendRecvTag(Tensor *);
-    bool delMPISendRecvTag(Tensor *);
+
+    // int getMPISendRecvTag(Tensor *);
+    // bool delMPISendRecvTag(Tensor *);
 
 protected:
     void destroy();
 
     std::string getTypeString(Tensor *);
 
+    CodeWriter headerWriter_;
     CodeWriter writer_;
     MakefileBuilder makefile_builder_;
+
     IRGraph *graph_;
 
     CodegenConfig config_;
@@ -163,8 +172,6 @@ protected:
     std::map<Tensor *, std::pair<std::string, uint64_t>>
         tensors_offset_map_;
 
-    // std::unordered_map<Tensor*, std::string> tensors_base_map_;
-    std::vector<Tensor *> mpi_sendRecv_tags_;
 
     /// to use Device as key, we implement std::hash() of Device in common.h
     /// if implemented with std::map, we must define comparison of Device
@@ -175,6 +182,10 @@ protected:
 class ParallelCodegen : public Codegen {
 public:
     ParallelCodegen(IRGraph *graph, CodegenConfig &config) : Codegen(graph, config) { }
+
+    /// add mpi header
+    void emitHeader() override;
+
     void allocateMemAddr() override;
     void emitVarDeclarations() override;
     void emitMemAllocations() override;
@@ -185,11 +196,25 @@ public:
     void emitTensorInitialization(TensorNode* tnode);
     void emitFuncCalls() override;
     void dispatchOpNode(OpNode *op, int side/*0:master, ~0: worker*/);
+
+    void emitEnvInit() override;
+    void emitEnvFinalize() override;
+
+    void initMakefileBuilder() override;
+
+    void emitMPIInit();
+    void emitMPIFinalize();
 private:
     std::vector<TensorNode *> _master_tensors;
     std::vector<TensorNode *> _parallel_tensors;
+
+    // std::unordered_map<Tensor*, std::string> tensors_base_map_;
+    std::vector<Tensor *> mpi_sendRecv_tags_;
+    
     // std::vector<OpNode*> _scheduled_opnodes;
     void masterWorkerDispatcher(OpNode *op, int side/*master:0, worker:1*/);
+    int getMPISendRecvTag(Tensor *);
+    bool delMPISendRecvTag(Tensor *);
     std::vector<OpNode*> schedule();
 };
 
