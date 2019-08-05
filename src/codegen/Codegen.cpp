@@ -1029,6 +1029,20 @@ void Codegen::emitFuncCall(OpNode *op) {
         writer_ << tensors_name_map_[B] << " = " << tensors_name_map_[A] << ";\n";
     }
 
+    if ((oplabel->getTypeNameLabel()).compare("TensorAscend") == 0) {
+        auto *A = ((TensorNode *)op->getParentNode(0))->getTensor();
+        auto *B = ((TensorNode *)op->getChildNode(0))->getTensor();
+
+        writer_ << tensors_name_map_[B] << " = " << tensors_name_map_[A] << ";\n";
+    }
+
+    if ((oplabel->getTypeNameLabel()).compare("TensorDescend") == 0) {
+        auto *A = ((TensorNode *)op->getParentNode(0))->getTensor();
+        auto *B = ((TensorNode *)op->getChildNode(0))->getTensor();
+
+        writer_ << tensors_name_map_[B] << " = " << tensors_name_map_[A] << ";\n";
+    }
+
     if ((oplabel->getTypeNameLabel()) == "BatchedAdd"  || (oplabel->getTypeNameLabel()) == "MatrixVectorAdd") {
         auto *A = ((TensorNode *)op->getParentNode(0))->getTensor();
         auto *B = ((TensorNode *)op->getParentNode(1))->getTensor();

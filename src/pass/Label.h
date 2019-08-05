@@ -24,11 +24,17 @@ class Label {
 
     int _train{0};
 
+    // This label is to mark those nodes that can not be
+    // eliminated even the out rank is zero;
+    // 0 by default
+    int _isOut;
+    
     TensorInitType _initTypeLabel;
     Device _dev;
+    
 
   public:
-    Label() : _toLower(0), _initTypeLabel(TensorInitType::NONE){};
+    Label() : _toLower(0), _isOut(0), _initTypeLabel(TensorInitType::NONE){};
     virtual ~Label(){};
 
     void destroy() { this->~Label(); };
@@ -49,10 +55,15 @@ class Label {
     void setTraining(int train) { _train = train; }
     bool needTraining() { return _train == 1; }
 
+    void setIsOut() { _isOut = 1; };
+    int getIsOut() const { return _isOut; }
+    
     std::string getNodeNameLabel() const { return _nodeNameLabel; }
     std::string getTypeNameLabel() const { return _typeNameLabel; }
     TensorInitType getTensorInitTypeLabel() const { return _initTypeLabel; }
     Device getDeviceLabel() const { return _dev; }
+    
+    
 };
 
 } // namespace swc

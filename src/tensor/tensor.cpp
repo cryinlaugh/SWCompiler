@@ -36,6 +36,19 @@ TensorShape::getShuffledTensorShape(const std::vector<size_t> &shuffle) const {
     return new TensorShape(shape);
 }
 
+TensorShape* TensorShape::getTiledShape(int index, int n) {
+    int ndim = getNDim();
+    std::vector<size_t>* tileVector = new std::vector<size_t>();
+    for(int i = 0; i < ndim; i++) {
+        if(i == index)
+            tileVector->push_back(getDim(i)/n);
+        else
+            tileVector->push_back(getDim(i));
+    }
+    TensorShape* result= new TensorShape(tileVector);
+    return result;
+}
+
 
 Tensor *Tensor::clone() const {
     Tensor *t = new Tensor(shape_, dataType_);

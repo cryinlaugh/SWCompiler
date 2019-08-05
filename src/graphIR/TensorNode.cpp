@@ -121,29 +121,47 @@ void TensorNode::autoDiff(IRGraph* graph,
 
 void TensorNode::checkValid() {
 
-    unsigned int i;
     SWLOG_DEBUG(4) << "Checking connect validation for " 
         << this->name() << std::endl;
-        
-    OpNode* parentIter = (OpNode*)(this->getParentNode(0));
-    for (i = 0; i < parentIter->getChildNodes().size(); i++) {
-        if(this == parentIter->getChildNode(i)) {
+
+    size_t i;
+    OpNode* parent = (OpNode*)(this->getParentNode(0));
+    for (i = 0; i < parent->getChildNodes().size(); i++) {
+        if(this == parent->getChildNode(i)) {
             break;
         }
     }
-    if (parentIter->getOp()->getOutputDims(i) 
+    // uninitialized tensors
+    if (this->getTensor()->getNDim() == 1 &&
+            this->getTensor()->getDim(0) == 0) {
+
+        SWLOG_DEBUG(4) << "Uninitialized tensor, "
+            << "acquire the tensor shape from upper op:" 
+            << parent->name() << std::endl;
+        
+        parent->outTensorShapeGen(i, this->getTensor()->getTensorShape());
+    
+        TensorShape* tshapeGen = this->getTensor()->getTensorShape();
+        std::stringstream ss;
+        for (int i = 0; i < tshapeGen->getNDim(); i++) {
+            ss << " " << tshapeGen->getDim(i) << " ";
+        }
+        SWLOG_DEBUG(4) << "Infer tensor shape by:" << ss.str() << std::endl;
+    }
+
+    if (parent->getOp()->getOutputDims(i) 
             != this->getTensor()->getNDim()) {
-        std::cout << " Warnning: The upper op"
-            << parentIter->name() 
+        std::cout << "FATAL ERROR: The upper op "
+            << parent->name() 
             << " with " << i << "th output dim:"
-            << parentIter->getOp()->getOutputDims(i)
+            << parent->getOp()->getOutputDims(i)
             << " while the current tensor "
             << this->name()
             << " with " << i << "th"
             << " dim:"
             << this->getTensor()->getNDim()
             << std::endl;
-        //abort();
+        abort();
     }
 
 }

@@ -99,7 +99,7 @@ void AutodiffPass::run(IRGraph* graph_train)
             irnode->autoDiff(graph_train, gradNodeMap);
         }
         else {
-            std::cout << "illegal node type"<< std::endl;
+            std::cout << "FATAL ERROR: illegal node type"<< std::endl;
             abort();
         }
 
@@ -119,23 +119,23 @@ void AutodiffPass::destroy()
 
 void AutodiffPass::show()
 {
-    SWLOG_DEBUG(4) << "Show Methods:" << endl;
+    SWLOG_INFO << "Show Methods:" << endl;
     switch(_method)
     {
         case SGD_METHOD:
-            SWLOG_DEBUG(4) << "----SGD" << endl;
-            SWLOG_DEBUG(4) << "----learning rate:" 
+            SWLOG_INFO << "----SGD" << endl;
+            SWLOG_INFO << "----learning rate:" 
                 << ((SGD_PARAMETERS*)_parameters)->lr << endl;
-            SWLOG_DEBUG(4) << "----decay:"
+            SWLOG_INFO << "----decay:"
                 << ((SGD_PARAMETERS*)_parameters)->decay << endl;
-            SWLOG_DEBUG(4) << "----momentum:"
+            SWLOG_INFO << "----momentum:"
                 << ((SGD_PARAMETERS*)_parameters)->momentum << endl;
-            SWLOG_DEBUG(4) << "----batch:"
+            SWLOG_INFO << "----batch:"
                 << ((SGD_PARAMETERS*)_parameters)->batch << endl;
             break;
         case ADAM_METHOD:
-            SWLOG_DEBUG(4) << "----ADAM" << endl;
-            SWLOG_DEBUG(4) << "----learning rate:" 
+            SWLOG_INFO << "----ADAM" << endl;
+            SWLOG_INFO << "----learning rate:" 
                 << ((ADAM_PARAMETERS*)_parameters)->lr << endl;
             break;
         default:

@@ -510,4 +510,13 @@ void IRGraph::setDeviceLabel(Device dev) {
         opnode->getLabel()->setDeviceLabel(dev.rank, dev.type, dev.id);
     }
 }
+
+
+void IRGraph::setOutMark() {
+    for (unsigned int i = 0; i < _outNodes.size(); i++) {
+        _outNodes[i]->getLabel()->setIsOut();
+    }
+}
+
+
 } // namespace swc

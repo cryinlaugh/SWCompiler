@@ -34,16 +34,6 @@ class IRNode {
     }
     ~IRNode() { printf("free:%s\n", _name.c_str()); }
 
-    virtual void destroy(){};
-    virtual void autoDiff(IRGraph* graph,
-                        std::unordered_map<IRNode*, IRNode*> &gradNodeMap){};
-
-    virtual void autoDiff(IRGraph* graph,
-                        std::unordered_map<IRNode*, IRNode*> &gradNodeMap,
-                        void* methodParams,
-                        pass::METHOD_TYPE methodType){};
-
-
     void pushParentNode(){};
     template <typename T, typename... Types>
     void pushParentNode(const T &firstArg, const Types &... args) {
@@ -142,8 +132,22 @@ class IRNode {
     void setExternal(bool flag) { _isExternal = flag; }
     bool isExternal() const { return _isExternal; }
 
+    //Virtual function entry
     virtual IRNode *clone() const = 0;
     virtual IRNode *deepClone() const = 0;
+
+    virtual void destroy(){};
+    virtual void autoDiff(IRGraph* graph,
+                        std::unordered_map<IRNode*, IRNode*> &gradNodeMap){};
+
+    virtual void autoDiff(IRGraph* graph,
+                        std::unordered_map<IRNode*, IRNode*> &gradNodeMap,
+                        void* methodParams,
+                        pass::METHOD_TYPE methodType){};
+
+    virtual void checkValid(){};
+
+
 
   private:
     std::vector<IRNode *> _parentNodes;
@@ -153,6 +157,7 @@ class IRNode {
     NodeType _nodeType;
     int _topologyId;
     Label *_label;
+
     bool _isExternal{false};
 };
 

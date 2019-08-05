@@ -18,6 +18,9 @@
 
 namespace swc {
 
+//Forward declaration
+class TilingLabel;
+
 class TensorNode : public IRNode {
   public:
     TensorNode() : tensor_(NULL){};
@@ -33,9 +36,13 @@ class TensorNode : public IRNode {
         tensor_ = new Tensor(shape);
     }
 
-    ~TensorNode(){};
+    ~TensorNode(){ destroy(); };
 
-    void destroy() { printf("free TensorNode:%s\n", name().c_str()); };
+    void destroy() { 
+        printf("free TensorNode:%s\n", name().c_str()); 
+        getLabel()->destroy();
+        getTensor()->destroy();
+    };
 
     void setTensor(Tensor *tensor) { tensor_ = tensor; }
     Tensor *getTensor() { return tensor_; }
@@ -58,8 +65,15 @@ class TensorNode : public IRNode {
 
     void checkValid();
 
+    void setTilingLabel(TilingLabel* tilinglabel){
+        _tilingLabel = tilinglabel;
+    }
+    TilingLabel* getTilingLabel() { return _tilingLabel; }
+    
   private:
     Tensor *tensor_{nullptr};
+    
+    TilingLabel* _tilingLabel;
 };
 
 } // namespace swc

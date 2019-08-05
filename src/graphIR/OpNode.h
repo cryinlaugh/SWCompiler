@@ -17,6 +17,9 @@ using namespace swc::op;
 
 namespace swc {
 
+//Forward declaration
+class StrategyLabel;
+
 class OpNode : public IRNode {
   public:
     OpNode() : op_(NULL){};
@@ -26,7 +29,7 @@ class OpNode : public IRNode {
     ~OpNode(){};
 
     void destroy() {
-        // printf("free OpNode:%s\n", name().c_str());
+        printf("free OpNode:%s\n", name().c_str());
 
         getOp()->destroy();
         getLabel()->destroy();
@@ -57,12 +60,30 @@ class OpNode : public IRNode {
         _op->autoDiff(graph, this, gradNodeMap);
     };
 
-    void checkValid();
+    void checkValid() {
+        Op *_op = op_;
+        _op->checkValid(this);
+        return;
+    };
+   
+    void outTensorShapeGen(size_t index, TensorShape* tShape) {
+        Op *_op = op_;
+        _op->outTensorShapeGen(this, index, tShape);
+    };
 
+    void genOutTensor() const;
+
+    void setStrategyLabel(StrategyLabel* strategyLabel){
+        _strategyLabel = strategyLabel;
+    }
+    StrategyLabel* getStrategyLabel() { return _strategyLabel; }
+  
   private:
     Op *op_;
     bool run_{true};
     bool run_once_{false};
+
+    StrategyLabel* _strategyLabel{NULL};
 };
 
 } // namespace swc

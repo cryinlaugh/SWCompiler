@@ -11,7 +11,7 @@
 #include "common.h"
 #include "SWLOG.h"
 #include <string>
-
+#include <iostream>
 #include <cassert>
 
 namespace swc {
@@ -32,11 +32,23 @@ class TensorShape {
     }
 
     ~TensorShape() {}
+    void destroy() {}
+
     int getNDim() const;
     size_t getDim(int idx) const;
     size_t size() const;
+    
+    void setShape(const std::vector<size_t>& shape) {
+        _ndim = shape.size();
+        shape_->resize(_ndim);
+        for (int i = 0; i < _ndim; i++)
+            (*shape_)[i] = shape[i];
+    };
+
     TensorShape *
     getShuffledTensorShape(const std::vector<size_t> &shuffle) const;
+    
+    TensorShape* getTiledShape( int index, int n);
 };
 
 class TensorInitInfo {
@@ -92,7 +104,11 @@ class Tensor {
         initType_ = TensorInitType::NONE;
     }
 
-    ~Tensor(){};
+    ~Tensor(){ destroy(); };
+
+    void destroy() {
+        getTensorShape()->destroy();
+    }
 
     void reset(TensorShape *shape, DataType dtype = DataType::Float_t) {
         shape_ = shape;

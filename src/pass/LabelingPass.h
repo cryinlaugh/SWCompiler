@@ -12,8 +12,6 @@
 #include "OptimizePass.h"
 #include "SWLOG.h"
 
-#include "TileHint.h"
-#include "TilingLabel.h"
 
 #include "graphIR/OpNode.h"
 #include "graphIR/TensorNode.h"

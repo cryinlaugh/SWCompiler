@@ -80,8 +80,10 @@ std::string dotGenTensorNode(TensorNode *tnode) {
     tensorInfo = tensorInfo + "label = \"{Name: " + tensorName + " |";
 
     std::ostringstream os;
-    os << "Tensor: " << std::hex << tnode->getTensor() << "\\l";
-    os << "isExternal: " << tnode->isExternal() << "\\l";
+    os << "Tensor: " << std::hex << tnode->getTensor() << " |";
+    os << "isExternal: " << tnode->isExternal() << " |";
+
+
     auto dev = tnode->getLabel()->getDeviceLabel();
     os << "Dev: (" << dev.rank << ", " << static_cast<int>(dev.type) << ", " << dev.id << ")\\l";
     tensorInfo += os.str();
@@ -99,7 +101,7 @@ std::string dotGenTensorNode(TensorNode *tnode) {
     // }
     tensorInfo += "Dims: [";
     for (int i = 0; i < NDim; ++i) {
-        tensorInfo += std::to_string(tnode->getTensor()->getDim(i));
+        tensorInfo += std::to_string((unsigned long)tnode->getTensor()->getDim(i));
         if (i < NDim - 1)
             tensorInfo += ", ";
     }

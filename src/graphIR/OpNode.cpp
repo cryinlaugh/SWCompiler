@@ -41,32 +41,4 @@ std::string OpNode::toString() const {
 }
 
 
-void OpNode::checkValid()
-{
-    unsigned int i;
-    SWLOG_DEBUG(4) << "Checking connect validation for " 
-        << this->name() << std::endl;
-    for (i = 0; i < this->getParentNodes().size(); i++) {
-        TensorNode* parentIter = (TensorNode*)(this->getParentNode(i));
-        
-        if (parentIter->getTensor()->getNDim() 
-                != this->getOp()->getInputDims(i)) {
-            std::cout << "Warnning: The "
-                << i << "th input tensor "
-                << parentIter->name()
-                << " with dim:"
-                << parentIter->getTensor()->getNDim()
-                << " while the current op "
-                << this->name()
-                << " with " << i << "th"
-                << " dim:"
-                << this->getOp()->getInputDims(i)
-                << std::endl;
-            //abort();
-        }
-    }
-
-}
-
-
 } // namespace swc
