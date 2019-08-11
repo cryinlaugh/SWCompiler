@@ -24,14 +24,14 @@ using namespace std;
 namespace swc {
 namespace pass {
 
-void EliminationPass::destroy() 
+void EliminationPass::destroy()
 {
     SWLOG_DEBUG(4) << "EliminationPass Destroy" << endl;
     return;
 }
 
 
-void EliminationPass::run(IRGraph* graph)
+void EliminationPass::run()
 {
     SWLOG_DEBUG(4) << "EliminationPass Run" << endl;
     //graph_train = _graph;
@@ -39,10 +39,10 @@ void EliminationPass::run(IRGraph* graph)
     std::vector<IRNode*> topo_nodes;
 
     //get each level nodes;
-    for (int i = 0; i < graph->topologyNum(); i++) {
-        for (int j = 0; j < graph->getNumInTopoLevel(i); j++) {
-            auto node = graph->getNodeInTopo(i, j);
-            SWLOG_DEBUG(4) << "TopoLevel.." << i << "\tType..." 
+    for (int i = 0; i < _graph->topologyNum(); i++) {
+        for (int j = 0; j < _graph->getNumInTopoLevel(i); j++) {
+            auto node = _graph->getNodeInTopo(i, j);
+            SWLOG_DEBUG(4) << "TopoLevel.." << i << "\tType..."
                 << (node->nodeType() == TENSOR_NODE ? "TENSOR\t" : "OP\t")
                 << (node->name()) << std::endl;
             topo_nodes.push_back(node);
@@ -64,7 +64,7 @@ void EliminationPass::run(IRGraph* graph)
                     << " Eliminate it!" << std::endl;
 
                 flag = 1;
-               
+
                 // break link;
                 while(irnode->parentNum()) {
                     irnode->destroyUpperNode(irnode->getParentNode(0));
@@ -72,11 +72,11 @@ void EliminationPass::run(IRGraph* graph)
                 // remove from graph
                 if (irnode->nodeType() == TENSOR_NODE) {
                     TensorNode* tnode = (TensorNode*)irnode;
-                    graph->delTensorNode(tnode);
+                    _graph->delTensorNode(tnode);
                     tnode->destroy();
                 } else {
                     OpNode* onode = (OpNode*)irnode;
-                    graph->delOpNode(onode);
+                    _graph->delOpNode(onode);
                     onode->destroy();
                 }
                 if (!delVecMember(topo_nodes, irnode)) {
@@ -86,12 +86,11 @@ void EliminationPass::run(IRGraph* graph)
             }
         }
     }
-                
-    graph->updateTopology();
+
+    _graph->updateTopology();
 }
 
 
 
 } //namespace pass
 } //namespace swc
-

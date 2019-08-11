@@ -98,8 +98,8 @@ int main() {
     swc::pass::RenamingNodePass renamingpass(mlp);
     renamingpass.run();
 
-    swc::pass::EliminationPass elim;
-    elim.run(mlp);
+    swc::pass::EliminationPass elim(mlp);
+    elim.run();
     
     //std::vector<string>
 

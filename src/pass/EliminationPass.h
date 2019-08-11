@@ -8,7 +8,7 @@
 #ifndef ELIMINATIONPASS_H_
 #define ELIMINATIONPASS_H_
 
-
+#include "OptimizePass.h"
 #include "SWLOG.h"
 
 namespace swc {
@@ -18,19 +18,19 @@ class IRGraph;
 
 namespace pass {
 
-class EliminationPass {
+class EliminationPass : public OptimizePass {
 
   public:
-    EliminationPass() {};
+    EliminationPass(IRGraph *graph) : OptimizePass(graph){};
     ~EliminationPass() { destroy(); };
 
-    void run(IRGraph* graph);
+    void run();
     void destroy();
 
 };
 
-}  //namespace pass 
-}  //namespace swc 
+}  //namespace pass
+}  //namespace swc
 
 
 

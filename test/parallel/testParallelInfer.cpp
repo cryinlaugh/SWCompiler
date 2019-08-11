@@ -11,8 +11,6 @@ int main() {
     //============================
     // Example of 2-layer
     // fully connected network:
-    // data parallel, fc0 and tanh0
-    // run on GPU0 and GPU1
     //
     //  T:data0   T:weight0
     //     \       /
@@ -125,11 +123,15 @@ int main() {
 
     softmax->setStrategyLabel(new StrategyLabel({1, 1}));
     argmax_o->setStrategyLabel(new StrategyLabel({0, 0}));
-    print_o->setStrategyLabel(new StrategyLabel({-1, 1}));
+    print_o->setStrategyLabel(new StrategyLabel({-1}));
 
 
     PassManager passManager;
     passManager.add(new ParallelingPass(mlp));
+    // !!! is a must for EliminationPass, or all nodes
+    // will be eliminated.
+    SETOUT(mlp, data4);
+    passManager.add(new EliminationPass(mlp));
     passManager.add(new RenamingNodePass(mlp));
     passManager.run();
 

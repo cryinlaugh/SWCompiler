@@ -277,8 +277,8 @@ int main(){
     lenet5->findInOut();
     lenet5->updateTopology();
 
-    swc::pass::EliminationPass elim;
-    elim.run(lenet5);
+    swc::pass::EliminationPass elim(lenet5);
+    elim.run();
 
     //TRAIN(lenet5, "SGD");
 
