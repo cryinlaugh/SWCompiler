@@ -131,10 +131,15 @@ std::string dotGenOpNode(OpNode *opnode) {
     int nOutput = opnode->getOp()->getnOutput();
 
     // generate the opInfo
-    opInfo += "label = \"Node's name: " + opNodeName +
-             "\\nOperation: " + opName + "\\n";
+    opInfo += "label = \"Node's name: " + opNodeName + "\\n";
+    /*
+    opInfo += "Operation: " + opName + "\\n";
     opInfo += "_nInput: " + std::to_string(nInput) + "\\n";
     opInfo += "_nOutput: " + std::to_string(nOutput) + "\", ";
+    */
+    SWLOG_DEBUG(1) << opNodeName << " getOpInfo: " << opnode->getOp()->getOpInfo() << "\n";
+    
+    opInfo += opnode->getOp()->getOpInfo() + "\", ";
     opInfo += "color=darkorange1, penwidth = 2";
     opInfo += "];\n";
 

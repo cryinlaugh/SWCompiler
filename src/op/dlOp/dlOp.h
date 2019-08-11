@@ -332,6 +332,8 @@ public:
     ScatterOp(int axis, int degree) : Op(DL_OP, 0, 0, "Scatter"), axis_(axis), degree_(degree) {}
     ~ScatterOp();
 
+    std::string getOpInfo() override;
+
     void setOffset(size_t offset) { offset_ = offset; }
     size_t getOffset() { return offset_; }
 
@@ -353,6 +355,8 @@ public:
     GatherOp(size_t offset) : Op(DL_OP, 0, 0, "Gather"), offset_(offset) {}
     GatherOp(int axis, int degree) : Op(DL_OP, 0, 0, "Gather"), axis_(axis), degree_(degree) {}
     ~GatherOp();
+
+    std::string getOpInfo() override;
 
     void setOffset(size_t offset) { offset_ = offset; }
     size_t getOffset() { return offset_; }
@@ -416,6 +420,8 @@ public:
     }
     ~Conv2dOp();
     void destroy() {}
+
+    std::string getOpInfo() override;
 
     void outTensorShapeGen(OpNode* node, size_t index, TensorShape* tShape);
 
@@ -527,6 +533,8 @@ public:
         return strides_;
     }
     void destroy() {}
+
+    std::string getOpInfo() override;
 
     void outTensorShapeGen(OpNode* node, size_t index, TensorShape* tShape);
 

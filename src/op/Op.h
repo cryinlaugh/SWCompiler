@@ -53,8 +53,12 @@ class Op {
 
     OpType getOpType() { return _opType; }
 
-    inline const std::string getOpName() { return _opClassName; }
+    // aggregate information for dotGen or Debug
+    // calls getOpName, getnInput/Output etc. 
+    // some derived classes may override this
+    virtual std::string getOpInfo(); 
 
+    inline const std::string getOpName() { return _opClassName; }
     inline int getnInput() { return _nInput; }
     inline int getnOutput() { return _nOutput; }
 

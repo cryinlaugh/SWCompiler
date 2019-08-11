@@ -1,7 +1,7 @@
 /*************************************************************************
 	> File Name: Op.cpp
-	> Author: cryinlaugh 
-	> Mail: cryinlaugh@gmail.com 
+	> Author: cryinlaugh
+	> Mail: cryinlaugh@gmail.com
 	> Created Time: 二 12/ 4 15:57:16 2018
  ************************************************************************/
 
@@ -10,8 +10,18 @@
 #include "graphIR/TensorNode.h"
 #include "graphIR/OpNode.h"
 #include "tensor/tensor.h"
+#include <sstream>
 
 using namespace swc::op;
+
+std::string Op::getOpInfo() {
+    std::ostringstream stream;
+    stream << "Operation: "+ _opClassName + "\\n"
+        << "nInput : " << _nInput << "\\n"
+        << "nOutput: " << _nOutput << "\\n";
+
+    return stream.str();
+}
 
 bool Op::check() {
     if (_nInputTensor != _nInput)
@@ -31,15 +41,15 @@ bool Op::check() {
 
 void Op::checkValid(OpNode *node) {
 
-    SWLOG_DEBUG(4) << "Checking connect validation for " 
+    SWLOG_DEBUG(4) << "Checking connect validation for "
         << node->name() << "by general" << std::endl;
-    
+
     unsigned int i;
-    
+
     for (i = 0; i < node->getParentNodes().size(); i++) {
         TensorNode* parentIter = (TensorNode*)(node->getParentNode(i));
 
-        if (parentIter->getTensor()->getNDim() 
+        if (parentIter->getTensor()->getNDim()
                 != node->getOp()->getInputDims(i)) {
             std::cout << "FATAL ERROR: The "
                 << i << "th input tensor "
@@ -59,7 +69,7 @@ void Op::checkValid(OpNode *node) {
 }
 
 void Op::outTensorShapeGen(OpNode* node,
-                           size_t index, 
+                           size_t index,
                            TensorShape* tShape)
 {
     TensorNode *inNode = (TensorNode*)node->getParentNode(0);
