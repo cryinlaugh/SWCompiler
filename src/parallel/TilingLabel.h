@@ -19,50 +19,51 @@ namespace swc {
 
 class TilingLabel {
 private:
-    //int _tilenum; //
-    //std::vector<int> _tiles;
-    
+
+    int _scope;
     TensorNode * _currentnode;
     int _currentstrategy;
-    //bool _state;
-    bool  _isApplied;
+    int  _isApplied;
 
 public:
 
-    TilingLabel(){
+    TilingLabel() {
         _isApplied = false;
     };
 
-    void init(){
-        _isApplied = false;
+    void init(int scope) {
+        _scope = scope;
+        _isApplied = 0;
+
     }
-    void setCurrentNode(TensorNode* tensornode){
+
+    int getScope() {
+        return _scope;
+    }
+    void setCurrentNode(TensorNode* tensornode) {
         _currentnode = tensornode;
     }
 
 
-    TensorNode *  getCurrentNode(){
+    TensorNode *  getCurrentNode() {
         return _currentnode;
     }
-    void setCurrentStrategy(int EinSum){
+    void setCurrentStrategy(int EinSum) {
         _currentstrategy = EinSum;
     }
 
-    int  getCurrentStrategy(){
+    int  getCurrentStrategy() {
         return _currentstrategy;
     }
     ~TilingLabel() {};
-    bool isApplied() {
+    int isApplied() {
         //std::cout<<"test1"<<std::endl;
         return _isApplied;
     }
-    void setApplied() {
-        _isApplied = true;
+    void setApplied(int status) {
+        _isApplied = status;
     }
 
-    void test(){
-        std::cout<<"test Tiling Label"<<std::endl;
-    }
 
 
 };
@@ -75,19 +76,20 @@ private:
     std::vector<int> _strategy;
 public:
 
-    StrategyLabel(){};
-    StrategyLabel(std::vector<int> strategy){
-        _strategy=strategy;
+    StrategyLabel(std::vector<int> strategy) {
+        _strategy = strategy;
     }
-    ~StrategyLabel(){};
-    
-    void setStrategy(std::vector<int> strategy){
-    
-        _strategy= strategy;
+    ~StrategyLabel() {};
+
+    void setStrategy(std::vector<int> strategy) {
+
+        _strategy = strategy;
     }
-    std::vector<int> getStrategy(){
+    std::vector<int> getStrategy() {
         return _strategy;
     }
+
+
 };
 } // namespace swc
 

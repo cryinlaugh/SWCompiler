@@ -5,6 +5,7 @@
 //#include "parallel/TilingLabel.h"
 //#include "parallel/ParallelPattern.h"
 //#include "pass/ParallelingPass.h"
+//#include "pass/Subgraphpass.h"
 using namespace swc;
 using namespace swc::op;
 using namespace std;
@@ -86,10 +87,6 @@ int main() {
 
     //StrategyLabel* slabel = new StrategyLabel();
     //slabel->setStrategy({0,-1,0});
-    fc0->setStrategyLabel(new StrategyLabel({0, -1, -1, 0}));
-    tanh0->setStrategyLabel(new StrategyLabel({0, 0}));
-    fc1->setStrategyLabel(new StrategyLabel({0, -1, -1, 0}));
-    softmax0->setStrategyLabel(new StrategyLabel({1, 1}));
 
 
     swc::pass::ParallelingPass parallelingpass(mlp);
@@ -98,9 +95,14 @@ int main() {
     swc::pass::RenamingNodePass renamingpass(mlp);
     renamingpass.run();
 
-    swc::pass::EliminationPass elim;
-    elim.run(mlp);
-    
+    swc::pass::EliminationPass elim(mlp);
+    elim.run();
+
+    swc::pass::SubGraphPass sub(mlp);
+    sub.run();
+   
+    swc::pass::RenamingNodePass renamingpass2(mlp);
+    renamingpass2.run();
     //std::vector<string>
 
     //pass::Optimizer *opt = new pass::Optimizer(mlp);
@@ -108,5 +110,19 @@ int main() {
     //opt->runOptimizer();
     //mlp->updateTopology();
     dotGen(mlp);
+    
+    //codegen::Codegen *cg = new codegen::Codegen(mlp);
+   // string code = cg->generate();
+   // cout << code;
+
+    CodegenConfig config;
+    config.mpi = true;
+    codegen::Codegen *cg = new codegen::Codegen(mlp, config);
+    string code = cg->generate();
+    cout << code;
+
+
+
+    
     return 0;
 }

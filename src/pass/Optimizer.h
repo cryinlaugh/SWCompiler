@@ -16,6 +16,7 @@
 #include "AutodiffPass.h"
 #include "EliminationPass.h"
 #include "ParallelingPass.h"
+#include "Subgraphpass.h"
 #include <queue>
 
 namespace swc {

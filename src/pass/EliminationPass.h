@@ -10,7 +10,7 @@
 
 
 #include "SWLOG.h"
-
+#include "OptimizePass.h"
 namespace swc {
 
 // Forward declarations
@@ -18,13 +18,15 @@ class IRGraph;
 
 namespace pass {
 
-class EliminationPass {
+class EliminationPass:public OptimizePass{
+    using OptimizePass::_graph;
+public:
+    EliminationPass(IRGraph *graph): OptimizePass(graph) {};
+ 
 
-  public:
-    EliminationPass() {};
     ~EliminationPass() { destroy(); };
 
-    void run(IRGraph* graph);
+    void run();
     void destroy();
 
 };

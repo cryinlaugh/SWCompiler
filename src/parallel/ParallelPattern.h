@@ -15,7 +15,7 @@
 #include "TilingLabel.h"
 using namespace swc::op;
 namespace swc {
-class ForkPattern{
+class ForkPattern {
 private:
     TensorNode* _tensornode;
     int _num;
@@ -29,6 +29,7 @@ public:
 
     void apply(int strategy, IRGraph * irgraph) {
         TilingLabel * tlabel = _tensornode->getTilingLabel();
+
         TensorShape * originshape = _tensornode->getTensor()->getTensorShape();
         TensorNode *tilenode;
         if(strategy >= 0) {
@@ -38,25 +39,29 @@ public:
             tilenode = new TensorNode(_tensornode->name() + "_replicate", new Tensor(originshape));
         } else
             tilenode = new TensorNode(_tensornode->name() + "_unknown", new Tensor(originshape));
-        
-        
+
+        TilingLabel * newtlabel = new TilingLabel();
+        newtlabel->init(1);
+        tilenode->setTilingLabel(newtlabel);
+
+
         OpNode *opnode = new OpNode(_tensornode->name() + "_fork");
         opnode->setOp(new ScatterOp());
-        
+
         tilenode->exlinkUpperNode(opnode);
         opnode->exlinkUpperNode(_tensornode);
 
 
 
-        
+
         irgraph->pushTensorNode(tilenode);
         irgraph->pushOpNode(opnode);
         irgraph->updateTopology();
 
-        
+
         tlabel->setCurrentNode(tilenode);
         tlabel->setCurrentStrategy(strategy);
-        tlabel->setApplied();
+        tlabel->setApplied(1);
 
     }
 
@@ -71,7 +76,7 @@ private:
 public:
     TransformPattern(TensorNode * tensornode, int num) {
         _tensornode = tensornode;
-        _num =num;
+        _num = num;
     };
     ~TransformPattern() {};
     void apply(int strategy, IRGraph * irgraph) {
@@ -85,6 +90,12 @@ public:
             tilenode = new TensorNode(_tensornode->name() + "_replicate", new Tensor(originshape));
         } else
             tilenode = new TensorNode(_tensornode->name() + "_unknown", new Tensor(originshape));
+
+        TilingLabel * newtlabel = new TilingLabel();
+        newtlabel->init(1);
+        tilenode->setTilingLabel(newtlabel);
+
+
         
         OpNode *opnode = new OpNode(_tensornode->name() + "_transform");
         opnode->setOp(new ScatterOp());
@@ -97,19 +108,19 @@ public:
         irgraph->updateTopology();
         tlabel->setCurrentNode(tilenode);
         tlabel->setCurrentStrategy(strategy);
-        tlabel->setApplied();
+        //tlabel->setApplied();
 
     }
 
 };
 
-class JoinPattern{
+class JoinPattern {
 private:
     TensorNode * _tensornode;
     int _num;
 public:
 
-    JoinPattern(TensorNode * tensornode, int num){
+    JoinPattern(TensorNode * tensornode, int num) {
         _tensornode = tensornode;
         _num = num;
     };
@@ -121,13 +132,18 @@ public:
         TensorShape * originshape = _tensornode->getTensor()->getTensorShape();
         TensorNode *tilenode;
         if(strategy >= 0) {
-            
+
             TensorShape* tileTensorShape = originshape->getTiledShape(strategy, _num);
             tilenode = new TensorNode(_tensornode->name() + "_tile", new Tensor(tileTensorShape));
         } else if (strategy == -2) {
             tilenode = new TensorNode(_tensornode->name() + "_reduce", new Tensor(originshape));
         } else
             tilenode = new TensorNode(_tensornode->name() + "_unknown", new Tensor(originshape));
+
+        TilingLabel * newtlabel = new TilingLabel();
+        newtlabel->init(1);
+        tilenode->setTilingLabel(newtlabel);
+
 
         OpNode *opnode = new OpNode(_tensornode->name() + "_join");
         opnode->setOp(new GatherOp());
@@ -140,7 +156,7 @@ public:
         irgraph->updateTopology();
         tlabel->setCurrentNode(tilenode);
         tlabel->setCurrentStrategy(strategy);
-        tlabel->setApplied();
+        tlabel->setApplied(2);
 
     }
 

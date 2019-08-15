@@ -31,7 +31,7 @@ void EliminationPass::destroy()
 }
 
 
-void EliminationPass::run(IRGraph* graph)
+void EliminationPass::run()
 {
     SWLOG_DEBUG(4) << "EliminationPass Run" << endl;
     //graph_train = _graph;
@@ -39,9 +39,9 @@ void EliminationPass::run(IRGraph* graph)
     std::vector<IRNode*> topo_nodes;
 
     //get each level nodes;
-    for (int i = 0; i < graph->topologyNum(); i++) {
-        for (int j = 0; j < graph->getNumInTopoLevel(i); j++) {
-            auto node = graph->getNodeInTopo(i, j);
+    for (int i = 0; i < _graph->topologyNum(); i++) {
+        for (int j = 0; j < _graph->getNumInTopoLevel(i); j++) {
+            auto node = _graph->getNodeInTopo(i, j);
             SWLOG_DEBUG(4) << "TopoLevel.." << i << "\tType..." 
                 << (node->nodeType() == TENSOR_NODE ? "TENSOR\t" : "OP\t")
                 << (node->name()) << std::endl;
@@ -72,11 +72,11 @@ void EliminationPass::run(IRGraph* graph)
                 // remove from graph
                 if (irnode->nodeType() == TENSOR_NODE) {
                     TensorNode* tnode = (TensorNode*)irnode;
-                    graph->delTensorNode(tnode);
+                    _graph->delTensorNode(tnode);
                     tnode->destroy();
                 } else {
                     OpNode* onode = (OpNode*)irnode;
-                    graph->delOpNode(onode);
+                    _graph->delOpNode(onode);
                     onode->destroy();
                 }
                 if (!delVecMember(topo_nodes, irnode)) {
@@ -87,7 +87,7 @@ void EliminationPass::run(IRGraph* graph)
         }
     }
                 
-    graph->updateTopology();
+    _graph->updateTopology();
 }
 
 

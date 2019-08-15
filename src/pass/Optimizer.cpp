@@ -30,12 +30,21 @@ void pass::Optimizer::runOptimizer() {
     LoweringPass loweringpass(_graph);
     passManager.add((OptimizePass *)&loweringpass);
     passManager.add((OptimizePass *)&labelingpass); // run labeling again
+
     
-    // paralleing pass: assign tiling label to all ops , then applied  to graph
-    
-    
-    ParallelingPass parallelingpass(_graph);
+    //ParallelingPass parallelingpass(_graph);
     //passManager.add((OptimizePass*)&parallelingpass);
+    
+
+    //RenamingNodePass renamingpass2(_graph);
+    //passManager.add((OptimizePass*)&renamingpass2);
+
+    //EliminationPass elim(_graph);
+    //passManager.add((OptimizePass*)&elim);
+
+    //SubGraphPass sub(_graph);
+    //passManager.add((OptimizePass*)&sub);
+    
     passManager.run();
     SWLOG_DEBUG(4) << "Optimization done." << std::endl;
 }

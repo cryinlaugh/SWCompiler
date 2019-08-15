@@ -9,7 +9,7 @@
 #include "graphIR/IRGraph.h"
 #include "graphIR/OpNode.h"
 #include "graphIR/TensorNode.h"
-
+#include "parallel/TilingLabel.h"
 // using namespace std;
 
 namespace swc {
@@ -87,8 +87,8 @@ std::string dotGenTensorNode(TensorNode *tnode) {
     auto dev = tnode->getLabel()->getDeviceLabel();
     os << "Dev: " << static_cast<int>(dev.type) << " " << dev.id << " |";
 
-    //auto tile = tnode->getLabel()->isAssign();
-    //os << "tile: " << tile << " |";
+    //auto tile= tnode->getTilingLabel()->getScope();
+    //os << "Tiling: " << std::to_string(tile) << " |";
 
     tensorInfo += os.str();
 
