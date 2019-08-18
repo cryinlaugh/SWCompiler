@@ -368,6 +368,27 @@ public:
     int getDegree() { return degree_; }
 };
 
+class TransformOp: public Op {
+    int preAxis_{-1};
+    int postAxis_{-1};
+    int degree_{1};
+
+public:
+    TransformOp() : Op(DL_OP, 0, 0, "Transform"){}
+    TransformOp(int pre_axis, int post_axis, int degree) : Op(DL_OP, 0, 0, "Transform"), preAxis_(pre_axis), postAxis_(post_axis), degree_(degree) {}
+    ~TransformOp() {}
+
+    std::string getOpInfo() override;
+
+    void setPreAxis(int axis) { preAxis_ = axis; }
+    int getPreAxis() { return preAxis_; }
+    void setPostAxis(int axis) { postAxis_ = axis; }
+    int getPostAxis() { return postAxis_; }
+
+    void setDegree(int degree) { degree_ = degree; }
+    int getDegree() { return degree_; }
+};
+
 class SubGraphOp : public Op {
     IRGraph *graph_;
 
@@ -419,15 +440,15 @@ public:
         return group_;
     }
     ~Conv2dOp();
-    void destroy() {}
+    void destroy() override {}
 
     std::string getOpInfo() override;
 
-    void outTensorShapeGen(OpNode* node, size_t index, TensorShape* tShape);
+    void outTensorShapeGen(OpNode* node, size_t index, TensorShape* tShape) override;
 
     void autoDiff(IRGraph* graph,
         IRNode* opNode,
-        std::unordered_map<IRNode*, IRNode*>&gradNodeMap);
+        std::unordered_map<IRNode*, IRNode*>&gradNodeMap) override;
 };
 
 
@@ -532,15 +553,15 @@ public:
     std::vector<size_t> getStrides() {
         return strides_;
     }
-    void destroy() {}
+    void destroy() override {}
 
     std::string getOpInfo() override;
 
-    void outTensorShapeGen(OpNode* node, size_t index, TensorShape* tShape);
+    void outTensorShapeGen(OpNode* node, size_t index, TensorShape* tShape) override;
 
     void autoDiff(IRGraph* graph,
         IRNode* opNode,
-        std::unordered_map<IRNode*, IRNode*>&gradNodeMap);
+        std::unordered_map<IRNode*, IRNode*>&gradNodeMap) override;
 };
 
 class MaxPoolGradOp : public Op {

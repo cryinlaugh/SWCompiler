@@ -21,7 +21,7 @@ class TilingLabel {
 private:
     //int _tilenum; //
     //std::vector<int> _tiles;
-    
+
     TensorNode * _currentnode;
     int _currentstrategy;
     //bool _state;
@@ -68,7 +68,7 @@ public:
 };
 
 
-class  StrategyLabel {
+class StrategyLabel {
 
 private:
 
@@ -80,9 +80,9 @@ public:
         _strategy=strategy;
     }
     ~StrategyLabel(){};
-    
+
     void setStrategy(std::vector<int> strategy){
-    
+
         _strategy= strategy;
     }
     std::vector<int> getStrategy(){

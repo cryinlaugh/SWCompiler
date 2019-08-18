@@ -43,6 +43,14 @@ std::string GatherOp::getOpInfo() {
     return Op::getOpInfo() + stream.str();
 }
 
+std::string TransformOp::getOpInfo() {
+    std::ostringstream stream;
+    stream << "pre_axis: "  << preAxis_<< "\\n"
+           << "post_axis: "  << postAxis_ << "\\n"
+           << "degree: " << degree_ << "\\n";
+    return Op::getOpInfo() + stream.str();
+}
+
 std::string Conv2dOp::getOpInfo() {
     std::ostringstream stream;
     stream << "kernels: " << dumpVector(kernels_) << "\\n";
