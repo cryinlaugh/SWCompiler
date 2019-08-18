@@ -7,6 +7,7 @@
 #        Create: 2019-07-05 11:04:16
 # Last Modified: 2019-07-05 11:04:16
 ***********************************************/
+#include "common.h"
 #include "op/Op.h"
 #include "op/dlOp/dlOp.h"
 #include "graphIR/IRGraph.h"
@@ -15,19 +16,24 @@
 #include "TilingLabel.h"
 using namespace swc::op;
 namespace swc {
-class ForkPattern{
-private:
+
+class BasePattern{
+protected:
     TensorNode* _tensornode;
     int _num;
+    Device _p_dev{INT_MAX, DeviceType::CPU, 0};
 public:
-    ForkPattern(TensorNode * tensornode, int num) {
+    BasePattern(TensorNode *node, int num) : _tensornode(node), _num(num) {}
 
-        _tensornode = tensornode;
-        _num = num;
-    };
-    ~ForkPattern() {};
+    virtual void apply(int strategy, IRGraph *graph) = 0;
+};
 
-    void apply(int strategy, IRGraph * irgraph) {
+class ForkPattern : public BasePattern{
+public:
+    ForkPattern(TensorNode * tensornode, int num) : BasePattern(tensornode, num) {}
+    ~ForkPattern() {}
+
+    void apply(int strategy, IRGraph * irgraph) override {
         SWLOG_DEBUG(4) << "ForkPattern on tensor " << _tensornode->name() << ", strategy= " << strategy << "\n";
         TilingLabel * tlabel = _tensornode->getTilingLabel();
         TensorShape * originshape = _tensornode->getTensor()->getTensorShape();
@@ -40,15 +46,13 @@ public:
         } else
             tilenode = new TensorNode(_tensornode->name() + "_unknown", new Tensor(originshape));
 
+        tilenode->getLabel()->setDeviceLabel(_p_dev);
 
         OpNode *opnode = new OpNode(_tensornode->name() + "_fork");
-        opnode->setOp(new ScatterOp());
+        opnode->setOp(new ScatterOp(strategy, _num));
 
         tilenode->exlinkUpperNode(opnode);
         opnode->exlinkUpperNode(_tensornode);
-
-
-
 
         irgraph->pushTensorNode(tilenode);
         irgraph->pushOpNode(opnode);
@@ -58,24 +62,18 @@ public:
         tlabel->setCurrentNode(tilenode);
         tlabel->setCurrentStrategy(strategy);
         tlabel->setApplied();
-
     }
-
 };
 
-class TransformPattern {
-private:
-
-    TensorNode * _tensornode;
-    int _num;
-
+class TransformPattern : public BasePattern {
 public:
-    TransformPattern(TensorNode * tensornode, int num) {
-        _tensornode = tensornode;
-        _num =num;
-    };
-    ~TransformPattern() {};
-    void apply(int strategy, IRGraph * irgraph) {
+    TransformPattern(TensorNode * tensornode, int num) : BasePattern(tensornode, num) {}
+    ~TransformPattern() {}
+
+
+    void apply(int , IRGraph * ) override{} 
+
+    void apply(int pre_strategy, int strategy, IRGraph * irgraph) {
         SWLOG_DEBUG(4) << "TransformPattern on tensor " << _tensornode->name() << ", strategy= " << strategy << "\n";
         TilingLabel * tlabel = _tensornode->getTilingLabel();
         TensorShape * originshape = _tensornode->getTensor()->getTensorShape();
@@ -88,8 +86,10 @@ public:
         } else
             tilenode = new TensorNode(_tensornode->name() + "_unknown", new Tensor(originshape));
 
+        tilenode->getLabel()->setDeviceLabel(_p_dev);
+
         OpNode *opnode = new OpNode(_tensornode->name() + "_transform");
-        opnode->setOp(new ScatterOp());
+        opnode->setOp(new TransformOp(pre_strategy, strategy, _num));
         tilenode->exlinkUpperNode(opnode);
         opnode->exlinkUpperNode(tlabel->getCurrentNode());
 
@@ -105,19 +105,13 @@ public:
 
 };
 
-class JoinPattern{
-private:
-    TensorNode * _tensornode;
-    int _num;
+class JoinPattern : public BasePattern {
 public:
 
-    JoinPattern(TensorNode * tensornode, int num){
-        _tensornode = tensornode;
-        _num = num;
-    };
-    ~JoinPattern();
+    JoinPattern(TensorNode * tensornode, int num): BasePattern(tensornode, num) {}
+    ~JoinPattern() {}
 
-    void apply(int strategy, IRGraph * irgraph) {
+    void apply(int strategy, IRGraph * irgraph) override {
         SWLOG_DEBUG(4) << "JoinPattern on tensor " << _tensornode->name() << ", strategy= " << strategy << "\n";
         TilingLabel * tlabel = _tensornode->getTilingLabel();
 
@@ -132,8 +126,10 @@ public:
         } else
             tilenode = new TensorNode(_tensornode->name() + "_unknown", new Tensor(originshape));
 
+        tilenode->getLabel()->setDeviceLabel(_p_dev);
+
         OpNode *opnode = new OpNode(_tensornode->name() + "_join");
-        opnode->setOp(new GatherOp());
+        opnode->setOp(new GatherOp(strategy, _num));
 
         opnode->exlinkUpperNode(tilenode);
         _tensornode->exlinkUpperNode(opnode);
@@ -144,10 +140,7 @@ public:
         tlabel->setCurrentNode(tilenode);
         tlabel->setCurrentStrategy(strategy);
         tlabel->setApplied();
-
     }
-
-
 };
 
 

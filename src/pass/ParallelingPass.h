@@ -95,7 +95,7 @@ public:
                     // transfrom pattern
 
                     TransformPattern * transformpattern = new TransformPattern(originNode, parallelnum);
-                    transformpattern->apply(strategy, _graph);
+                    transformpattern->apply(tlabel->getCurrentStrategy(), strategy, _graph);
                     curOpNode -> destroyUpperNode(originNode);
                     curOpNode ->exlinkUpperNode(tlabel->getCurrentNode());
 
@@ -157,7 +157,7 @@ public:
 
     void run() {
         //SWLOG_DEBUG(4) << "Start Paralleling Pass." << std::endl;
-        runParalleling(4);
+        runParalleling(2);
         //SWLOG_DEBUG(4) << "Finish Paralleling pass. " << std::endl;
 
         // //std::cout<<"test"<<std::endl;

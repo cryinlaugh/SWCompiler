@@ -32,6 +32,14 @@ int main() {
     //          O: softmax
     //              |
     //          T:data4
+    //              |
+    //          O: argmax_o
+    //              |
+    //          T: top3_t
+    //              |
+    //          O: print_o
+    //              |
+    //          T: useless
     //=============================
 
     TENSOR(data0, 8, 784);
@@ -82,10 +90,13 @@ int main() {
     auto *print_o = new OpNode("print", new DebugOp());
     print_o->exlinkUpperNode(top3_t);
 
+    TENSOR(placeholder, 0);
+    LINKUPPER(placeholder, print_o);
+
     // define IR graph
     G(mlp);
     GpT(mlp, data0, weight0, bias0, data1, data2, weight1, bias1, data3, data4,
-        top3_t);
+        top3_t, placeholder);
     GpO(mlp, fc0, tanh0, fc1, softmax, argmax_o, print_o);
 
     //====================================================
@@ -118,19 +129,23 @@ int main() {
         SWLOG_ERROR << "cannot find lowered nodes for fcbias\n";
         exit(1);
     }
-    fc1_mm->setStrategyLabel(new StrategyLabel({0, -1, 0}));
-    fc1_add->setStrategyLabel(new StrategyLabel({0, -1, 0}));
+    fc1_mm->setStrategyLabel(new StrategyLabel({1, 0, -2}));
+    fc1_add->setStrategyLabel(new StrategyLabel({-2, -1, -2}));
 
+    /*
     softmax->setStrategyLabel(new StrategyLabel({1, 1}));
     argmax_o->setStrategyLabel(new StrategyLabel({0, 0}));
     print_o->setStrategyLabel(new StrategyLabel({-1}));
+    */
 
 
     PassManager passManager;
     passManager.add(new ParallelingPass(mlp));
     // !!! is a must for EliminationPass, or all nodes
     // will be eliminated.
-    SETOUT(mlp, data4);
+    //SETOUT(mlp, data4);
+    //SETOUT(mlp, top3_t);
+    SETOUT(mlp, placeholder);
     passManager.add(new EliminationPass(mlp));
     passManager.add(new RenamingNodePass(mlp));
     passManager.run();
@@ -140,7 +155,7 @@ int main() {
 
     //====================================================
     CodegenConfig config;
-    codegen::Codegen *cg = new codegen::Codegen(mlp, config);
+    codegen::ParallelCodegen *cg = new codegen::ParallelCodegen(mlp, config);
     string code = cg->generate();
     cout << code;
 
