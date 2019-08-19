@@ -212,7 +212,8 @@ private:
     std::vector<Tensor *> mpi_sendRecv_tags_;
     
     // std::vector<OpNode*> _scheduled_opnodes;
-    void masterWorkerDispatcher(OpNode *op, int side/*master:0, worker:1*/);
+    void masterWorkerDispatcher(OpNode *node, int side/*master:0, worker:1*/);
+    void transfromOpDispatcher(OpNode *node, int side/*master:0, worker:1*/);
     int getMPISendRecvTag(Tensor *);
     bool delMPISendRecvTag(Tensor *);
     std::vector<OpNode*> schedule();
