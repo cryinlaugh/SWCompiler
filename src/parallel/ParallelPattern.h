@@ -71,7 +71,7 @@ public:
     ~TransformPattern() {}
 
 
-    void apply(int , IRGraph * ) override{} 
+    void apply(int , IRGraph * ) override{}
 
     void apply(int pre_strategy, int strategy, IRGraph * irgraph) {
         SWLOG_DEBUG(4) << "TransformPattern on tensor " << _tensornode->name() << ", strategy= " << strategy << "\n";
@@ -129,7 +129,11 @@ public:
         tilenode->getLabel()->setDeviceLabel(_p_dev);
 
         OpNode *opnode = new OpNode(_tensornode->name() + "_join");
-        opnode->setOp(new GatherOp(strategy, _num));
+        if(strategy == -2) {
+            opnode->setOp(new ReduceOp());
+        }else {
+            opnode->setOp(new GatherOp(strategy, _num));
+        }
 
         opnode->exlinkUpperNode(tilenode);
         _tensornode->exlinkUpperNode(opnode);

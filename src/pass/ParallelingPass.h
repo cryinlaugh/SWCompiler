@@ -92,8 +92,15 @@ public:
                     curOpNode -> exlinkUpperNode(tlabel->getCurrentNode());
 
                 } else if(strategy != tlabel->getCurrentStrategy()) {
+                    if(tlabel->getCurrentStrategy() == -2) {
+                        // joinpattern fllowed by forkpatter...
+                        ForkPattern* forkpattern = new ForkPattern(originNode, parallelnum);
+                        forkpattern->apply(strategy, _graph);
+                        curOpNode ->destroyUpperNode(originNode);
+                        curOpNode -> exlinkUpperNode(tlabel->getCurrentNode());
+                        continue;
+                    }
                     // transfrom pattern
-
                     TransformPattern * transformpattern = new TransformPattern(originNode, parallelnum);
                     transformpattern->apply(tlabel->getCurrentStrategy(), strategy, _graph);
                     curOpNode -> destroyUpperNode(originNode);
@@ -131,7 +138,7 @@ public:
                     originNode->destroyUpperNode(curOpNode);
                     tlabel->getCurrentNode()->exlinkUpperNode(curOpNode);
                     //join pattern
-
+                // beblow two conditions should not occur
                 } else if(strategy != tlabel -> getCurrentStrategy()) {
                     TransformPattern * transformpattern = new TransformPattern(originNode, parallelnum);
                     transformpattern->apply(strategy, _graph);

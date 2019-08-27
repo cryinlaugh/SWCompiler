@@ -368,6 +368,14 @@ public:
     int getDegree() { return degree_; }
 };
 
+class ReduceOp : public Op {
+
+public:
+    ReduceOp() : Op(DL_OP, 0, 0, "Reduce") {}
+    ~ReduceOp();
+    // std::string getOpInfo() override;
+};
+
 class TransformOp: public Op {
     int preAxis_{-1};
     int postAxis_{-1};
