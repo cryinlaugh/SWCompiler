@@ -312,107 +312,395 @@ void ParallelCodegen::emitTensorInitializations() {
         writer_ << "} // if rank != 0\n";
     */
 
-    writer_ << "\n";
     SWLOG_DEBUG(4) << "end emitTensorInitializations...\n";
 }
 
 void ParallelCodegen::masterWorkerDispatcher(OpNode *op,
                                              int side /*master:0, worker:1*/) {
     if (auto *scatter = dynamic_cast<ScatterOp *>(op->getOp())) {
-        auto *from = ((TensorNode *)op->getParentNode(0));
-        auto *from_tensor = from->getTensor();
-        // Device from_dev = from->getLabel()->getDeviceLabel();
-        auto *to = ((TensorNode *)op->getChildNode(0));
-        auto *to_tensor = to->getTensor();
+        auto *in = ((TensorNode *)op->getParentNode(0));
+        auto *in_tensor = in->getTensor();
+        // Device in_dev = in->getLabel()->getDeviceLabel();
+        auto *out = ((TensorNode *)op->getChildNode(0));
+        auto *out_tensor = out->getTensor();
 
-        std::string fname = tensors_name_map_[from_tensor];
-        std::string tname = tensors_name_map_[to_tensor];
+        std::string fname = tensors_name_map_[in_tensor];
+        std::string tname = tensors_name_map_[out_tensor];
 
         int axis = scatter->getAxis();
         int degree = scatter->getDegree();
-        size_t size = to_tensor->getSizeInBytes();
-        size_t offset = (axis == -1) ? 0 : to_tensor->size();
 
-        int tag = getMPISendRecvTag(to_tensor);
+        // size_t offset = (axis == -1) ? 0 : out_tensor->size();
+
+        auto idims = in_tensor->getDims();
+        auto odims = out_tensor->getDims();
+        int n = in_tensor->getNDim();
+        std::string dtype = getTypeString(in_tensor);
+
+        size_t out_count = out_tensor->size();
+
+
+        // TODO: -1 BroadcastOp
+        if(axis == -1) {
+            if(side == 0) {
+                masterWriter_ << "// rank 0 memcpy from " << fname << " to " << tname
+                        << "\n";
+                masterWriter_ << tname << " = " << fname << ";\n";
+                masterWriter_ << "MPI_Bcast(" << tname << ", " << out_count << ", "
+                        << DTYPE_MPI_DATATYPE_MAP.at(dtype) << ", "
+                        << "0, " << "MPI_COMM_WORLD);\n";
+            }
+            else {
+                workerWriter_ << "MPI_Bcast(" << tname << ", " << out_count << ", "
+                        << DTYPE_MPI_DATATYPE_MAP.at(dtype) << ", "
+                        << "0, " << "MPI_COMM_WORLD);\n";
+            }
+
+            return;
+        }
+
+        int tag = getMPISendRecvTag(out_tensor);
+
+        size_t sendType_count = 1, sendType_num=1, sendType_stride = 1;
+        for(int i=0; i<axis; i++)
+            sendType_count *= idims[i];
+        for(int i=axis; i<n; i++)
+            sendType_stride*= idims[i];
+        sendType_num = sendType_stride / degree;
+
 
         if (side == 0) {
-            // writer_ << "for(int r=1; r<=" << degree <<"; r++) {\n";
-            writer_ << "for(int r=1; r<" << degree << "; r++) {\n";
-            writer_.indentInc();
-            writer_ << "MPI_Send(" << fname << "+r*" << offset << ", " << size
+            masterWriter_ << "MPI_Datatype " << fname+"_sendType;\n"
+                << "MPI_Type_vector("
+                << sendType_count << ", "
+                << sendType_num<< ", "
+                << sendType_stride<< ", "
+                << DTYPE_MPI_DATATYPE_MAP.at(dtype) << ", "
+                << "&"<<fname+"_sendType);\n"
+                <<"MPI_Type_commit(&"<<fname+"_sendType);\n";
+
+            masterWriter_ << "size_t " << fname << "_sendOffset = 0;\n";
+            masterWriter_ << "for(int r=1; r<" << degree << "; r++) {\n";
+            masterWriter_.indentInc();
+            masterWriter_ << fname << "_sendOffset = " << sendType_num << " * r;\n";
+            masterWriter_ << "MPI_Send(" << fname << "+" << fname+"_sendOffset"<< ", "
+            << "1, " << fname+"_sendType, "
+            << "r, " << tag << ",  MPI_COMM_WORLD);\n";
+            masterWriter_.indentDec();
+            masterWriter_ << "} //for \n";
+
+            masterWriter_ << "// rank 0 memcpy from " << fname << " to " << tname
+                    << "\n";
+            if(axis == 0) {
+                masterWriter_ << tname << " = " << fname << ";\n";
+            }else {
+                masterWriter_ << "MPI_Sendrecv(" << fname << ", "
+                    << "1, " << fname+"_sendType" << ", " << "0, " << tag << ", "
+                    << tname << ", " << out_count << ", "
+                    << DTYPE_MPI_DATATYPE_MAP.at(dtype) << ", "
+                    << "0, " << tag
+                    << ",  MPI_COMM_WORLD, &status);\n";
+            }
+            /*
+            // masterWriter_ << "for(int r=1; r<=" << degree <<"; r++) {\n";
+            masterWriter_ << "for(int r=1; r<" << degree << "; r++) {\n";
+            masterWriter_.indentInc();
+            masterWriter_ << "MPI_Send(" << fname << "+r*" << offset << ", " << size
                     << ", "
                     << "MPI_CHAR, r, " << tag << ",  MPI_COMM_WORLD);\n";
-            writer_.indentDec();
-            writer_ << "} //for \n";
+            masterWriter_.indentDec();
+            masterWriter_ << "} //for \n";
 
-            writer_ << "// rank 0 memcpy from " << fname << " to " << tname
+            masterWriter_ << "// rank 0 memcpy from " << fname << " to " << tname
                     << "\n";
-            writer_ << "memcpy(" << fname << ", " << tname << ", " << size
+            masterWriter_ << "memcpy(" << tname << ", " << fname << ", " << size
                     << ");\n";
+            */
         } else {
-            writer_ << "MPI_Recv(" << tname << ", " << size << ", "
+            workerWriter_ << "MPI_Recv(" << tname << ", " << out_count << ", "
+                    << DTYPE_MPI_DATATYPE_MAP.at(dtype) << ", "
+                    << "0, " << tag
+                    << ",  MPI_COMM_WORLD, &status);\n";
+            /*
+            workerWriter_ << "MPI_Recv(" << tname << ", " << size << ", "
                     << "MPI_CHAR, 0, " << tag
                     << ",  MPI_COMM_WORLD, &status);\n";
+            */
         }
 
     } else if (auto gather = dynamic_cast<GatherOp *>(op->getOp())) {
-        auto *from = ((TensorNode *)op->getParentNode(0));
-        auto *from_tensor = from->getTensor();
-        auto *to = ((TensorNode *)op->getChildNode(0));
-        auto *to_tensor = to->getTensor();
+        auto *in = ((TensorNode *)op->getParentNode(0));
+        auto *in_tensor = in->getTensor();
+        auto *out = ((TensorNode *)op->getChildNode(0));
+        auto *out_tensor = out->getTensor();
         // Device to_dev = to->getLabel()->getDeviceLabel();
 
-        std::string fname = tensors_name_map_[from_tensor];
-        std::string tname = tensors_name_map_[to_tensor];
+        std::string fname = tensors_name_map_[in_tensor];
+        std::string tname = tensors_name_map_[out_tensor];
         SWLOG_DEBUG(2) << "gather\n";
 
-        // TODO, non-continuous
         int axis = gather->getAxis();
         int degree = gather->getDegree();
-        size_t size = from_tensor->getSizeInBytes();
-        // size_t offset = (axis == -1) ? 0 : from_tensor->size();
+
         // -1: replicate -2: reduce
-        size_t offset = (axis < 0) ? 0 : from_tensor->size();
+        // size_t offset = (axis < 0) ? 0 : in_tensor->size();
 
         SWLOG_DEBUG(2) << "GatherOp " << op->name() << " axis=" << axis << " degree=" << degree
                        << "\n";
 
-        int tag = getMPISendRecvTag(from_tensor);
-        
+        int tag = getMPISendRecvTag(in_tensor);
+
         // reduce
         if(axis == -2) {
-            size_t count = from_tensor->size();
-            std::string dtype = getTypeString(from_tensor);
-            
+            size_t count = in_tensor->size();
+            std::string dtype = getTypeString(in_tensor);
+
             writer_ << "MPI_Reduce(" << fname << ", " << tname << ", "
-                << count << ", " << DTYPE_MPI_DATATYPE_MAP.at(dtype) << ", " 
-                << "MPI_SUM, " << 0 << ", MPI_COMM_WORLD);\n"; 
+                << count << ", " << DTYPE_MPI_DATATYPE_MAP.at(dtype) << ", "
+                << "MPI_SUM, " << 0 << ", MPI_COMM_WORLD);\n";
             return;
         }
 
+        auto idims = in_tensor->getDims();
+        auto odims = out_tensor->getDims();
+        int n = in_tensor->getNDim();
+        std::string dtype = getTypeString(in_tensor);
+        size_t in_count = in_tensor->size();
+
+        size_t recvType_count = 1, recvType_num=1, recvType_stride = 1;
+        for(int i=0; i<axis; i++)
+            recvType_count *= odims[i];
+        for(int i=axis; i<n; i++)
+            recvType_stride*= odims[i];
+        recvType_num = recvType_stride / degree;
+
         if (side == 0) {
-            writer_ << "for(int r=1; r<" << degree << "; r++) {\n";
-            writer_.indentInc();
-            writer_ << "MPI_Recv(" << tname << "+r*" << offset << ", " << size
+            masterWriter_ << "MPI_Datatype " << tname+"_recvType;\n"
+            << "MPI_Type_vector("
+            << recvType_count << ", "
+            << recvType_num<< ", "
+            << recvType_stride<< ", "
+            << DTYPE_MPI_DATATYPE_MAP.at(dtype) << ", "
+            << "&"<<tname+"_recvType);\n"
+            <<"MPI_Type_commit(&"<<tname+"_recvType);\n";
+
+            masterWriter_ << "size_t " << tname << "_recvOffset = 0;\n";
+            masterWriter_ << "for(int r=1; r<" << degree << "; r++) {\n";
+            masterWriter_.indentInc();
+            masterWriter_ << tname << "_recvOffset = " << recvType_num << " * r;\n";
+            masterWriter_ << "MPI_Recv(" << tname << "+" << tname+"_recvOffset"<< ", "
+            << "1, " << tname+"_recvType, "
+            << "r, " << tag << ",  MPI_COMM_WORLD, &status);\n";
+            masterWriter_.indentDec();
+            masterWriter_ << "} //for \n";
+
+            masterWriter_ << "// rank 0 memcpy in " << fname << " to " << tname
+                    << "\n";
+            masterWriter_ << "MPI_Sendrecv(" << fname << ", "
+                    << in_count << ", "
+                    << DTYPE_MPI_DATATYPE_MAP.at(dtype) << ", "
+                    << "0, " << tag << ", "
+                    << tname << ", "
+                    << "1, " << tname+"_recvType" << ", " << "0, " << tag << ", "
+                    << "MPI_COMM_WORLD, &status);\n";
+            /*
+            masterWriter_ << "for(int r=1; r<" << degree << "; r++) {\n";
+            masterWriter_.indentInc();
+            masterWriter_ << "MPI_Recv(" << tname << "+r*" << offset << ", " << size
                     << ", "
                     << "MPI_CHAR, r, " << tag
                     << ",  MPI_COMM_WORLD, &status);\n";
-            writer_.indentDec();
-            writer_ << "} //for \n";
+            masterWriter_.indentDec();
+            masterWriter_ << "} //for \n";
 
-            writer_ << "// rank 0 memcpy from " << fname << " to " << tname
+            masterWriter_ << "// rank 0 memcpy in " << fname << " to " << tname
                     << "\n";
-            writer_ << "memcpy(" << fname << ", " << tname << ", " << size
+            masterWriter_ << "memcpy(" << tname << ", " << fname << ", " << size
                     << ");\n";
+            */
         } else {
-            writer_ << "MPI_Send(" << fname << ", " << size << ", "
+            workerWriter_ << "MPI_Send(" << fname << ", " << in_count << ", "
+                    << DTYPE_MPI_DATATYPE_MAP.at(dtype) << ", "
+                    << "0, " << tag
+                    << ",  MPI_COMM_WORLD);\n";
+            /*
+            workerWriter_ << "MPI_Send(" << fname << ", " << size << ", "
                     << "MPI_CHAR, 0, " << tag << ",  MPI_COMM_WORLD);\n";
+            */
         }
     }
 }
 
-void ParallelCodegen::transfromOpDispatcher(OpNode *node, int side/*master:0, worker:1*/) {
-    writer_ << "// ====== do nothing\n";
+void ParallelCodegen::transformOpDispatcher(OpNode *node) {
+
+    auto *transform = dynamic_cast<TransformOp*>(node->getOp());
+    int ki = transform->getPreAxis();
+    int ko = transform->getPostAxis();
+    int p = transform->getDegree();
+
+    writer_ << "// " << node->name() << "transform parallel strategy "
+            << ki << "->" << ko << "\n";
+
+    auto *in = ((TensorNode *)node->getParentNode(0));
+    auto *in_tensor = in->getTensor();
+    auto *out = ((TensorNode *)node->getChildNode(0));
+    auto *out_tensor = out->getTensor();
+
+    std::string fname = tensors_name_map_[in_tensor];
+    std::string tname = tensors_name_map_[out_tensor];
+
+    std::string dtype = getTypeString(in_tensor);
+    size_t in_count = in_tensor->size();
+    size_t out_count = in_tensor->size();
+
+    // std::vector<size_t>
+    auto idims = in_tensor->getDims();
+    auto odims = out_tensor->getDims();
+    int n = in_tensor->getNDim();
+
+
+    if(ki>=0 && ko>=0) {
+        assert(in_count == out_count && "in_tensor size() inequal to out_tensor");
+
+        assert((ki>=0 && ki<n && ko>=0 && ko<n) && "illegal strategy");
+        assert((ki != ko) && "same in/out strategy");
+
+        size_t sendType_count = 1, sendType_num=1, sendType_stride = 1;
+        for(int i=0; i<ko; i++)
+            sendType_count *= idims[i];
+        for(int i=ko; i<n; i++)
+            sendType_stride*= idims[i];
+        sendType_num = sendType_stride / p;
+
+        writer_ << "MPI_Datatype " << fname+"_sendType;\n"
+            << "MPI_Type_vector("
+            << sendType_count << ", "
+            << sendType_num<< ", "
+            << sendType_stride<< ", "
+            << DTYPE_MPI_DATATYPE_MAP.at(dtype) << ", "
+            << "&"<<fname+"_sendType);\n"
+            <<"MPI_Type_commit(&"<<fname+"_sendType);\n";
+
+        size_t recvType_count = 1, recvType_num=1, recvType_stride = 1;
+        for(int i=0; i<ki; i++)
+            recvType_count *= odims[i];
+        for(int i=ki; i<n; i++)
+            recvType_stride*= odims[i];
+        recvType_num = recvType_stride / p;
+
+        writer_<< "MPI_Datatype " << tname+"_recvType;\n"
+            << "MPI_Type_vector("
+            << recvType_count << ", "
+            << recvType_num<< ", "
+            << recvType_stride<< ", "
+            << DTYPE_MPI_DATATYPE_MAP.at(dtype) << ", "
+            << "&"<<tname+"_recvType);\n"
+            <<"MPI_Type_commit(&"<<tname+"_recvType);\n";
+
+        writer_ << "size_t " << fname << "_sendOffset = 0;\n"
+                << "size_t " << tname << "_recvOffset = 0;\n"
+                << "int dest, src;\n";
+
+        writer_ << "for(int i=0; i<nprocs; i++) {\n";
+        writer_.indentInc();
+
+        writer_ << "src = " << "(rank + nprocs - i) % nprocs;\n"
+                << "dest = " << "(rank + nprocs + i) % nprocs;\n"
+                << "\n"
+                << fname << "_sendOffset = " << sendType_num << " * dest;\n"
+                << tname << "_recvOffset = " << recvType_num << " * src;\n";
+
+        int tag = getMPISendRecvTag(out_tensor);
+
+        writer_ << "\n"
+                << "MPI_Sendrecv(" << fname << "+" << fname+"_sendOffset" << ", "
+                << "1, " << fname+"_sendType" << ", " << "dest, " << tag << ", "
+                << tname << "+" << tname+"_recvOffset" << ", "
+                << "1, " << tname+"_recvType" << ", " << "src, " << tag << ", "
+                << "MPI_COMM_WORLD, &status);\n";
+
+        writer_.indentDec();
+        writer_ << "} // for\n";
+
+        return;
+    }
+    if(ki==-2 && ko>=0) {
+        writer_ << "MPI_Reduce(" << fname << ", " << fname << ", "
+            << in_count << ", " << DTYPE_MPI_DATATYPE_MAP.at(dtype) << ", "
+            << "MPI_SUM, " << 0 << ", MPI_COMM_WORLD);\n";
+
+        size_t sendType_count = 1, sendType_num=1, sendType_stride = 1;
+        for(int i=0; i<ko; i++)
+            sendType_count *= idims[i];
+        for(int i=ko; i<n; i++)
+            sendType_stride*= idims[i];
+        sendType_num = sendType_stride / p;
+
+        heteroBegin();
+
+        masterWriter_ << "MPI_Datatype " << fname+"_sendType;\n"
+            << "MPI_Type_vector("
+            << sendType_count << ", "
+            << sendType_num<< ", "
+            << sendType_stride<< ", "
+            << DTYPE_MPI_DATATYPE_MAP.at(dtype) << ", "
+            << "&"<<fname+"_sendType);\n"
+            <<"MPI_Type_commit(&"<<fname+"_sendType);\n";
+        
+        masterWriter_ << "size_t " << fname << "_sendOffset = 0;\n";
+        masterWriter_ << "for(int r=1; r<" << p << "; r++) {\n";
+        masterWriter_.indentInc();
+        masterWriter_ << fname << "_sendOffset = " << sendType_num << " * r;\n";
+
+        int tag = getMPISendRecvTag(out_tensor);
+
+        masterWriter_ << "MPI_Send(" << fname << "+" << fname+"_sendOffset"<< ", "
+        << "1, " << fname+"_sendType, "
+        << "r, " << tag << ",  MPI_COMM_WORLD);\n";
+        masterWriter_.indentDec();
+        masterWriter_ << "} //for \n";
+
+        masterWriter_ << "// rank 0 memcpy from " << fname << " to " << tname
+                << "\n";
+        if(ko == 0) {
+            masterWriter_ << tname << " = " << fname << ";\n";
+        } else {
+            int tag_r0 = getMPISendRecvTag(in_tensor);
+            masterWriter_ << "MPI_Sendrecv(" << fname << ", "
+                << "1, " << fname+"_sendType" << ", " << "0, " << tag_r0 << ", "
+                << tname << ", " << out_count << ", "
+                << DTYPE_MPI_DATATYPE_MAP.at(dtype) << ", "
+                << "0, " << tag_r0
+                << ",  MPI_COMM_WORLD, &status);\n";
+        }
+
+        workerWriter_ << "MPI_Recv(" << tname << ", " << out_count << ", "
+                    << DTYPE_MPI_DATATYPE_MAP.at(dtype) << ", "
+                    << "0, " << tag
+                    << ",  MPI_COMM_WORLD, &status);\n";
+        heteroEnd();
+
+        return;
+    }
+}
+
+void ParallelCodegen::reduceOpDispatcher(OpNode *op) {
+    auto *from = ((TensorNode *)op->getParentNode(0));
+    auto *from_tensor = from->getTensor();
+    auto *to = ((TensorNode *)op->getChildNode(0));
+    auto *to_tensor = to->getTensor();
+    // Device to_dev = to->getLabel()->getDeviceLabel();
+
+    std::string fname = tensors_name_map_[from_tensor];
+    std::string tname = tensors_name_map_[to_tensor];
+
+    // reduce
+    size_t count = from_tensor->size();
+    std::string dtype = getTypeString(from_tensor);
+
+    writer_ << "MPI_Reduce(" << fname << ", " << tname << ", "
+        << count << ", " << DTYPE_MPI_DATATYPE_MAP.at(dtype) << ", "
+        << "MPI_SUM, " << 0 << ", MPI_COMM_WORLD);\n";
 }
 
 void ParallelCodegen::emitTensorInitialization(TensorNode *tnode) {
@@ -481,51 +769,74 @@ void ParallelCodegen::emitFuncCalls() {
 
     auto scheduled = schedule();
 
-    writer_ << "if(rank == 0) {\n";
-    writer_.indentInc();
-
-    SWLOG_DEBUG(4) << ">>>> rank 0 dispatching\n";
+    SWLOG_DEBUG(4) << ">>>> dispatching\n";
     for (auto *node : scheduled) {
-        if (dynamic_cast<ScatterOp *>(node->getOp()) ||
-            dynamic_cast<GatherOp *>(node->getOp())) {
+        if (dynamic_cast<ScatterOp *>(node->getOp()) || dynamic_cast<GatherOp *>(node->getOp())) {
+            if(!hetero_pending_) {
+                heteroBegin();
+            }
             dispatchOpNode(node, 0);
-            // masterWorkerDispatcher(node, 0);
-            continue;
-        }
-        if (isParallel(node))
-            continue;
-
-        dispatchOpNode(node, 0);
-    }
-
-    writer_.indentDec();
-    writer_ << "} // if rank == 0\n";
-
-    writer_ << "\n";
-
-    SWLOG_DEBUG(4) << ">>>> rank parallel dispatching\n";
-    writer_ << "if(rank != 0) {\n";
-    writer_.indentInc();
-
-    for (auto *node : scheduled) {
-        if (dynamic_cast<ScatterOp *>(node->getOp()) ||
-            dynamic_cast<GatherOp *>(node->getOp())) {
             dispatchOpNode(node, 1);
-            // masterWorkerDispatcher(node, 0);
+
             continue;
         }
 
+        if(hetero_pending_)
+            heteroEnd();
+
+        /*
+        if (dynamic_cast<TransformOp *>(node->getOp())) {
+            dispatchOpNode(node);
+            continue;
+        }
+        */
+        if (dynamic_cast<ReduceOp *>(node->getOp())) {
+            dispatchOpNode(node);
+            continue;
+        }
         if (isParallel(node)) {
-            dispatchOpNode(node, 1);
+            dispatchOpNode(node);
+        }
+        else {
+            writer_ << "if(rank == 0) {\n";
+            writer_.indentInc();
+
+            dispatchOpNode(node, 0);
+
+            writer_.indentDec();
+            writer_ << "} // if rank == 0\n";
         }
     }
-
-    writer_.indentDec();
-    writer_ << "} // if rank != 0\n";
 
     writer_ << "\n";
 
     SWLOG_DEBUG(4) << "end emitFuncCalls...\n";
+}
+
+void ParallelCodegen::heteroBegin() {
+    masterWriter_ << "if(rank == 0) {\n";
+    masterWriter_.indentInc();
+    workerWriter_ << "if(rank != 0) {\n";
+    workerWriter_.indentInc();
+
+    hetero_pending_ = true;
+}
+void ParallelCodegen::heteroEnd() {
+    masterWriter_.indentDec();
+    masterWriter_<< "} // if rank == 0\n";
+    workerWriter_.indentDec();
+    workerWriter_ << "} // if rank != 0\n";
+
+    writer_ << masterWriter_.get_code()
+            << workerWriter_.get_code();
+
+    masterWriter_.clear();
+    workerWriter_.clear();
+
+    writer_ << masterWriter_.get_code()
+            << workerWriter_.get_code();
+
+    hetero_pending_ = false;
 }
 
 void ParallelCodegen::dispatchOpNode(OpNode *op,
@@ -535,7 +846,13 @@ void ParallelCodegen::dispatchOpNode(OpNode *op,
 
     SWLOG_DEBUG(4) << "dispatchOpNode " << op->name() << " for rank " << side
                    << "\n";
-    writer_ << "// " << op->name() << " : " << op->getOpName() << "\n";
+    if(side == 0)
+        masterWriter_ << "// " << op->name() << " : " << op->getOpName() << "\n";
+    else if(side == 1)
+        workerWriter_ << "// " << op->name() << " : " << op->getOpName() << "\n";
+    else
+        writer_ << "// " << op->name() << " : " << op->getOpName() << "\n";
+
 
     Label *label = op->getLabel();
     Device dev = label->getDeviceLabel();
@@ -543,8 +860,11 @@ void ParallelCodegen::dispatchOpNode(OpNode *op,
         dynamic_cast<GatherOp *>(op->getOp())) {
         masterWorkerDispatcher(op, side);
     }
+    else if (dynamic_cast<ReduceOp*>(op->getOp())) {
+        reduceOpDispatcher(op);
+    }
     else if (dynamic_cast<TransformOp *>(op->getOp())) {
-        transfromOpDispatcher(op, side);
+        transformOpDispatcher(op);
     }
     else {
         switch (dev.type) {

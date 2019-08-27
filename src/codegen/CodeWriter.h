@@ -12,6 +12,8 @@ class CodeWriter {
     CodeWriter() : _indent(0), _new_line(true) {}
 
     std::string get_code() { return _ss.str(); }
+    void flush() { _ss.flush(); }
+    void clear() { _ss.str(""); }
 
     void indentInc() { _indent++; }
     void indentDec() { _indent--; }

@@ -195,7 +195,10 @@ public:
     void emitTensorInitializations() override;
     void emitTensorInitialization(TensorNode* tnode);
     void emitFuncCalls() override;
-    void dispatchOpNode(OpNode *op, int side/*0:master, ~0: worker*/);
+    // void emitFuncCall(OpNode *op, CodeWriter& writer);
+    void heteroBegin();
+    void heteroEnd();
+    void dispatchOpNode(OpNode *op, int side=-1/*0:master, ~0: worker*/);
 
     void emitEnvInit() override;
     void emitEnvFinalize() override;
@@ -205,6 +208,10 @@ public:
     void emitMPIInit();
     void emitMPIFinalize();
 private:
+    CodeWriter masterWriter_; // rank == 0
+    CodeWriter workerWriter_; // rank!=0
+    bool hetero_pending_{false};
+
     std::vector<TensorNode *> _master_tensors;
     std::vector<TensorNode *> _parallel_tensors;
 
@@ -213,7 +220,8 @@ private:
     
     // std::vector<OpNode*> _scheduled_opnodes;
     void masterWorkerDispatcher(OpNode *node, int side/*master:0, worker:1*/);
-    void transfromOpDispatcher(OpNode *node, int side/*master:0, worker:1*/);
+    void transformOpDispatcher(OpNode *node);
+    void reduceOpDispatcher(OpNode *node);
     int getMPISendRecvTag(Tensor *);
     bool delMPISendRecvTag(Tensor *);
     std::vector<OpNode*> schedule();
