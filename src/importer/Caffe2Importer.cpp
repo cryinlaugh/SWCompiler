@@ -199,20 +199,21 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
         auto data = name_tNode_map_[op.input(0)];
         auto weight = name_tNode_map_[op.input(1)];
 
-        std::vector<unsigned long> inDims = data->getDims();
+        std::vector<size_t> inDims = data->getDims();
+        std::vector<size_t> filterDims = weight->getDims();
+
+        std::vector<size_t> kernels = getKernels(args);
+        std::vector<size_t> strides = getStrides(args);
+        std::vector<size_t> pads = getPads(args);
 
         TensorNode *bias;
         if (op.input_size() == 3) {
             bias = name_tNode_map_[op.input(2)];
         } else {
             std::string nm = opName + "_bias";
-            bias = new TensorNode(nm, {inDims[3]});
+            bias = new TensorNode(nm, {filterDims[0]});
             graph_->pushTensorNode(bias);
         }
-
-        std::vector<size_t> kernels = getKernels(args);
-        std::vector<size_t> strides = getStrides(args);
-        std::vector<size_t> pads = getPads(args);
 
         std::string trans_op_name = "op_" + weight->name() + "_T";
         auto trans = new OpNode(trans_op_name, new TransposeOp(NCHW2NHWC));

@@ -6,3 +6,4 @@ doc/latex
 tags
 .vscode
 *.bak
+.ycm_extra_conf.py

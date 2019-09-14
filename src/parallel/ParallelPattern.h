@@ -14,6 +14,8 @@
 #include "graphIR/TensorNode.h"
 #include "graphIR/OpNode.h"
 #include "TilingLabel.h"
+#include <limits.h>
+
 using namespace swc::op;
 namespace swc {
 

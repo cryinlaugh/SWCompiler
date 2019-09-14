@@ -29,8 +29,8 @@ std::string MakefileBuilder::generate() {
 
     writer_ << "\t$(CXX)"
             << " $(CXXFLAGS)"
-            << " $(LDFLAGS)"
             << " $^ "
+            << " $(LDFLAGS)"
             << " -o $@"
             << "\n";
 
