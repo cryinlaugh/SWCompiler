@@ -60,9 +60,6 @@ public:
         _isApplied = true;
     }
 
-    void test(){
-        std::cout<<"test Tiling Label"<<std::endl;
-    }
 
 
 };

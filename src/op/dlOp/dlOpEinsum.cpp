@@ -90,11 +90,11 @@ void MatrixMatrixFCGradOp::einsumLowering(IRGraph *graph, IRNode *node)
     assert(node->childNum() == 2 && "FCGrad output should be 2: dataGrad, weightGrad");
 
     for (int i = 0; i < node->parentNum(); i++) {
-        std::cout << node->getParentNode(i)->name() << std::endl;
+        SWLOG_DEBUG(2)<< node->getParentNode(i)->name() << std::endl;
     }
 
     for (int i = 0; i < node->childNum(); i++) {
-        std::cout << node->getChildNode(i)->name() << std::endl;
+         SWLOG_DEBUG(2) << node->getChildNode(i)->name() << std::endl;
     }
 
     // Op info fetch
@@ -152,6 +152,7 @@ void MatrixMatrixFCBiasOp::einsumLowering(IRGraph *graph, IRNode *node)
 {
     SWLOG_DEBUG(4) << "einsumLowering MatrixMatrixFCBiasOp ..." << std::endl;
     
+    SWLOG_DEBUG(10) << node->name() << " lowering\n";
     // Op check;
     assert(node->parentNum() == 3 &&
            "FC input should be 3: data, weight, bias");

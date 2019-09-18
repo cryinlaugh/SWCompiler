@@ -139,6 +139,8 @@ class MatrixTanhOp : public Op {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
         this->_einOp = 1;
+        this->_einRep.push_back("ij");
+        this->_einRep.push_back("ij");
     };
     ~MatrixTanhOp();
     void destroy(){};
@@ -159,6 +161,10 @@ class MatrixSoftmaxOp : public Op {
     MatrixSoftmaxOp() : Op(DL_OP, 1, 1, std::string("MatrixSoftmax")) {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
+        
+        this->_einOp = 1;
+        this->_einRep.push_back("i0");
+        this->_einRep.push_back("i0");
     };
     ~MatrixSoftmaxOp();
     void checkValid(OpNode *node);
@@ -680,6 +686,9 @@ class ArgMaxOp : public Op {
 public:
     ArgMaxOp(int topK) : Op(DL_OP, 1, 1, std::string("ArgMax")) {
         topK_ = topK;
+        this->_einOp = 1;
+        this->_einRep.push_back("00");
+        this->_einRep.push_back("00");
     }
     ~ArgMaxOp() {}
     int getTopK() {
@@ -693,7 +702,11 @@ public:
  */
 class DebugOp : public Op {
 public:
-    DebugOp() : Op(DL_OP, 1, 1, std::string("Debug")) {}
+    DebugOp() : Op(DL_OP, 1, 1, std::string("Debug")) {
+        this->_einOp = 1;
+        this->_einRep.push_back("00");
+        this->_einRep.push_back("00");
+    }
     ~DebugOp() {}
     void destroy() {}
 };

@@ -144,7 +144,9 @@ int main() {
 
 
     PassManager passManager;
-    passManager.add(new ParallelingPass(mlp));
+    passManager.add(new ParallelLabelingPass(mlp));
+    passManager.add(new ParallelLoweringPass(mlp));
+
     // !!! is a must for EliminationPass, or all nodes
     // will be eliminated.
     //SETOUT(mlp, data4);

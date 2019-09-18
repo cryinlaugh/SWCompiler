@@ -29,11 +29,13 @@ class MatrixMatrixMulOp : public Op {
         this->_inputNDims.push_back(2);
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
-
         this->_einOp = 1;
         this->_einRep.push_back("ij");
         this->_einRep.push_back("jk");
         this->_einRep.push_back("ik");
+        this->_parallelDim.push_back(3);
+        this->_parallelDim.push_back(3);
+
         
     }
     ~MatrixMatrixMulOp() {}
@@ -51,6 +53,8 @@ class VectorMatrixMulOp : public Op {
         this->_einRep.push_back("i");
         this->_einRep.push_back("ij");
         this->_einRep.push_back("j");
+        this->_parallelDim.push_back(1);
+        this->_parallelDim.push_back(3);
     }
     ~VectorMatrixMulOp() {}
     void destroy(){};
@@ -67,6 +71,8 @@ class MatrixVectorMulOp : public Op {
         this->_einRep.push_back("ij");
         this->_einRep.push_back("j");
         this->_einRep.push_back("i");
+        this->_parallelDim.push_back(3);
+        this->_parallelDim.push_back(1);
     }
     ~MatrixVectorMulOp() {}
     void destroy(){};
@@ -109,6 +115,8 @@ class VectorVectorInnerProductOp : public Op {
         this->_einRep.push_back("i");
         this->_einRep.push_back("i");
         this->_einRep.push_back("");
+        this->_parallelDim.push_back(1);
+        this->_parallelDim.push_back(1);
     }
     ~VectorVectorInnerProductOp() {}
     void destroy(){};
@@ -139,6 +147,8 @@ class ScalarMulOp : public Op {
         this->_einRep.push_back("");
         this->_einRep.push_back("");
         this->_einRep.push_back("");
+        this->_parallelDim.push_back(0);
+        this->_parallelDim.push_back(0);
     }
     ~ScalarMulOp() {}
     void destroy(){};
@@ -155,6 +165,8 @@ class ScalarAddOp : public Op {
         this->_einRep.push_back("");
         this->_einRep.push_back("");
         this->_einRep.push_back("");
+        this->_parallelDim.push_back(0);
+        this->_parallelDim.push_back(0);
     }
     ~ScalarAddOp() {}
     void destroy(){};
@@ -171,6 +183,8 @@ class ScalarMaxOp : public Op {
         this->_einRep.push_back("");
         this->_einRep.push_back("");
         this->_einRep.push_back("");
+        this->_parallelDim.push_back(0);
+        this->_parallelDim.push_back(0);
     }
     ~ScalarMaxOp() {}
     void destroy(){};
@@ -185,6 +199,7 @@ class ScalarExpOp : public Op {
         this->_einOp = 1;
         this->_einRep.push_back("");
         this->_einRep.push_back("");
+        this->_parallelDim.push_back(0);
     }
     ~ScalarExpOp() {}
     void destroy(){};
@@ -199,6 +214,7 @@ class ScalarNegOp : public Op {
         this->_einOp = 1;
         this->_einRep.push_back("");
         this->_einRep.push_back("");
+        this->_parallelDim.push_back(0);
     }
     ~ScalarNegOp() {}
     void destroy(){};
@@ -213,6 +229,7 @@ class ScalarDivOp : public Op {
         this->_einOp = 1;
         this->_einRep.push_back("");
         this->_einRep.push_back("");
+        this->_parallelDim.push_back(0);
     }
     ~ScalarDivOp() {}
     void destroy(){};
@@ -227,6 +244,7 @@ class ScalarLogOp : public Op {
         this->_einOp = 1;
         this->_einRep.push_back("");
         this->_einRep.push_back("");
+        this->_parallelDim.push_back(0);
     }
     ~ScalarLogOp() {}
     void destroy(){};

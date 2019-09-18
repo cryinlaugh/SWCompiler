@@ -22,6 +22,7 @@ class TensorShape;
 class IRGraph;
 class IRNode;
 class OpNode;
+class ParallelGen;
 
 namespace op {
 
@@ -32,8 +33,8 @@ class Op {
         : _opType(opType), _nInput(nInput), _nOutput(nOutput),
           _opClassName(opClassName) {
 
-        _nInputTensor = 0;
-        _nOutputTensor = 0;
+        _nInputTensor = nInput;
+        _nOutputTensor = nOutput;
     };
 
     ~Op(){};
@@ -93,6 +94,7 @@ class Op {
     inline int getInputDims(int n) { return _inputNDims[n]; }
     inline int getOutputDims(int n) { return _outputNDims[n]; }
 
+
   protected:
     /* The following variables are constant values in a specific Op Class
        indicating what kind of input/output tensors it should keep. */
@@ -120,12 +122,19 @@ class Op {
      * and is used for analyzing and generating parallel strategies for a tensor graph.
      * 
      * _einOp is a label variable indicats whether the Op can be discribed using Einsum expression.
+     * _einRep is the vecter stores the Einsum expression for input and output tensors seperately,
+     * _parallelDim is a vector of unsigned integers which store the parallelizable label of all input tensors, used for generate parallelization strategy, 
+     * e.g. input tensor is expressed as "ijk" and has a parallel label x, 
+     *      then dimension i is parallelizable <==> ((x>>2) & 1 == 1)
+     *      dimension j is parallelizable <==> ((x>>1) & 1 == 1)
+     *      dimension k is parallelizable <==> ((x>>0) & 1 == 1)
      *
      */
     int _einOp;
-    std::vector<std::string> _einRep;
+    std::vector<std::string> _einRep; 
+    std::vector<int> _parallelDim; 
 
-    friend class ParallelGen;
+    friend class swc::ParallelGen;
 };
 
 } // namespace op

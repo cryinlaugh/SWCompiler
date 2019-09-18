@@ -135,7 +135,9 @@ int main() {
     // fc1_add->setStrategyLabel(new StrategyLabel({-2, -1, -2}));
 
     PassManager passManager;
-    passManager.add(new ParallelingPass(mlp));
+    passManager.add(new ParallelLabelingPass(mlp));
+    passManager.add(new ParallelLoweringPass(mlp));
+//passManager.add(new ParallelingPass(mlp));
     // !!! is a must for EliminationPass, or all nodes
     // will be eliminated.
     //SETOUT(mlp, data4);
