@@ -42,20 +42,37 @@ std::string dotGenIRNode(IRNode *irnode, std::string tensorInfo,
     str_total = str_total + "    // Generate one Node!\n";
 
     // Generate the information of this Node
-    thisNode = irnode->name();
+    // thisNode = irnode->name();
+    //
+    // NodeType nodeType = irnode->nodeType();
+    //
+    // if (nodeType == TENSOR_NODE)
+    //     str_tmp = "    " + thisNode + NodeInfo[0];
+    // else if (nodeType == OP_NODE)
+    //     str_tmp = "    " + thisNode + NodeInfo[1];
+    std::ostringstream os;
+    os  << irnode;
+    auto node_id_str = "node_" + os.str();
 
     NodeType nodeType = irnode->nodeType();
 
     if (nodeType == TENSOR_NODE)
-        str_tmp = "    " + thisNode + NodeInfo[0];
+        str_tmp = "\t" + node_id_str + NodeInfo[0];
     else if (nodeType == OP_NODE)
-        str_tmp = "    " + thisNode + NodeInfo[1];
+        str_tmp = "\t" + node_id_str + NodeInfo[1];
 
     str_total = str_total + str_tmp;
 
     // Generate -> Children
+    // for (int i = 0; i < irnode->childNum(); ++i) {
+    //     str_tmp = "    " + thisNode + " -> " + childNodes[i] + ";\n";
+    //     str_total = str_total + str_tmp;
+    // }
     for (int i = 0; i < irnode->childNum(); ++i) {
-        str_tmp = "    " + thisNode + " -> " + childNodes[i] + ";\n";
+        os.str("");
+        os << irnode->getChildNode(i);
+        auto child_id_str = "node_"+os.str();
+        str_tmp = "\t" + node_id_str + " -> " + child_id_str + ";\n";
         str_total = str_total + str_tmp;
     }
 
@@ -138,7 +155,7 @@ std::string dotGenOpNode(OpNode *opnode) {
     opInfo += "_nOutput: " + std::to_string(nOutput) + "\", ";
     */
     SWLOG_DEBUG(1) << opNodeName << " getOpInfo: " << opnode->getOp()->getOpInfo() << "\n";
-    
+
     opInfo += opnode->getOp()->getOpInfo() + "\", ";
     opInfo += "color=darkorange1, penwidth = 2";
     opInfo += "];\n";
