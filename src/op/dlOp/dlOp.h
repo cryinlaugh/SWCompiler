@@ -151,7 +151,13 @@ class MatrixTanhOp : public Op {
 
 class MatrixTanhGradOp : public Op {
   public:
-    MatrixTanhGradOp() : Op(DL_OP, 2, 1, std::string("MatrixTanhGrad")) {}
+    MatrixTanhGradOp() : Op(DL_OP, 3, 1, std::string("MatrixTanhGrad")) {
+        this->_einOp = 1;
+        this->_einRep.push_back("00");
+        this->_einRep.push_back("00");
+        this->_einRep.push_back("00");
+        this->_einRep.push_back("00");
+    }
     ~MatrixTanhGradOp();
     void destroy() {}
 };
@@ -189,6 +195,12 @@ class MatrixSoftmaxWithLossOp : public Op {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
         this->_outputNDims.push_back(1);
+
+        this->_einOp = 1;
+        this->_einRep.push_back("00");
+        this->_einRep.push_back("00");
+        this->_einRep.push_back("00");
+        this->_einRep.push_back("00");
     };
     ~MatrixSoftmaxWithLossOp();
     void checkValid(OpNode *node);
@@ -200,7 +212,14 @@ class MatrixSoftmaxWithLossOp : public Op {
 
 class MatrixSoftmaxWithLossGradOp : public Op {
   public:
-    MatrixSoftmaxWithLossGradOp() : Op(DL_OP, 4, 1, std::string("MatrixSoftmaxWithLossGrad")){};
+    MatrixSoftmaxWithLossGradOp() : Op(DL_OP, 4, 1, std::string("MatrixSoftmaxWithLossGrad")){
+        this->_einOp = 1;
+        this->_einRep.push_back("00");
+        this->_einRep.push_back("00");
+        this->_einRep.push_back("00");
+        this->_einRep.push_back("00");
+        this->_einRep.push_back("00");
+    };
     ~MatrixSoftmaxWithLossGradOp();
     void destroy() {}
 };
@@ -217,7 +236,13 @@ public:
     SGDOp() : Op(DL_OP, 3, 1, std::string("SGD")) {}
     SGDOp(float lr, float decay, float momentum, size_t batch)
         : Op(DL_OP, 2, 1, std::string("SGD")), lr_(lr), decay_(decay),
-          momentum_(momentum), batch_(batch) {}
+          momentum_(momentum), batch_(batch) {
+        this->_einOp = 1;
+        this->_einRep.push_back("00");
+        this->_einRep.push_back("00");
+        this->_einRep.push_back("00");
+        this->_einRep.push_back("00");
+    }
     ~SGDOp();
     float getLR() {
         return lr_;
@@ -249,6 +274,7 @@ public:
     MatrixTransOp() : Op(DL_OP, 1, 1, std::string("MatrixTrans")) {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
+        this->_einOp = 0;
     };
     ~MatrixTransOp();
     void destroy() {};
@@ -671,6 +697,7 @@ public:
         this->_outputNDims.push_back(4);
         for (auto i : shuffle)
             shuffle_.push_back(i);
+        this->_einOp = 0;
     }
     ~TransposeOp();
     std::vector<size_t> getShuffle() {

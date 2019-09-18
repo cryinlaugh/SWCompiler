@@ -112,22 +112,39 @@ int main() {
     // IRGraph *net = getTrainNet(mlp, profile);
     TRAIN(mlp, "sgd", 0.001, 0.001, 0.9, 8);
 
-    TensorNode *data_input = (TensorNode *)mlp_train->getNodeByName("data0");
-    TensorNode *label_input = (TensorNode *)mlp_train->getNodeByName("selected");
+    // TensorNode *data_input = (TensorNode *)mlp_train->getNodeByName("data0");
+    // TensorNode *label_input = (TensorNode *)mlp_train->getNodeByName("selected");
 
-    mlp_train->setTrainDataNodes(label_input, data_input);
+    // mlp_train->setTrainDataNodes(label_input, data_input);
+    mlp_train->setTrainDataNodes(data0, label);
+    mlp_train->findInOut();
     mlp_train->updateTopology();
 
+    dotGen(mlp_train, "mlp_train.dot");
+
+    swc::pass::ParallelLabelingPass parallelLabelingpass(mlp_train);
+    swc::pass::ParallelLoweringPass parallelLoweringpass(mlp_train);
+    swc::pass::EliminationPass elim(mlp_train);
     renamingpass.setGraph(mlp_train);
     labelingpass.setGraph(mlp_train);
     LoweringPass loweringpass(mlp_train);
+
     passManager.add((OptimizePass *)&renamingpass);
     passManager.add((OptimizePass *)&labelingpass);
     passManager.add((OptimizePass *)&loweringpass);
     passManager.add((OptimizePass *)&labelingpass);
+    passManager.add((OptimizePass *)&parallelLabelingpass);
+    passManager.add((OptimizePass *)&parallelLoweringpass);
+    passManager.add((OptimizePass *)&renamingpass);
     passManager.run();
 
+    elim.run();
+    // passManager.add((OptimizePass *)&elim);
+
     CHECKG(mlp_train);
+
+    mlp_train->findInOut();
+    mlp_train->updateTopology();
 
     dotGen(mlp_train);
 
@@ -141,7 +158,7 @@ int main() {
     config.train_config.snapshot = 1000;
     config.train_config.display = 500;
 
-    codegen::Codegen *cg = new codegen::Codegen(mlp_train, config);
+    codegen::ParallelCodegen *cg = new codegen::ParallelCodegen(mlp_train, config);
 
     string code = cg->generate();
     // cout << code;

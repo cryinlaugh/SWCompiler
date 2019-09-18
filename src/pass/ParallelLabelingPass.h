@@ -55,15 +55,23 @@ public:
         //get startegy 
         for(unsigned long i =0;i<topoOpNodes.size();++i){
             OpNode * originNode = topoOpNodes[i];
+            SWLOG_DEBUG(10) <<"get Candidate strategies for "<<originNode->name()
+                << " : " << originNode->getOp()->getOpName()<<":\n";
+
+            if(originNode->getOp()->getEinOp()== 0){
+                SWLOG_DEBUG(10) <<originNode->name()<<" can not be parallelized:\n";
+                continue;
+            }
+
             std::vector<std::vector<int> > strategies = ParallelGen::generateStgy(originNode->getOp());
             //default select 0
-            
-            std::cout<<"Candidate strategies for "<<originNode->name()<<":\n";
+
             for(auto sgy : strategies){
                 for(auto dim: sgy)
                     std::cout<<dim<<" ";
                 std::cout<<"\n";
             }
+
             int strategy_size = strategies.size();
             std::vector<int> finalstrategy;
             if(strategy_size == 0){

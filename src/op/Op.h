@@ -94,6 +94,7 @@ class Op {
     inline int getInputDims(int n) { return _inputNDims[n]; }
     inline int getOutputDims(int n) { return _outputNDims[n]; }
 
+    inline int getEinOp() { return _einOp; }
 
   protected:
     /* The following variables are constant values in a specific Op Class
@@ -130,7 +131,7 @@ class Op {
      *      dimension k is parallelizable <==> ((x>>0) & 1 == 1)
      *
      */
-    int _einOp;
+    int _einOp{0};
     std::vector<std::string> _einRep; 
     std::vector<int> _parallelDim; 
 

@@ -67,7 +67,8 @@ int main() {
     TENSOR(data3, 8, 10);
     LINKUPPER(data3, fc1);
 
-    OP(softmax0, MatrixSoftmaxOp);
+    // OP(softmax0, MatrixSoftmaxOp);
+    OP(softmax0, MatrixSoftmaxWithLossOp);
     LINKUPPER(softmax0, data3);
 
     TENSOR(data4, 8, 10);
