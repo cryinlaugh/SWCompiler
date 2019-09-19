@@ -11,6 +11,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <limits.h>
 
 enum class DataType { Float_t, Double_t, Int8_t, Int32_t };
 
@@ -30,6 +31,7 @@ struct TrainingConfig {
     size_t snapshot{0};
     // For Dataload
     size_t max_epoch{1};
+    size_t max_iters{0};
     // interval for Graph output display
     size_t display{0};
 

@@ -98,7 +98,7 @@ std::string dotGenTensorNode(TensorNode *tnode) {
 
     std::ostringstream os;
     os << "Tensor: " << std::hex << tnode->getTensor() << " |";
-    os << "isExternal: " << tnode->isExternal() << " |";
+    // os << "isExternal: " << tnode->isExternal() << " |";
 
 
     auto dev = tnode->getLabel()->getDeviceLabel();
@@ -144,12 +144,11 @@ std::string dotGenOpNode(OpNode *opnode) {
     else if (opnode->getOp()->getOpType() == TENSOR_OP)
         opType = "TENSOR_OP";
 
-    int nInput = opnode->getOp()->getnInput();
-    int nOutput = opnode->getOp()->getnOutput();
-
     // generate the opInfo
     opInfo += "label = \"Node's name: " + opNodeName + "\\n";
     /*
+    int nInput = opnode->getOp()->getnInput();
+    int nOutput = opnode->getOp()->getnOutput();
     opInfo += "Operation: " + opName + "\\n";
     opInfo += "_nInput: " + std::to_string(nInput) + "\\n";
     opInfo += "_nOutput: " + std::to_string(nOutput) + "\", ";

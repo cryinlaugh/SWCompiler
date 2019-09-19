@@ -29,7 +29,7 @@ class MakefileBuilder {
     std::string nvcc_{"nvcc"};
     std::string object_{"net.bin"};
     std::vector<std::string> cxx_srcs_;
-    std::string cxx_flags_{"-std=c++11 -O3"};
+    std::string cxx_flags_{"-std=c++11 -O2"};
     std::string ld_flags_;
     std::vector<std::string> include_dirs_;
     std::vector<std::string> library_dirs_;
