@@ -121,12 +121,10 @@ class ReshapeOp: public Op {
         this->_inputNDims.push_back(4);
         this->_outputNDims.push_back(4);
         */
-        this->_einOp = 1;
     };
     ReshapeOp(std::vector<size_t> &shape)
         : Op(DL_OP, 1, 1, std::string("Reshape")) {
         oshape_.assign(shape.begin(), shape.end());
-        this->_einOp = 1;
     }
     std::vector<size_t> getOutShape() { return oshape_; }
     ~ReshapeOp();
@@ -455,6 +453,12 @@ public:
         this->_inputNDims.push_back(4);
         this->_inputNDims.push_back(1);
         this->_outputNDims.push_back(4);
+
+        this->_einOp =  1;
+        this->_einRep.push_back("nhwc"); // in
+        this->_einRep.push_back("okkc"); // w
+        this->_einRep.push_back("o"); // b 
+        this->_einRep.push_back("nxyo"); // out 
     };
     Conv2dOp(std::vector<size_t> &kernels, std::vector<size_t> &strides,
              std::vector<size_t> &pads)
@@ -466,6 +470,12 @@ public:
         this->_inputNDims.push_back(4);
         this->_inputNDims.push_back(1);
         this->_outputNDims.push_back(4);
+
+        this->_einOp =  1;
+        this->_einRep.push_back("nhwc"); // in
+        this->_einRep.push_back("okkc"); // w
+        this->_einRep.push_back("o"); // b 
+        this->_einRep.push_back("nxyo"); // out 
     }
     std::vector<size_t> getPads() {
         return pads_;
@@ -573,6 +583,10 @@ public:
     MaxPoolOp() : Op(DL_OP, 1, 1, std::string("MaxPool")) {
         this->_inputNDims.push_back(4);
         this->_outputNDims.push_back(4);
+
+        this->_einOp =  1;
+        this->_einRep.push_back("nhwc"); // in
+        this->_einRep.push_back("nxyc"); // out 
     }
     MaxPoolOp(std::vector<size_t> &kernels, std::vector<size_t> &strides,
               std::vector<size_t> &pads)
@@ -582,6 +596,10 @@ public:
         pads_.assign(pads.begin(), pads.end());
         this->_inputNDims.push_back(4);
         this->_outputNDims.push_back(4);
+
+        this->_einOp =  1;
+        this->_einRep.push_back("nhwc"); // in
+        this->_einRep.push_back("nxyc"); // out 
     }
     ~MaxPoolOp();
     std::vector<size_t> getPads() {
@@ -639,6 +657,10 @@ public:
     AvgPoolOp() : Op(DL_OP, 1, 1, std::string("AveragePool")) {
         this->_inputNDims.push_back(4);
         this->_outputNDims.push_back(4);
+
+        this->_einOp =  1;
+        this->_einRep.push_back("nhwc"); // in
+        this->_einRep.push_back("nxyc"); // out 
     }
     AvgPoolOp(std::vector<size_t> &kernels, std::vector<size_t> &strides,
               std::vector<size_t> &pads)
@@ -648,6 +670,10 @@ public:
         pads_.assign(pads.begin(), pads.end());
         this->_inputNDims.push_back(4);
         this->_outputNDims.push_back(4);
+
+        this->_einOp =  1;
+        this->_einRep.push_back("nhwc"); // in
+        this->_einRep.push_back("nxyc"); // out 
     }
     ~AvgPoolOp();
     std::vector<size_t> getPads() {
