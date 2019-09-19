@@ -17,15 +17,10 @@ using namespace std;
 vector<vector<int> > swc::ParallelGen::generateStgy (swc::op::Op* testOp) {
     assert( (testOp->_einOp == 1) && "Not a parallelizable Op!");
 
-    SWLOG_DEBUG(10) << ">>>>>>>>>>"
-        << testOp->_nInputTensor << " " << testOp-> _nOutputTensor 
-        <<"\n";
     std::map<char, int> comDim;
     for(int iterT = 0; iterT < (testOp->_nInputTensor+testOp->_nOutputTensor); iterT ++){
         for(size_t dimIdx = 0; dimIdx < testOp->_einRep[iterT].size(); dimIdx ++){
             char dim_rep = testOp->_einRep[iterT][dimIdx];
-            SWLOG_DEBUG(10) << ">>>>>>>>>>"
-                << dimIdx << ": " << dim_rep << "\n";
             if(dim_rep == '0')
                 continue;
             if (comDim.find(testOp->_einRep[iterT][dimIdx]) == comDim.end()){
@@ -35,7 +30,6 @@ vector<vector<int> > swc::ParallelGen::generateStgy (swc::op::Op* testOp) {
             }
         }
     }
-    SWLOG_DEBUG(10) << ">>>>>>>>>>\n";
 
     map<char,int>::iterator it;
     it = comDim.begin();
