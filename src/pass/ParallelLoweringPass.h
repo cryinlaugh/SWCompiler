@@ -84,8 +84,18 @@ public:
                     curOpNode -> exlinkUpperNode(tlabel->getCurrentNode());
 
                 } else if(strategy != tlabel->getCurrentStrategy()) {
+                    SWLOG_DEBUG(4) << originNode->name() << " strategy " << tlabel->getCurrentStrategy()
+                        << " -> " << strategy << "\n";
                     if(tlabel->getCurrentStrategy() == -2) {
                         // joinpattern fllowed by forkpatter...
+                        ForkPattern* forkpattern = new ForkPattern(originNode, parallelnum);
+                        forkpattern->apply(strategy, _graph);
+                        curOpNode ->destroyUpperNode(originNode);
+                        curOpNode -> exlinkUpperNode(tlabel->getCurrentNode());
+                        continue;
+                    }
+                    if(tlabel->getCurrentStrategy()>=0 && strategy == -1) {
+                        // joinpattern fllowed by forkpattern...
                         ForkPattern* forkpattern = new ForkPattern(originNode, parallelnum);
                         forkpattern->apply(strategy, _graph);
                         curOpNode ->destroyUpperNode(originNode);
@@ -131,6 +141,8 @@ public:
                     //join pattern
                 // beblow two conditions should not occur
                 } else if(strategy != tlabel -> getCurrentStrategy()) {
+                    SWLOG_DEBUG(4) << originNode->name() << " strategy " << tlabel->getCurrentStrategy()
+                        << " -> " << strategy << "\n";
                     TransformPattern * transformpattern = new TransformPattern(originNode, parallelnum);
                     transformpattern->apply(strategy, _graph);
                     originNode->destroyUpperNode(curOpNode);
@@ -155,7 +167,7 @@ public:
 
     void run() {
         //SWLOG_DEBUG(4) << "Start Paralleling Pass." << std::endl;
-        runLowering(4);
+        runLowering(2);
         //SWLOG_DEBUG(4) << "Finish Paralleling pass. " << std::endl;
 
         // //std::cout<<"test"<<std::endl;
