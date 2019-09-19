@@ -114,7 +114,18 @@ void ParallelCodegen::emitExecute() {
 
         TrainingConfig tconfig = config_.train_config;
         tconfig.batch = data->getDims()[0];
-        writer_ << "DataLoader *loader;\n";
+
+        writer_ << "std::string train_data_file = \""
+                << tconfig.train_data_file << "\";\n";
+        writer_ << "DataLoader loader("
+            << "train_data_file, "
+            << getBytesProtoString(tconfig.label_bytes) << ", "
+            << getBytesProtoString(tconfig.data_bytes) << ", "
+            << tconfig.max_epoch << ", "
+            << tconfig.train_data_samples << ", "
+            << getInitialLizerString(label->getDims()) << ", "
+            << getInitialLizerString(data->getDims())
+            << ");\n";
 
         size_t max_iter = tconfig.max_iters==0 ?
                 (tconfig.train_data_samples * tconfig.max_epoch / tconfig.batch) : tconfig.max_iters;
@@ -128,24 +139,8 @@ void ParallelCodegen::emitExecute() {
         writer_ << "if(rank == 0) {\n";
         writer_.indentInc();
 
-        writer_ << "if(!loader) {\n";
-        writer_.indentInc();
 
-        writer_ << "std::string train_data_file = \""
-                << tconfig.train_data_file << "\";\n";
-        writer_ << "loader = new DataLoader("
-            << "train_data_file, "
-            << getBytesProtoString(tconfig.label_bytes) << ", "
-            << getBytesProtoString(tconfig.data_bytes) << ", "
-            << tconfig.max_epoch << ", "
-            << tconfig.train_data_samples << ", "
-            << getInitialLizerString(label->getDims()) << ", "
-            << getInitialLizerString(data->getDims())
-            << ");\n";
-        writer_.indentDec();
-        writer_ << "} // if loader null\n";
-
-        writer_ << "loader->next(" << label_var << ", " << data_var
+        writer_ << "loader.next(" << label_var << ", " << data_var
                 << ");\n";
         writer_.indentDec();
         writer_ << "} // if rank\n";

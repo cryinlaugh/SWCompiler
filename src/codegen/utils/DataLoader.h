@@ -13,6 +13,7 @@ enum BytesProto { ONE_BYTE_AS_INT, FOUR_BYTES_AS_FLOAT };
 
 class DataLoader {
     // FILE *_file{nullptr};
+    std::string _datafile;
     std::ifstream _stream;
     size_t _sample_num{0};
 
@@ -37,6 +38,9 @@ class DataLoader {
     size_t _epoch{0};
     void open();
     void close();
+
+    bool init_flag{false};
+    void check_init();
     /*
     template <typename T>
         void read(T *buf, size_t num);
