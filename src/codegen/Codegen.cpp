@@ -322,6 +322,7 @@ void Codegen::allocateMemAddr(IRGraph *graph) {
                 SWLOG_DEBUG(1) << "allocateMemAddr topo(" << i
                                <<", " << j << ") "
                                << tnode->name() << " " << size
+                               << " as " << bufferName
                                << " on dev(" << dev.rank << ", "
                                << static_cast<int>(dev.type) << ", "
                                << dev.id << ")."
@@ -720,13 +721,25 @@ void Codegen::emitPrintGraphOutputs() {
 
     writer_ << R"(std::cout << "iterations " << iter << "\n";)"
             << "\n";
+    /*
     for(int i=0; i<graph_->outNodeNum(); i++) {
         TensorNode * outnode = graph_->getOutNode(i);
         Tensor* out = outnode->getTensor();
+        std::cout << out << "\n";
         int m = out->getDim(0);
         int n = out->getNDim()==2 ? out->getDim(1) : 1;
         writer_ << "// OutNode " << i << ": " << outnode->name() << "\n";
         writer_ << "std::cout << \"" << outnode->name() <<":\\n\";" << "\n";
+        writer_ << "printMatrix(" <<  tensors_name_map_[out] << ", "
+            << m << ", " << n << ");\n";
+    }
+    */
+    for(auto &tnode : graph_->getDisplayTensorNodes()) {
+        auto* out = tnode->getTensor();
+        int m = out->getDim(0);
+        int n = out->getNDim()==2 ? out->getDim(1) : 1;
+        writer_ << "// " << tnode->name() << "\n";
+        writer_ << "std::cout << \"" << tnode->name() <<":\\n\";" << "\n";
         writer_ << "printMatrix(" <<  tensors_name_map_[out] << ", "
             << m << ", " << n << ");\n";
     }
@@ -764,7 +777,7 @@ std::string Codegen::emitTensorMemAlloc(TensorNode *tnode) {
     return bufferName;
 }
 
-static std::string getBytesProtoString(BytesProto proto) {
+std::string Codegen::getBytesProtoString(BytesProto proto) {
     switch (proto) {
     case ONE_BYTE_AS_INT:
         return "ONE_BYTE_AS_INT";
@@ -775,7 +788,7 @@ static std::string getBytesProtoString(BytesProto proto) {
     }
 }
 
-static std::string getInitialLizerString(const std::vector<size_t> &dims) {
+std::string Codegen::getInitialLizerString(const std::vector<size_t> &dims) {
     std::ostringstream os;
     os << "{";
     for (auto dim : dims)
@@ -809,10 +822,21 @@ void Codegen::emitDataLoaderInit() {
 }
 
 void Codegen::emitExecute() {
+    SWLOG_DEBUG(4) << "begin emitExecute ...\n";
     if (config_.train_mode) {
         TensorNode *label = graph_->getTrainLabelNode();
         TensorNode *data = graph_->getTrainDataNode();
-
+        if(!tensors_name_map_.count(label->getTensor())) {
+            SWLOG_DEBUG(4) << "label tensor " << label->name() << " " << label->getTensor() << " not in map ...\n";
+            for(auto iter : tensors_name_map_) {
+                std::cout << iter.first << " " << iter.second << "\n";
+            }
+            exit(0);
+        }
+        if(!tensors_name_map_.count(data->getTensor())) {
+            SWLOG_DEBUG(4) << "data tensor " << data->name() << " " << data->getTensor() << " not in map ...\n";
+            exit(0);
+        }
         std::string label_var = tensors_name_map_.at(label->getTensor());
         std::string data_var = tensors_name_map_.at(data->getTensor());
         /*
@@ -843,9 +867,11 @@ void Codegen::emitExecute() {
 
         writer_ << "} //while\n";
     }
+    SWLOG_DEBUG(4) << "begin emitExecute ...\n";
 }
 
 void Codegen::emitFuncCalls() {
+    SWLOG_DEBUG(4) << "begin emitFuncCalls ...\n";
     for (int i = 0; i < graph_->topologyNum(); i++)
         for (int j = 0; j < graph_->getNumInTopoLevel(i); j++) {
             auto node = graph_->getNodeInTopo(i, j);
@@ -868,6 +894,7 @@ void Codegen::emitFuncCalls() {
                 }
             }
         }
+    SWLOG_DEBUG(4) << "end emitFuncCalls ...\n";
 }
 void Codegen::emitFuncCalls(IRGraph *graph_) {
     for (int i = 0; i < graph_->topologyNum(); i++)
@@ -1468,7 +1495,7 @@ void Codegen::emitFuncCall(OpNode *op) {
                 << tensors_name_map_[input_mirror] << ", "
                 << tensors_name_map_[input] << ", " << tensors_name_map_[inputG]
                 << ", " << tensors_name_map_[momen] << ", " << lr << ", "
-                << decay << ", " << momentum << ", " << batch << ");\n ";
+                << decay << ", " << momentum << ", " << batch << ");\n";
     }
     SWLOG_DEBUG(2) << "end genKernelCall for " << op->name() << "\n";
 }

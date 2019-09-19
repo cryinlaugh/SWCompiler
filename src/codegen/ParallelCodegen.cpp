@@ -95,6 +95,97 @@ void ParallelCodegen::emitMPIInit() {
 }
 void ParallelCodegen::emitMPIFinalize() { writer_ << "MPI_Finalize();\n"; }
 
+void ParallelCodegen::emitExecute() {
+    SWLOG_DEBUG(4) << "begin emitExecute ...\n";
+    if (config_.train_mode) {
+        TensorNode *label = graph_->getTrainLabelNode();
+        TensorNode *data = graph_->getTrainDataNode();
+        if(!tensors_name_map_.count(label->getTensor())) {
+            SWLOG_DEBUG(4) << "label tensor " << label->name() << " " << label->getTensor() << " not in map ...\n";
+            exit(0);
+        }
+        if(!tensors_name_map_.count(data->getTensor())) {
+            SWLOG_DEBUG(4) << "data tensor " << data->name() << " " << data->getTensor() << " not in map ...\n";
+            exit(0);
+        }
+
+        std::string label_var = tensors_name_map_.at(label->getTensor());
+        std::string data_var = tensors_name_map_.at(data->getTensor());
+
+        TrainingConfig tconfig = config_.train_config;
+        tconfig.batch = data->getDims()[0];
+        writer_ << "DataLoader *loader;\n";
+
+        size_t max_iter = tconfig.max_iters==0 ?
+                (tconfig.train_data_samples * tconfig.max_epoch / tconfig.batch) : tconfig.max_iters;
+        writer_ << "size_t max_iter = " << max_iter
+                << ";\n";
+        writer_ << "size_t iter = 0; "
+                << "\n\n";
+        writer_ << "while(iter < max_iter) {\n";
+        writer_.indentInc();
+
+        writer_ << "if(rank == 0) {\n";
+        writer_.indentInc();
+
+        writer_ << "if(!loader) {\n";
+        writer_.indentInc();
+
+        writer_ << "std::string train_data_file = \""
+                << tconfig.train_data_file << "\";\n";
+        writer_ << "loader = new DataLoader("
+            << "train_data_file, "
+            << getBytesProtoString(tconfig.label_bytes) << ", "
+            << getBytesProtoString(tconfig.data_bytes) << ", "
+            << tconfig.max_epoch << ", "
+            << tconfig.train_data_samples << ", "
+            << getInitialLizerString(label->getDims()) << ", "
+            << getInitialLizerString(data->getDims())
+            << ");\n";
+        writer_.indentDec();
+        writer_ << "} // if loader null\n";
+
+        writer_ << "loader->next(" << label_var << ", " << data_var
+                << ");\n";
+        writer_.indentDec();
+        writer_ << "} // if rank\n";
+
+    }
+
+    emitFuncCalls();
+
+    if (config_.train_mode) {
+
+        writer_ << "\n";
+        writer_ << "iter++;\n";
+        if (config_.train_config.snapshot) {
+            writer_ << "if(rank == 0) {\n";
+            writer_.indentInc();
+
+            emitSaveSnapshot();
+
+            writer_.indentDec();
+            writer_ << "} // if rank\n";
+        }
+
+        if(config_.train_config.display) {
+            writer_ << "if(rank == 0) {\n";
+            writer_.indentInc();
+
+            emitPrintGraphOutputs();
+
+            writer_.indentDec();
+            writer_ << "} // if rank\n";
+        }
+
+        writer_.indentDec();
+
+        writer_ << "} //while\n";
+    }
+    SWLOG_DEBUG(4) << "begin emitExecute ...\n";
+
+}
+
 void ParallelCodegen::allocateMemAddr() {
     SWLOG_DEBUG(4) << "begin allocateMemAddr...\n";
     for (int i = 0; i < graph_->topologyNum(); i++) {
@@ -111,7 +202,9 @@ void ParallelCodegen::allocateMemAddr() {
                 Device dev = tnode->getLabel()->getDeviceLabel();
 
                 SWLOG_DEBUG(1)
-                    << "allocateMemAddr " << tnode->name() << " " << size
+                    << "allocateMemAddr " << tnode->name() << " "
+                    << "(" << tensor << ", " << size << ")"
+                    << " as " << buf_name
                     << " on dev(" << dev.rank << ", "
                     << static_cast<int>(dev.type) << ", " << dev.id << ")."
                     << "\n";
@@ -646,7 +739,7 @@ void ParallelCodegen::transformOpDispatcher(OpNode *node) {
             << DTYPE_MPI_DATATYPE_MAP.at(dtype) << ", "
             << "&"<<fname+"_sendType);\n"
             <<"MPI_Type_commit(&"<<fname+"_sendType);\n";
-        
+
         masterWriter_ << "size_t " << fname << "_sendOffset = 0;\n";
         masterWriter_ << "for(int r=1; r<" << p << "; r++) {\n";
         masterWriter_.indentInc();
@@ -847,9 +940,9 @@ void ParallelCodegen::dispatchOpNode(OpNode *op,
     SWLOG_DEBUG(4) << "dispatchOpNode " << op->name() << " for rank " << side
                    << "\n";
     if(side == 0)
-        masterWriter_ << "// " << op->name() << " : " << op->getOpName() << "\n";
+        masterWriter_ << "// master " << op->name() << " : " << op->getOpName() << "\n";
     else if(side == 1)
-        workerWriter_ << "// " << op->name() << " : " << op->getOpName() << "\n";
+        workerWriter_ << "// worker " << op->name() << " : " << op->getOpName() << "\n";
     else
         writer_ << "// " << op->name() << " : " << op->getOpName() << "\n";
 

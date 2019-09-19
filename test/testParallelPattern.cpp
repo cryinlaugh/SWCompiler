@@ -67,8 +67,8 @@ int main() {
     TENSOR(data3, 8, 10);
     LINKUPPER(data3, fc1);
 
-    // OP(softmax0, MatrixSoftmaxOp);
-    OP(softmax0, MatrixSoftmaxWithLossOp);
+    OP(softmax0, MatrixSoftmaxOp);
+    // OP(softmax0, MatrixSoftmaxWithLossOp);
     LINKUPPER(softmax0, data3);
 
     TENSOR(data4, 8, 10);
@@ -110,18 +110,18 @@ int main() {
     //softmax0->setStrategyLabel(new StrategyLabel({1, 1}));
 
 
-    
+
     swc::pass::LabelingPass labelingpass(mlp);
     labelingpass.run();
 
     swc::pass::LoweringPass loweringpass(mlp);
     loweringpass.run();
     labelingpass.run();
-    
+
 
     swc::pass::ParallelLabelingPass parallelLabelingpass(mlp);
     parallelLabelingpass.run();
-    
+
    swc::pass::ParallelLoweringPass parallelLoweringpass(mlp);
    parallelLoweringpass.run();
 
@@ -132,7 +132,7 @@ int main() {
 
     swc::pass::EliminationPass elim(mlp);
     elim.run();
-    
+
     //std::vector<string>
 
     //pass::Optimizer *opt = new pass::Optimizer(mlp);
@@ -161,6 +161,7 @@ int main() {
 
     dotGen(mlp);
     CodegenConfig config;
+    std::cout << "dotgen ok\n";
     codegen::ParallelCodegen *cg = new codegen::ParallelCodegen(mlp, config);
     string code = cg->generate();
     cout << code;
