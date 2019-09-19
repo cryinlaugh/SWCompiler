@@ -112,46 +112,41 @@ int main()
 
     TRAIN(lenet, "sgd", 0.001, 0.001, 0.9, 8);
 
-    // TrainingConfig profile;
-    // profile.batch = data0->getDims()[0];
-    // IRGraph *lenet_train = getTrainNet(lenet, profile);
-
-
     TensorNode *data_input = (TensorNode *)lenet_train->getNodeByName("data0");
     TensorNode *label_input = (TensorNode *)lenet_train->getNodeByName("selected");
     TensorNode *train_loss = (TensorNode *)lenet_train->getNodeByName("loss");
 
     lenet_train->setTrainDataNodes(label_input, data_input);
 
-    // keep in/OutNodes as Infer net, do not findInOut()
+    lenet_train->findInOut();
     lenet_train->updateTopology();
 
-    PassManager passManager;
+    dotGen(lenet_train, "mlp_train.dot");
+
+    LoweringPass loweringpass(lenet_train);
     RenamingNodePass renamingpass(lenet_train);
     LabelingPass labelingpass(lenet_train);
-    LoweringPass loweringpass(lenet_train);
-    /*
-    * puzzle:
-    * 1. Labelingpass must before loweringpass (setLowerMark)
-    * 2. ? renamingpass must before labeling,  or setNodeNameLabel, labels may duplicate
-    * 3. renamingpass after loweringpass. because lowering may take dum names. "momentum", "xx_reshape"
-    * 4. labeling pass must after loweringpass. because new op need to be labeled.
-    * -----
-    * ???
-    * break the dependency between labeling and lowering.
-    * lowering->renaming->labeling?
-    */
+    ParallelLabelingPass parallelLabelingpass(lenet_train);
+    ParallelLoweringPass parallelLoweringpass(lenet_train);
+    EliminationPass elim(lenet_train);
 
+    PassManager passManager;
     passManager.add((OptimizePass *)&labelingpass);
     passManager.add((OptimizePass *)&loweringpass);
+    passManager.add((OptimizePass *)&labelingpass);
+    passManager.add((OptimizePass *)&parallelLabelingpass);
+    passManager.add((OptimizePass *)&parallelLoweringpass);
     passManager.add((OptimizePass *)&renamingpass);
+    passManager.add((OptimizePass *)&elim);
     passManager.add((OptimizePass *)&labelingpass);
     passManager.run();
 
-
-    dotGen(lenet_train);
+    
+    // parallelLoweringpass  and elim will add/delete nodes
+    lenet_train->updateTopology();
     lenet_train->addDisplayTensorNodes(train_loss);
 
+    dotGen(lenet_train);
 
     CodegenConfig config;
     config.train_mode = true;
@@ -162,11 +157,10 @@ int main()
     config.train_config.snapshot = 1000;
     config.train_config.display = 500;
 
-    codegen::Codegen *cg = new codegen::Codegen(lenet_train, config);
+    codegen::ParallelCodegen *cg = new codegen::ParallelCodegen(lenet_train, config);
 
     string code = cg->generate();
-
-    cout << code << "\n";
+    // cout << code << "\n";
 
     return 0;
 }
