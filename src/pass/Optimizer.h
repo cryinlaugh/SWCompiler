@@ -15,7 +15,8 @@
 #include "RenamingNodePass.h"
 #include "AutodiffPass.h"
 #include "EliminationPass.h"
-#include "ParallelingPass.h"
+#include "ParallelLabelingPass.h"
+#include "ParallelLoweringPass.h"
 #include <queue>
 
 namespace swc {

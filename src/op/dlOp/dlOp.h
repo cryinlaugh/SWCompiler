@@ -121,12 +121,10 @@ class ReshapeOp: public Op {
         this->_inputNDims.push_back(4);
         this->_outputNDims.push_back(4);
         */
-        this->_einOp = 1;
     };
     ReshapeOp(std::vector<size_t> &shape)
         : Op(DL_OP, 1, 1, std::string("Reshape")) {
         oshape_.assign(shape.begin(), shape.end());
-        this->_einOp = 1;
     }
     std::vector<size_t> getOutShape() { return oshape_; }
     ~ReshapeOp();
@@ -139,6 +137,8 @@ class MatrixTanhOp : public Op {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
         this->_einOp = 1;
+        this->_einRep.push_back("ij");
+        this->_einRep.push_back("ij");
     };
     ~MatrixTanhOp();
     void destroy(){};
@@ -149,7 +149,13 @@ class MatrixTanhOp : public Op {
 
 class MatrixTanhGradOp : public Op {
   public:
-    MatrixTanhGradOp() : Op(DL_OP, 2, 1, std::string("MatrixTanhGrad")) {}
+    MatrixTanhGradOp() : Op(DL_OP, 3, 1, std::string("MatrixTanhGrad")) {
+        this->_einOp = 1;
+        this->_einRep.push_back("00");
+        this->_einRep.push_back("00");
+        this->_einRep.push_back("00");
+        this->_einRep.push_back("00");
+    }
     ~MatrixTanhGradOp();
     void destroy() {}
 };
@@ -159,6 +165,10 @@ class MatrixSoftmaxOp : public Op {
     MatrixSoftmaxOp() : Op(DL_OP, 1, 1, std::string("MatrixSoftmax")) {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
+        
+        this->_einOp = 1;
+        this->_einRep.push_back("i0");
+        this->_einRep.push_back("i0");
     };
     ~MatrixSoftmaxOp();
     void checkValid(OpNode *node);
@@ -183,6 +193,12 @@ class MatrixSoftmaxWithLossOp : public Op {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
         this->_outputNDims.push_back(1);
+
+        this->_einOp = 1;
+        this->_einRep.push_back("00");
+        this->_einRep.push_back("00");
+        this->_einRep.push_back("00");
+        this->_einRep.push_back("00");
     };
     ~MatrixSoftmaxWithLossOp();
     void checkValid(OpNode *node);
@@ -194,7 +210,14 @@ class MatrixSoftmaxWithLossOp : public Op {
 
 class MatrixSoftmaxWithLossGradOp : public Op {
   public:
-    MatrixSoftmaxWithLossGradOp() : Op(DL_OP, 4, 1, std::string("MatrixSoftmaxWithLossGrad")){};
+    MatrixSoftmaxWithLossGradOp() : Op(DL_OP, 4, 1, std::string("MatrixSoftmaxWithLossGrad")){
+        this->_einOp = 1;
+        this->_einRep.push_back("00");
+        this->_einRep.push_back("00");
+        this->_einRep.push_back("00");
+        this->_einRep.push_back("00");
+        this->_einRep.push_back("00");
+    };
     ~MatrixSoftmaxWithLossGradOp();
     void destroy() {}
 };
@@ -211,7 +234,13 @@ public:
     SGDOp() : Op(DL_OP, 3, 1, std::string("SGD")) {}
     SGDOp(float lr, float decay, float momentum, size_t batch)
         : Op(DL_OP, 2, 1, std::string("SGD")), lr_(lr), decay_(decay),
-          momentum_(momentum), batch_(batch) {}
+          momentum_(momentum), batch_(batch) {
+        this->_einOp = 1;
+        this->_einRep.push_back("00");
+        this->_einRep.push_back("00");
+        this->_einRep.push_back("00");
+        this->_einRep.push_back("00");
+    }
     ~SGDOp();
     float getLR() {
         return lr_;
@@ -243,6 +272,7 @@ public:
     MatrixTransOp() : Op(DL_OP, 1, 1, std::string("MatrixTrans")) {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
+        this->_einOp = 0;
     };
     ~MatrixTransOp();
     void destroy() {};
@@ -423,6 +453,12 @@ public:
         this->_inputNDims.push_back(4);
         this->_inputNDims.push_back(1);
         this->_outputNDims.push_back(4);
+
+        this->_einOp =  1;
+        this->_einRep.push_back("nhwc"); // in
+        this->_einRep.push_back("okkc"); // w
+        this->_einRep.push_back("o"); // b 
+        this->_einRep.push_back("nxyo"); // out 
     };
     Conv2dOp(std::vector<size_t> &kernels, std::vector<size_t> &strides,
              std::vector<size_t> &pads)
@@ -434,6 +470,12 @@ public:
         this->_inputNDims.push_back(4);
         this->_inputNDims.push_back(1);
         this->_outputNDims.push_back(4);
+
+        this->_einOp =  1;
+        this->_einRep.push_back("nhwc"); // in
+        this->_einRep.push_back("okkc"); // w
+        this->_einRep.push_back("o"); // b 
+        this->_einRep.push_back("nxyo"); // out 
     }
     std::vector<size_t> getPads() {
         return pads_;
@@ -541,6 +583,10 @@ public:
     MaxPoolOp() : Op(DL_OP, 1, 1, std::string("MaxPool")) {
         this->_inputNDims.push_back(4);
         this->_outputNDims.push_back(4);
+
+        this->_einOp =  1;
+        this->_einRep.push_back("nhwc"); // in
+        this->_einRep.push_back("nxyc"); // out 
     }
     MaxPoolOp(std::vector<size_t> &kernels, std::vector<size_t> &strides,
               std::vector<size_t> &pads)
@@ -550,6 +596,10 @@ public:
         pads_.assign(pads.begin(), pads.end());
         this->_inputNDims.push_back(4);
         this->_outputNDims.push_back(4);
+
+        this->_einOp =  1;
+        this->_einRep.push_back("nhwc"); // in
+        this->_einRep.push_back("nxyc"); // out 
     }
     ~MaxPoolOp();
     std::vector<size_t> getPads() {
@@ -607,6 +657,10 @@ public:
     AvgPoolOp() : Op(DL_OP, 1, 1, std::string("AveragePool")) {
         this->_inputNDims.push_back(4);
         this->_outputNDims.push_back(4);
+
+        this->_einOp =  1;
+        this->_einRep.push_back("nhwc"); // in
+        this->_einRep.push_back("nxyc"); // out 
     }
     AvgPoolOp(std::vector<size_t> &kernels, std::vector<size_t> &strides,
               std::vector<size_t> &pads)
@@ -616,6 +670,10 @@ public:
         pads_.assign(pads.begin(), pads.end());
         this->_inputNDims.push_back(4);
         this->_outputNDims.push_back(4);
+
+        this->_einOp =  1;
+        this->_einRep.push_back("nhwc"); // in
+        this->_einRep.push_back("nxyc"); // out 
     }
     ~AvgPoolOp();
     std::vector<size_t> getPads() {
@@ -665,6 +723,7 @@ public:
         this->_outputNDims.push_back(4);
         for (auto i : shuffle)
             shuffle_.push_back(i);
+        this->_einOp = 0;
     }
     ~TransposeOp();
     std::vector<size_t> getShuffle() {
@@ -680,6 +739,9 @@ class ArgMaxOp : public Op {
 public:
     ArgMaxOp(int topK) : Op(DL_OP, 1, 1, std::string("ArgMax")) {
         topK_ = topK;
+        this->_einOp = 1;
+        this->_einRep.push_back("00");
+        this->_einRep.push_back("00");
     }
     ~ArgMaxOp() {}
     int getTopK() {
@@ -693,7 +755,11 @@ public:
  */
 class DebugOp : public Op {
 public:
-    DebugOp() : Op(DL_OP, 1, 1, std::string("Debug")) {}
+    DebugOp() : Op(DL_OP, 1, 1, std::string("Debug")) {
+        this->_einOp = 1;
+        this->_einRep.push_back("00");
+        this->_einRep.push_back("00");
+    }
     ~DebugOp() {}
     void destroy() {}
 };

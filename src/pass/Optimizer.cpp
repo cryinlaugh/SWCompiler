@@ -32,7 +32,7 @@ void pass::Optimizer::runOptimizer() {
     passManager.add((OptimizePass *)&labelingpass); // run labeling again
 
     // paralleing pass: assign tiling label to all ops , then applied  to graph
-    ParallelingPass parallelingpass(_graph);
+    //ParallelingPass parallelingpass(_graph);
     //passManager.add((OptimizePass*)&parallelingpass);
     passManager.run();
     SWLOG_DEBUG(4) << "Optimization done.\n\n" << std::endl;

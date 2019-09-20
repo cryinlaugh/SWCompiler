@@ -42,20 +42,37 @@ std::string dotGenIRNode(IRNode *irnode, std::string tensorInfo,
     str_total = str_total + "    // Generate one Node!\n";
 
     // Generate the information of this Node
-    thisNode = irnode->name();
+    // thisNode = irnode->name();
+    //
+    // NodeType nodeType = irnode->nodeType();
+    //
+    // if (nodeType == TENSOR_NODE)
+    //     str_tmp = "    " + thisNode + NodeInfo[0];
+    // else if (nodeType == OP_NODE)
+    //     str_tmp = "    " + thisNode + NodeInfo[1];
+    std::ostringstream os;
+    os  << irnode;
+    auto node_id_str = "node_" + os.str();
 
     NodeType nodeType = irnode->nodeType();
 
     if (nodeType == TENSOR_NODE)
-        str_tmp = "    " + thisNode + NodeInfo[0];
+        str_tmp = "\t" + node_id_str + NodeInfo[0];
     else if (nodeType == OP_NODE)
-        str_tmp = "    " + thisNode + NodeInfo[1];
+        str_tmp = "\t" + node_id_str + NodeInfo[1];
 
     str_total = str_total + str_tmp;
 
     // Generate -> Children
+    // for (int i = 0; i < irnode->childNum(); ++i) {
+    //     str_tmp = "    " + thisNode + " -> " + childNodes[i] + ";\n";
+    //     str_total = str_total + str_tmp;
+    // }
     for (int i = 0; i < irnode->childNum(); ++i) {
-        str_tmp = "    " + thisNode + " -> " + childNodes[i] + ";\n";
+        os.str("");
+        os << irnode->getChildNode(i);
+        auto child_id_str = "node_"+os.str();
+        str_tmp = "\t" + node_id_str + " -> " + child_id_str + ";\n";
         str_total = str_total + str_tmp;
     }
 
@@ -81,7 +98,7 @@ std::string dotGenTensorNode(TensorNode *tnode) {
 
     std::ostringstream os;
     os << "Tensor: " << std::hex << tnode->getTensor() << " |";
-    os << "isExternal: " << tnode->isExternal() << " |";
+    // os << "isExternal: " << tnode->isExternal() << " |";
 
 
     auto dev = tnode->getLabel()->getDeviceLabel();
@@ -127,18 +144,17 @@ std::string dotGenOpNode(OpNode *opnode) {
     else if (opnode->getOp()->getOpType() == TENSOR_OP)
         opType = "TENSOR_OP";
 
-    int nInput = opnode->getOp()->getnInput();
-    int nOutput = opnode->getOp()->getnOutput();
-
     // generate the opInfo
     opInfo += "label = \"Node's name: " + opNodeName + "\\n";
     /*
+    int nInput = opnode->getOp()->getnInput();
+    int nOutput = opnode->getOp()->getnOutput();
     opInfo += "Operation: " + opName + "\\n";
     opInfo += "_nInput: " + std::to_string(nInput) + "\\n";
     opInfo += "_nOutput: " + std::to_string(nOutput) + "\", ";
     */
     SWLOG_DEBUG(1) << opNodeName << " getOpInfo: " << opnode->getOp()->getOpInfo() << "\n";
-    
+
     opInfo += opnode->getOp()->getOpInfo() + "\", ";
     opInfo += "color=darkorange1, penwidth = 2";
     opInfo += "];\n";

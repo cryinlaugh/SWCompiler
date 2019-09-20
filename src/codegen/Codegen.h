@@ -58,7 +58,7 @@ class Codegen {
     void emitCUDAInit();
 
     /// Dataloader for batch executions
-    void emitDataLoaderInit();
+    virtual void emitDataLoaderInit();
 
     /// create allocators for devices according to config
     /// and set baseptr name
@@ -115,7 +115,7 @@ class Codegen {
     /// may need to allocate for specific tensornode (e.g. different data type)
     std::string emitTensorMemAlloc(TensorNode *tnode);
     //----------------------------------------------------------
-    void emitExecute();
+    virtual void emitExecute();
     /// generate function calls for opNodes
     virtual void emitFuncCalls();
     /// generate function calls for opNodes of L2(Device) subGraph
@@ -153,6 +153,8 @@ protected:
     void destroy();
 
     std::string getTypeString(Tensor *);
+    std::string getBytesProtoString(BytesProto proto);
+    std::string getInitialLizerString(const std::vector<size_t> &dims);
 
     CodeWriter headerWriter_;
     CodeWriter writer_;
@@ -194,6 +196,7 @@ public:
     void emitTensorAddresses() override;
     void emitTensorInitializations() override;
     void emitTensorInitialization(TensorNode* tnode);
+    void emitExecute() override;
     void emitFuncCalls() override;
     // void emitFuncCall(OpNode *op, CodeWriter& writer);
     void heteroBegin();
@@ -205,8 +208,11 @@ public:
 
     void initMakefileBuilder() override;
 
+    void emitDataLoaderInit() override {}
+
     void emitMPIInit();
     void emitMPIFinalize();
+
 private:
     CodeWriter masterWriter_; // rank == 0
     CodeWriter workerWriter_; // rank!=0

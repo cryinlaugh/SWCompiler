@@ -39,9 +39,10 @@ class TensorNode : public IRNode {
     ~TensorNode(){ destroy(); };
 
     void destroy() { 
-        printf("free TensorNode:%s\n", name().c_str()); 
+        //printf("free TensorNode:%s\n", name().c_str()); 
         getLabel()->destroy();
         getTensor()->destroy();
+        SWLOG_DEBUG(10) << "Destroy TensorNode: " << name() << "\n"; 
     };
 
     void setTensor(Tensor *tensor) { tensor_ = tensor; }

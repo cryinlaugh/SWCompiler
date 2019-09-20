@@ -22,6 +22,8 @@ DataLoader::DataLoader(std::string &filename, BytesProto label_proto,
     _label_bytes_proto = label_proto;
     _data_bytes_proto = data_proto;
 
+    _datafile = filename;
+
     _sample_num = sample_num;
     _minibatch = _data_batch_shape[0];
 
@@ -31,21 +33,6 @@ DataLoader::DataLoader(std::string &filename, BytesProto label_proto,
     _data_bytes = _data_size * getProtoBytes(_data_bytes_proto);
 
     _max_epoch = epochs;
-
-    std::cout << "DataLoader Summary: \n"
-              << "<" << _label_bytes << " x label><" << _data_bytes << " x "
-              << "data>"
-              << "\n"
-              << "_minibatch: " << _minibatch << "\n"
-              << "_label_bytes: " << _label_bytes << "\n"
-              << "_data_size: " << _data_size << "\n"
-              << "_data_bytes: " << _data_bytes << "\n";
-
-    _stream.open(filename, std::ios::binary);
-    if (!_stream.is_open()) {
-        std::cout << "Error loading " << filename << "\n";
-        std::exit(EXIT_FAILURE);
-    }
 }
 
 size_t DataLoader::getProtoBytes(BytesProto proto) {
@@ -57,6 +44,27 @@ size_t DataLoader::getProtoBytes(BytesProto proto) {
     default:
         return 1;
     }
+}
+
+void DataLoader::check_init() {
+    if(init_flag)
+        return;
+
+    _stream.open(_datafile, std::ios::binary);
+    if (!_stream.is_open()) {
+        std::cout << "Error loading " << _datafile << "\n";
+        std::exit(EXIT_FAILURE);
+    }
+    init_flag = true;
+    std::cout << "DataLoader Summary: \n"
+              << "<" << _label_bytes << " x label><" << _data_bytes << " x "
+              << "data>"
+              << "\n"
+              << "_minibatch: " << _minibatch << "\n"
+              << "_label_bytes: " << _label_bytes << "\n"
+              << "_data_size: " << _data_size << "\n"
+              << "_data_bytes: " << _data_bytes << "\n";
+
 }
 
 void DataLoader::close() {
@@ -110,6 +118,9 @@ void DataLoader::read(size_t num) {
 }
 
 bool DataLoader::next(int *label_batch, float *data_batch) {
+    check_init();
+
+    // std::cout << "loader want to fill " << label_batch << " and " << data_batch;
     if (_epoch == _max_epoch) {
         close();
         return false;

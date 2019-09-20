@@ -91,6 +91,7 @@ class IRGraph {
         pushInNode(args...);
     }
 
+    void clearOutNodes(){ _outNodes.clear(); }
     void pushOutNode(){};
     template <typename T, typename... Types>
     void pushOutNode(const T &firstArg, const Types &... args) {
@@ -127,6 +128,14 @@ class IRGraph {
     TensorNode *getTrainLabelNode() { return _input_label_node; }
     TensorNode *getTrainDataNode() { return _input_data_node; }
 
+    void addDisplayTensorNodes(){}
+    template <typename T, typename... Types>
+    void addDisplayTensorNodes(const T &firstArg, const Types &... args) {
+        _display_nodes.push_back(firstArg);
+        addDisplayTensorNodes(args...);
+    }
+    std::vector<TensorNode*> getDisplayTensorNodes(){ return _display_nodes; }
+
   private:
     std::vector<TensorNode *> _tensors;
     std::vector<OpNode *> _ops;
@@ -138,6 +147,7 @@ class IRGraph {
 
     TensorNode *_input_data_node{nullptr};
     TensorNode *_input_label_node{nullptr};
+    std::vector <TensorNode*> _display_nodes;
 
     Device _dev;
 };

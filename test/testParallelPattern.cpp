@@ -68,6 +68,7 @@ int main() {
     LINKUPPER(data3, fc1);
 
     OP(softmax0, MatrixSoftmaxOp);
+    // OP(softmax0, MatrixSoftmaxWithLossOp);
     LINKUPPER(softmax0, data3);
 
     TENSOR(data4, 8, 10);
@@ -76,6 +77,23 @@ int main() {
     G(mlp);
     GpT(mlp, data0, data1, data2, data3, data4, weight0, weight1, bias0, bias1);
     GpO(mlp, fc0, fc1, tanh0, softmax0);
+
+    auto *argmax_o = new OpNode("argmax", new ArgMaxOp(3));
+    argmax_o->exlinkUpperNode(data4);
+    auto *top3_t =
+        new TensorNode("top3", new Tensor({8, 3}, DataType::Int32_t), argmax_o);
+    auto *print_o = new OpNode("print", new DebugOp());
+    print_o->exlinkUpperNode(top3_t);
+
+    TENSOR(placeholder, 0);
+    LINKUPPER(placeholder, print_o);
+
+    // define IR graph
+    GpT(mlp, top3_t, placeholder);
+    GpO(mlp, argmax_o, print_o);
+
+    mlp->findInOut();
+    mlp->updateTopology();
 
     SETOUT(mlp, data4);
 
@@ -86,27 +104,68 @@ int main() {
 
     //StrategyLabel* slabel = new StrategyLabel();
     //slabel->setStrategy({0,-1,0});
-    fc0->setStrategyLabel(new StrategyLabel({0, -1, -1, 0}));
-    tanh0->setStrategyLabel(new StrategyLabel({0, 0}));
-    fc1->setStrategyLabel(new StrategyLabel({0, -1, -1, 0}));
-    softmax0->setStrategyLabel(new StrategyLabel({1, 1}));
+    //fc0->setStrategyLabel(new StrategyLabel({0, -1, -1, 0}));
+    //tanh0->setStrategyLabel(new StrategyLabel({0, 0}));
+    //fc1->setStrategyLabel(new StrategyLabel({0, -1, -1, 0}));
+    //softmax0->setStrategyLabel(new StrategyLabel({1, 1}));
 
 
-    swc::pass::ParallelingPass parallelingpass(mlp);
-    parallelingpass.run();
+
+    swc::pass::LabelingPass labelingpass(mlp);
+    labelingpass.run();
+
+    swc::pass::LoweringPass loweringpass(mlp);
+    loweringpass.run();
+    labelingpass.run();
+
+
+    swc::pass::ParallelLabelingPass parallelLabelingpass(mlp);
+    parallelLabelingpass.run();
+
+   swc::pass::ParallelLoweringPass parallelLoweringpass(mlp);
+   parallelLoweringpass.run();
+
+
 
     swc::pass::RenamingNodePass renamingpass(mlp);
     renamingpass.run();
 
     swc::pass::EliminationPass elim(mlp);
     elim.run();
-    
+
     //std::vector<string>
 
     //pass::Optimizer *opt = new pass::Optimizer(mlp);
 
     //opt->runOptimizer();
     //mlp->updateTopology();
+    /*
+    auto *argmax_o = new OpNode("argmax", new ArgMaxOp(3));
+    argmax_o->exlinkUpperNode(data4);
+    auto *top3_t =
+        new TensorNode("top3", new Tensor({8, 3}, DataType::Int32_t), argmax_o);
+    auto *print_o = new OpNode("print", new DebugOp());
+    print_o->exlinkUpperNode(top3_t);
+
+    TENSOR(placeholder, 0);
+    LINKUPPER(placeholder, print_o);
+
+    // define IR graph
+    GpT(mlp, top3_t, placeholder);
+    GpO(mlp, argmax_o, print_o);
+
+    mlp->findInOut();
+    mlp->updateTopology();
+    labelingpass.run();
+    */
+
     dotGen(mlp);
+    CodegenConfig config;
+    std::cout << "dotgen ok\n";
+    codegen::ParallelCodegen *cg = new codegen::ParallelCodegen(mlp, config);
+    string code = cg->generate();
+    cout << code;
+
+
     return 0;
 }

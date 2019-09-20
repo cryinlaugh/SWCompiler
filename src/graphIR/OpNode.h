@@ -30,7 +30,7 @@ class OpNode : public IRNode {
 
     void destroy() {
         // printf("free OpNode:%s\n", name().c_str());
-        SWLOG_DEBUG(1) << "Destroy OpNodeL: " << name() << "\n"; 
+        SWLOG_DEBUG(10) << "Destroy OpNode: " << name() << "\n"; 
 
         getOp()->destroy();
         getLabel()->destroy();

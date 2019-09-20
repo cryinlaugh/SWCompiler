@@ -35,6 +35,10 @@ class swc::pass::LoweringPass : public OptimizePass {
 
         int nTensorNodes = _graph->tensorNodeNum();
         int nOpNodes = _graph->opNodeNum();
+        std::vector<OpNode*> opNodes;
+        for(int i=0; i<nOpNodes; i++)
+            opNodes.push_back(_graph->getOpNode(i));
+
 
         for (int i = 0; i < nTensorNodes; i++) {
             TensorNode *tnode = _graph->getTensorNode(i);
@@ -42,11 +46,13 @@ class swc::pass::LoweringPass : public OptimizePass {
             (void)tlabel;
         }
 
-        for (int i = 0; i < nOpNodes; i++) {
-            OpNode *tnode = _graph->getOpNode(i);
-            Label *tlabel = tnode->getLabel();
+        for (auto opnode : opNodes) {
+            Label *tlabel = opnode->getLabel();
+            SWLOG_DEBUG(10) << opnode->name() << " of " << 
+               nOpNodes  << " lowering mark "
+                << tlabel->getLowerMark() << "\n";
             if (tlabel->getLowerMark()) {
-                tnode->getOp()->lowering(_graph, tnode);
+                opnode->getOp()->lowering(_graph, opnode);
             } else {
             }
         }

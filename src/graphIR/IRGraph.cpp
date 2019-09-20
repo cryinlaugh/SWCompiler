@@ -329,6 +329,7 @@ void IRGraph::findInOut() {
         if ((*tnIter)->childNum() == 0)
             _outNodes.push_back(*tnIter);
     }
+    setOutMark();
 }
 
 template <typename T> void IRGraph::updateTopology(T node) {
