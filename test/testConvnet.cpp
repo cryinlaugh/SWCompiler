@@ -119,7 +119,6 @@ int main()
 
     TensorNode *data_input = (TensorNode *)lenet_train->getNodeByName("data0");
     TensorNode *label_input = (TensorNode *)lenet_train->getNodeByName("selected");
-
     lenet_train->setTrainDataNodes(label_input, data_input);
 
     // keep in/OutNodes as Infer net, do not findInOut()
@@ -152,7 +151,7 @@ int main()
 
 
 
-    CodegenConfig config;
+    Config config;
     config.train_mode = true;
     config.train_config.train_data_file = "mnist_labels_images.bin";
     config.train_config.label_bytes = BytesProto::ONE_BYTE_AS_INT;

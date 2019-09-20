@@ -30,11 +30,10 @@ namespace codegen {
 class Codegen {
   public:
     Codegen() {}
-    Codegen(IRGraph *graph) : graph_(graph) {}
+    Codegen(IRGraph *graph);
     /// to be depreciated
-    Codegen(IRGraph *graph, CodegenConfig &config) : graph_(graph) {
-        config_ = config;
-    }
+    Codegen(IRGraph *graph, Config &config);
+
     ~Codegen() { destroy(); }
 
     /// ensure each Variable (Tensor) has unique name
@@ -160,7 +159,7 @@ protected:
 
     IRGraph *graph_;
 
-    CodegenConfig config_;
+    Config config_;
 
     std::unordered_map<std::string, int> names_map_;
 
@@ -181,7 +180,7 @@ protected:
 
 class ParallelCodegen : public Codegen {
 public:
-    ParallelCodegen(IRGraph *graph, CodegenConfig &config) : Codegen(graph, config) { }
+    ParallelCodegen(IRGraph *graph, Config &config) : Codegen(graph, config) { }
 
     /// add mpi header
     void emitHeader() override;

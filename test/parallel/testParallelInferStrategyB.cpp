@@ -158,7 +158,7 @@ int main() {
     dotGen(mlp);
 
     //====================================================
-    CodegenConfig config;
+    Config config;
     codegen::ParallelCodegen *cg = new codegen::ParallelCodegen(mlp, config);
     string code = cg->generate();
     cout << code;

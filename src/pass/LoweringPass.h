@@ -28,8 +28,8 @@ class swc::pass::LoweringPass : public OptimizePass {
     using OptimizePass::_graph;
 
   public:
-    LoweringPass(IRGraph *graph) : OptimizePass(graph){};
-    ~LoweringPass(){};
+    LoweringPass(IRGraph *graph) : OptimizePass(graph){}
+    ~LoweringPass(){}
 
     void runLowering() {
 

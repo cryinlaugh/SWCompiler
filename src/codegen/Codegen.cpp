@@ -67,6 +67,15 @@ std::string Codegen::getTypeString(Tensor *tensor) {
     }
 }
 
+Codegen::Codegen(IRGraph *graph) : graph_(graph) {
+    config_ = graph->getConfig();
+}
+Codegen::Codegen(IRGraph *graph, Config &config) {
+    graph_ = graph; 
+    graph_->setConfig(config);
+    config_ = config;
+}
+
 void Codegen::destroy() {
     graph_ = nullptr;
     names_map_.clear();
@@ -879,6 +888,7 @@ void Codegen::emitFuncCalls(IRGraph *graph_) {
                 auto opnode = (OpNode *)node;
                 if (auto graphOp =
                         dynamic_cast<SubGraphOp *>(opnode->getOp())) {
+                        (void)graphOp;
                 } else {
                     dispatchOpNode(opnode);
                 }

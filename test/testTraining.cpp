@@ -128,7 +128,7 @@ int main() {
 
     dotGen(net);
 
-    CodegenConfig config;
+    Config config;
 
     config.train_mode = true;
     config.train_config.train_data_file = "mnist_labels_images.bin";

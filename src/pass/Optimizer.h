@@ -8,14 +8,7 @@
 #ifndef _OPTIMIZER_H
 #define _OPTIMIZER_H
 
-#include <queue>
-
-#include "LabelingPass.h"
-#include "LoweringPass.h"
-#include "RenamingNodePass.h"
-#include "AutodiffPass.h"
-#include "EliminationPass.h"
-#include "ParallelingPass.h"
+#include "OptimizePass.h"
 #include <queue>
 
 namespace swc {
@@ -52,6 +45,9 @@ class Optimizer {
 
   private:
     IRGraph *_graph;
+    // optimizer passes should know  backend 
+    // e.g. when using mkldnnn or cublas, FC no need for lowering
+    // update: we move config to IRGraph, and tell us backend info
 };
 
 } // namespace pass

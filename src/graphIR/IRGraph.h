@@ -127,6 +127,9 @@ class IRGraph {
     TensorNode *getTrainLabelNode() { return _input_label_node; }
     TensorNode *getTrainDataNode() { return _input_data_node; }
 
+    void setConfig(Config config) { _config = config; }
+    Config getConfig() { return _config; }
+
   private:
     std::vector<TensorNode *> _tensors;
     std::vector<OpNode *> _ops;
@@ -138,6 +141,9 @@ class IRGraph {
 
     TensorNode *_input_data_node{nullptr};
     TensorNode *_input_label_node{nullptr};
+
+    // for backend compilation
+    Config _config;
 
     Device _dev;
 };

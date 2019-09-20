@@ -41,9 +41,13 @@ struct TrainingConfig {
     size_t train_data_samples{0};
 };
 
-struct CodegenConfig {
+struct Config {
     bool train_mode{false};
 
+    // cpu codegen config
+    bool mkldnn{false}; 
+
+    // Nvidia cuda codegen config
     bool cuda{false};
     bool cublas{false};
     bool cuda_stream{false};

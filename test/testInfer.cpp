@@ -92,6 +92,7 @@ int main() {
     //====================================================
     mlp->findInOut();
     mlp->updateTopology();
+    
     pass::Optimizer *opt = new pass::Optimizer(mlp);
     opt->runOptimizer();
 
@@ -99,7 +100,7 @@ int main() {
     dotGen(mlp);
 
     //====================================================
-    CodegenConfig config;
+    Config config;
     codegen::Codegen *cg = new codegen::Codegen(mlp, config);
     string code = cg->generate();
     cout << code;
