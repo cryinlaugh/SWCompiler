@@ -11,6 +11,8 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <map>
+#include <climits>
 
 enum class DataType { Float_t, Double_t, Int8_t, Int32_t };
 
@@ -64,6 +66,22 @@ enum TensorType {
     D0 = 0,
     UNKNOWN = -1
 };
+
+typedef enum {
+    layout_default = 0,
+    
+    // for tensors
+    layout_nchw,
+    layout_nhwc, 
+    layout_nc,
+    layout_cn
+} mem_layout_t;
+const std::map<int, std::string> MEM_LAYOUT = {{layout_default, "default"},
+    {layout_nchw, "nchw"},
+    {layout_nhwc, "nhwc"},
+    {layout_nc, "nc"},
+    {layout_cn, "cn"},
+}; 
 
 enum class TensorInitType { NONE, CONSTANT, ZERO, XAVIER, FILE, PARENTOP };
 enum class DeviceType : int { CPU, GPU };
