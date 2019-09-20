@@ -25,24 +25,26 @@ class TensorNode : public IRNode {
   public:
     TensorNode() : tensor_(NULL){};
     explicit TensorNode(std::string name, IRNode *parent = nullptr)
-        : IRNode(TENSOR_NODE, name, parent){};
+        : IRNode(TENSOR_NODE, name, parent){}
     explicit TensorNode(std::string name, Tensor *tensor,
                         IRNode *parent = nullptr)
         : IRNode(TENSOR_NODE, name, parent), tensor_(tensor){};
     explicit TensorNode(std::string name,
-                        const std::initializer_list<size_t> &shape,
-                        IRNode *parent = nullptr)
+                        const std::initializer_list<size_t> &shape, 
+                        IRNode *parent = nullptr,
+                        DataType dtype = DataType::Float_t,
+                        mem_layout_t layout = layout_default)
         : IRNode(TENSOR_NODE, name, parent) {
-        tensor_ = new Tensor(shape);
+        tensor_ = new Tensor(shape, dtype, layout);
     }
 
-    ~TensorNode(){ destroy(); };
+    ~TensorNode(){ destroy(); }
 
     void destroy() { 
         printf("free TensorNode:%s\n", name().c_str()); 
         getLabel()->destroy();
         getTensor()->destroy();
-    };
+    }
 
     void setTensor(Tensor *tensor) { tensor_ = tensor; }
     Tensor *getTensor() { return tensor_; }
@@ -70,6 +72,8 @@ class TensorNode : public IRNode {
     }
     TilingLabel* getTilingLabel() { return _tilingLabel; }
     
+    void setMemLayout(mem_layout_t layout) { tensor_->setMemLayout(layout); }
+    mem_layout_t getMemLayout() const { return tensor_->getMemLayout(); }
   private:
     Tensor *tensor_{nullptr};
     

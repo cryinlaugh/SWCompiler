@@ -87,6 +87,20 @@ const std::map<int, std::string> MEM_LAYOUT = {{layout_default, "default"},
     {layout_cn, "cn"},
 }; 
 
+const std::map<std::string, std::string> dtype_mkldnn_datatype_map = {
+    {"float", "memory::data_type::f32"},
+    {"int", "memory::data_type::s32"}
+};
+
+const std::map<std::string, std::string> layout_mkldnn_format_tag_map = {
+    {"nhwc", "memory::format_tag::nhwc"},
+    {"nchw", "memory::format_tag::nchw"},
+    {"nc", "memory::format_tag::nc"},
+    {"cn", "memory::format_tag::cn"},
+    {"x", "memory::format_tag::x"},
+    {"xy", "memory::format_tag::nc"},
+};
+
 enum class TensorInitType { NONE, CONSTANT, ZERO, XAVIER, FILE, PARENTOP };
 enum class DeviceType : int { CPU, GPU };
 
