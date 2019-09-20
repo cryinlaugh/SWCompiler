@@ -91,6 +91,11 @@ class IRGraph {
         pushInNode(args...);
     }
 
+    void clearOutNodes() { 
+        clearOutMark();
+        _outNodes.clear(); 
+    }
+
     void pushOutNode(){};
     template <typename T, typename... Types>
     void pushOutNode(const T &firstArg, const Types &... args) {
@@ -101,6 +106,8 @@ class IRGraph {
     // To mark out node to avoid to be eliminated
     // by EliminationPass
     void setOutMark();
+    // if remove node from _outNodes, we need to clear its mark
+    void clearOutMark();
     
     inline int tensorNodeNum() const { return _tensors.size(); }
     inline int opNodeNum() const { return _ops.size(); }
