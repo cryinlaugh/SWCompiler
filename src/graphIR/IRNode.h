@@ -13,6 +13,7 @@
 #include <iostream>
 #include <string>
 #include <unordered_map>
+#include <algorithm>
 
 #include "pass/Label.h"
 #include "pass/AutodiffPass.h"
@@ -124,6 +125,26 @@ class IRNode {
                 }
             }
         }
+    }
+    void replaceUseKeepOrder(IRNode *spec_child, IRNode *node) {
+        std::cout << "[[[replaceUseKeepOrder]]]\n";
+        if(std::find(_childNodes.begin(), _childNodes.end(), spec_child) == _childNodes.end())
+            return;
+        for(auto n : spec_child->getParentNodes())
+            std::cout<< n->name() << "\n";
+        std::cout << "replaceUseKeepOrder begin\n";
+        for (auto &cp : spec_child->getParentNodes()) {
+            if (cp == this) {
+                // order of parent matter
+                cp = node;
+                // original link to spec_child (may have other children)
+                this->delChildNode(spec_child);
+                // node is new added, so order does not matter
+                node->pushChildNode(spec_child);
+            }
+        }
+        for(auto n : spec_child->getParentNodes())
+            std::cout<< n->name() << "\n";
     }
 
     void setLabel(Label *label) { _label = label; }
