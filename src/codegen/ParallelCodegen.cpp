@@ -685,26 +685,29 @@ void ParallelCodegen::transformOpDispatcher(OpNode *node) {
             << "&"<<tname+"_recvType);\n"
             <<"MPI_Type_commit(&"<<tname+"_recvType);\n";
 
+        std::string src = UniqueName("src"); 
+        std::string dest = UniqueName("dest"); 
         writer_ << "size_t " << fname << "_sendOffset = 0;\n"
                 << "size_t " << tname << "_recvOffset = 0;\n"
-                << "int dest, src;\n";
+                << "int " << src << ", " << dest << ";\n";
+                // << "int dest, src;\n";
 
         writer_ << "for(int i=0; i<nprocs; i++) {\n";
         writer_.indentInc();
 
-        writer_ << "src = " << "(rank + nprocs - i) % nprocs;\n"
-                << "dest = " << "(rank + nprocs + i) % nprocs;\n"
+        writer_ << src << " = " << "(rank + nprocs - i) % nprocs;\n"
+                << dest << " = " << "(rank + nprocs + i) % nprocs;\n"
                 << "\n"
-                << fname << "_sendOffset = " << sendType_num << " * dest;\n"
-                << tname << "_recvOffset = " << recvType_num << " * src;\n";
+                << fname << "_sendOffset = " << sendType_num << " * " << dest << ";\n"
+                << tname << "_recvOffset = " << recvType_num << " * " << src << ";\n";
 
         int tag = getMPISendRecvTag(out_tensor);
 
         writer_ << "\n"
                 << "MPI_Sendrecv(" << fname << "+" << fname+"_sendOffset" << ", "
-                << "1, " << fname+"_sendType" << ", " << "dest, " << tag << ", "
+                << "1, " << fname+"_sendType" << ", " << dest << ", " << tag << ", "
                 << tname << "+" << tname+"_recvOffset" << ", "
-                << "1, " << tname+"_recvType" << ", " << "src, " << tag << ", "
+                << "1, " << tname+"_recvType" << ", " << src << ", " << tag << ", "
                 << "MPI_COMM_WORLD, &status);\n";
 
         writer_.indentDec();

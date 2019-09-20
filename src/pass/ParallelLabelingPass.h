@@ -14,6 +14,7 @@
 #include "parallel/TilingLabel.h"
 #include "parallel/parallelGen.h"
 #include <random>
+#include <ctime>
 
 namespace swc {
 namespace pass {
@@ -24,6 +25,7 @@ class swc::pass::ParallelLabelingPass: public swc::pass::OptimizePass {
     using OptimizePass::_graph;
 public:
     ParallelLabelingPass(IRGraph *graph): OptimizePass(graph) {
+        srand(time(NULL));
     };
     ~ParallelLabelingPass() {};
     void runLabeling(int p) {
