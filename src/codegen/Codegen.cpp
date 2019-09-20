@@ -122,10 +122,21 @@ void Codegen::codeGenInit() {
 
 void Codegen::emitEnvInit() {
     emitCUDAInit();
+    if(config_.mkldnn)
+        emitMKLDNNInit();
 }
 
 void Codegen::emitEnvFinalize() {
     writer_ << "return 0;\n";
+}
+
+void Codegen::emitMKLDNNInit() {
+    //TODO multistream for multi cpu
+    UniqueName("mkldnn_eng");
+    UniqueName("mkldnn_s");
+    writer_ << "engine mkldnn_eng(engine::kind::cpu, 0);\n"; 
+    // TODO: name stream may conflict to cuda stream[]
+    writer_ << "stream mkldnn_s(mkldnn_eng);\n";
 }
 
 void Codegen::emitCUDAInit() {
@@ -141,6 +152,9 @@ void Codegen::emitCUDAInit() {
         return;
 
     if (config_.cublas) {
+        UniqueName("stat");
+        UniqueName("handle");
+
         writer_ << "cublasStatus_t stat;\n";
         writer_ << "cublasHandle_t handle;\n";
         writer_ << "stat = cublasCreate(&handle);\n";
@@ -177,15 +191,24 @@ std::string Codegen::UniqueName(std::string name) {
 void Codegen::initMakefileBuilder() {
    makefile_builder_.setCXXCompiler("/usr/bin/c++");
 
-    makefile_builder_.addCXXSrc("Graph.cpp");
-    makefile_builder_.addCXXSrc("utils/DataLoader.cpp");
-    makefile_builder_.addCXXSrc("caffe2.pb.cc");
     makefile_builder_.addIncDir("/usr/local/include");
-
     makefile_builder_.addLibDir("/usr/local/lib");
-    makefile_builder_.addLib("protobuf");
-    makefile_builder_.addLib("gflags");
 
+    makefile_builder_.addCXXSrc("Graph.cpp");
+    if(config_.train_mode) {
+        makefile_builder_.addCXXSrc("utils/DataLoader.cpp");
+        makefile_builder_.addCXXSrc("caffe2.pb.cc");
+
+        makefile_builder_.addLib("protobuf");
+        makefile_builder_.addLib("gflags");
+        makefile_builder_.addLib("pthread");
+    }
+
+    if(config_.mkldnn) {
+        makefile_builder_.addIncDir("$(HOME)/install/mkldnn_lnx_1.0.2_cpu_gomp/include");
+        makefile_builder_.addLibDir("$(HOME)/install/mkldnn_lnx_1.0.2_cpu_gomp/lib");
+        makefile_builder_.addLib("mkldnn");
+    }
 }
 
 void Codegen::emitHeader() {
@@ -205,7 +228,12 @@ void Codegen::emitHeader() {
             << "#include <random>\n"
             << "#include <stdlib.h>\n"
             << "#include <math.h>\n"
+            << "#include <chrono>\n"
             << "#include \"utils/image.h\"\n";
+
+    if(config_.mkldnn) {
+        headerWriter_ <<"#include \"mkldnn.hpp\"\n";
+    }
 
     //------------------TODO:BEGIN-------------------------------
     // TODO: mv mpi and cuda specific statements to derived class
@@ -221,9 +249,19 @@ void Codegen::emitHeader() {
     //------------------TODO:END---------------------------------
     // #include "kernels.h"
     // headerWriter_ << KERNELS_CODE;
-    headerWriter_ << "#include \"utils/kernels.h\"\n"
-            << "#include \"utils/DataLoader.h\"\n"
+    headerWriter_ << "#include \"utils/kernels.h\"\n";
+
+    if (config_.train_mode) {
+        headerWriter_ << "#include \"utils/DataLoader.h\"\n"
             << "#include \"utils/utils.h\"\n";
+    }
+
+    // namespace
+    headerWriter_ << "using namespace std;\n";
+    if(config_.mkldnn) {
+        headerWriter_ << "using namespace mkldnn;\n";
+    }
+
 
     if (config_.train_mode) {
         headerWriter_ << "#include \"gflags/gflags.h\"\n"
@@ -232,6 +270,7 @@ void Codegen::emitHeader() {
 
         emitGflagsDef();
     }
+
 
 }
 
@@ -243,6 +282,8 @@ std::string Codegen::generate() {
     writer_ << "\n"
             << "int main(int argc, char** argv) {\n";
     writer_.indentInc();
+
+    writer_ << "auto t_begin = chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now().time_since_epoch()).count();\n";
 
     if (config_.train_mode) {
         writer_ << "gflags::ParseCommandLineFlags(&argc, &argv, true);\n";
@@ -258,6 +299,13 @@ std::string Codegen::generate() {
 
     writer_ << "\n// free memory\n";
     emitMemFree();
+
+    writer_ << "auto t_end = chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now().time_since_epoch()).count();\n";
+
+    if(config_.mkldnn)
+        writer_ << "std::cout << \"Net with MKLDNN run time \" << (t_end - t_begin) << \" ms\\n\";\n";
+    else
+        writer_ << "std::cout << \"Net run time \" << (t_end - t_begin) << \" ms\\n\";\n";
 
     emitEnvFinalize();
 
@@ -1012,9 +1060,13 @@ void Codegen::emitFuncCall(OpNode *op) {
         dtype_flag = "f";
         SWLOG_ERROR << "UNKNOWN DataType\n";
     }
-
+    auto name = op->name();
     Label *oplabel = op->getLabel();
-    SWLOG_DEBUG(2) << "begin genKernelCall for " << op->name() << "\n";
+
+    std::string mkldnn_engine = "mkldnn_eng";
+    std::string mkldnn_stream = "mkldnn_s";
+
+    SWLOG_DEBUG(2) << "begin genKernelCall for " << name << "\n";
 
     // TODO assert legal dimensions
     if ((oplabel->getTypeNameLabel()).compare("MatrixMatrixMul") == 0) {
@@ -1030,6 +1082,135 @@ void Codegen::emitFuncCall(OpNode *op) {
                 << ", " << k << ", " << tensors_name_map_[A] << ", " << k
                 << ", " << tensors_name_map_[B] << ", " << n << ", "
                 << tensors_name_map_[C] << ", " << n << ");\n";
+    }
+
+    if ((oplabel->getTypeNameLabel()).compare("MatrixMatrixFCBias") == 0) {
+        auto *in = ((TensorNode *)op->getParentNode(0))->getTensor();
+        auto *w = ((TensorNode *)op->getParentNode(1))->getTensor();
+        auto *b = ((TensorNode *)op->getParentNode(2))->getTensor();
+        auto *out = ((TensorNode *)op->getChildNode(0))->getTensor();
+
+        // assert(in->getNDim()==2 && "FC does not support src dim=4 currently\n");
+
+
+        if(config_.mkldnn) {
+            auto in_dims = name+"_in_dims";
+            auto w_dims = name+"_w_dims";
+            auto b_dims = name+"_b_dims";
+            auto out_dims = name+"_out_dims";
+            auto strides_dims = name + "_strides_dims"; 
+            auto pads_dims = name + "_pads_dims"; 
+            emit_mkldnn_memory_dims(in_dims, in->getDims()); 
+            // e.g. in:(8, 50, 4, 4) w:(500,800)
+            auto logical_w_dims = in->getDims(); logical_w_dims[0] = w->getDim(0);
+            emit_mkldnn_memory_dims(w_dims,logical_w_dims); 
+            emit_mkldnn_memory_dims(b_dims, b->getDims()); 
+            emit_mkldnn_memory_dims(out_dims, out->getDims()); 
+            
+            auto in_md = name+"_in_md";
+            auto w_md = name+"_w_md";
+            auto b_md = name+"_b_md";
+            auto out_md = name+"_out_md";
+            emit_mkldnn_memory_desc(in_md, in_dims, in, true); // true implies format_tag::any 
+            emit_mkldnn_memory_desc(w_md, w_dims, w, true); 
+            emit_mkldnn_memory_desc(b_md, b_dims, b, true); 
+            emit_mkldnn_memory_desc(out_md, out_dims, out, true); 
+            writer_ << "\n";
+
+            auto fc_desc = name+"_desc";
+            writer_ << "auto " << fc_desc << " = inner_product_forward::desc(prop_kind::forward_inference, "
+                << in_md << ", "
+                << w_md << ", "
+                << b_md << ", "
+                << out_md << ");\n";
+
+
+            // inner_product primitive descriptor 
+            auto fc_pd = name + "_pd";
+            writer_ << "auto " << fc_pd << " = inner_product_forward::primitive_desc("
+                << fc_desc << ", " << mkldnn_engine << ");\n";
+            writer_ << "\n";
+
+            // memory objects
+            auto in_mem = name+"_in_mem";
+            auto w_mem = name+"_w_mem";
+            auto b_mem = name+"_b_mem";
+            auto out_mem = name+"_out_mem";
+            emit_mkldnn_memory(in_mem, in, in_dims, 
+                mkldnn_engine, tensors_name_map_[in]); 
+            if(in->getNDim() == 4)
+                emit_mkldnn_memory(w_mem, w, w_dims, mkldnn_engine, tensors_name_map_[w], "nchw"); 
+            else
+                emit_mkldnn_memory(w_mem, w, w_dims, mkldnn_engine, tensors_name_map_[w], "nc"); // nc 
+            emit_mkldnn_memory(b_mem, b, b_dims,
+                mkldnn_engine, tensors_name_map_[b]); 
+            emit_mkldnn_memory(out_mem, out, out_dims,
+                mkldnn_engine, tensors_name_map_[out]); 
+            writer_ << "\n";
+
+            // actual src, weight, dst of mkl inner_product memory
+            #define EMIT_NEED_REORDER(var, pd, obj, mem)    \
+                writer_ << "auto " << var << " = "         \
+                    << pd << "." << #obj << "_desc() != "  \
+                    << mem << ".get_desc();\n";
+            auto need_reorder_in = "need_reorder_" + name + "_in";
+            auto need_reorder_w = "need_reorder_" + name + "_w";
+            auto need_reorder_out = "need_reorder_" + name + "_out";
+            EMIT_NEED_REORDER(need_reorder_in, fc_pd, src, in_mem);
+            EMIT_NEED_REORDER(need_reorder_w, fc_pd, weights, w_mem);
+            EMIT_NEED_REORDER(need_reorder_out, fc_pd, dst, out_mem);
+            writer_ << "\n";
+
+
+            #define CREATE_CONV_MEM(cmem, flag, pd, obj, mem)                       \
+                writer_ << "auto " << cmem << " = " << flag << " ? "                \
+                    << "memory(" << pd << "." << #obj << "_desc(), mkldnn_eng)"  \
+                    << " : " << mem << ";\n";
+            auto src_mem = name+"_src_mem";
+            auto weight_mem = name+"_weights_mem";
+            auto dst_mem = name+"_dst_mem";
+            CREATE_CONV_MEM(src_mem, need_reorder_in, fc_pd, src, in_mem);
+            CREATE_CONV_MEM(weight_mem, need_reorder_w, fc_pd, weights, w_mem);
+            CREATE_CONV_MEM(dst_mem, need_reorder_out, fc_pd, dst, out_mem);
+            writer_ << "\n";
+
+
+            #define EMIT_REORDER(cmd, flag, from, to)                   \
+                writer_ << "if(" << flag<< ") {\n"                      \
+                    << "\t" << "auto "<< cmd << " = reorder("           \
+                    << from << ", " << to << ");\n";                    \
+                writer_ << "\t" << cmd << ".execute(mkldnn_s, {"        \
+                    << "{MKLDNN_ARG_FROM, " << from << "},"             \
+                    << "{MKLDNN_ARG_TO, " << to << "}});\n";           \
+                writer_ << "\t" << "mkldnn_s.wait();\n";                \
+                writer_ << "}\n";                                       \
+
+            auto cmd_reorder_in = "reorder_" + name + "_in";
+            auto cmd_reorder_w = "reorder_" + name + "_w";
+            auto cmd_reorder_out = "reorder_" + name + "_out";
+            EMIT_REORDER(cmd_reorder_in, need_reorder_in, in_mem, src_mem);
+            EMIT_REORDER(cmd_reorder_w, need_reorder_w, w_mem, weight_mem);
+            writer_ << "\n";
+
+             
+            // inner_product computation
+            auto cmd_fc = name + "_forward";
+            writer_ << "auto " << cmd_fc << " = "
+                << "inner_product_forward(" << fc_pd << ");\n";
+            writer_ << cmd_fc << ".execute(mkldnn_s, {\n";
+            writer_.indentInc();
+            writer_ << "{ MKLDNN_ARG_SRC," << src_mem << "},\n"
+                << "{ MKLDNN_ARG_WEIGHTS," << weight_mem <<  "},\n"
+                << "{ MKLDNN_ARG_BIAS,"<< b_mem <<  "},\n"
+                << "{ MKLDNN_ARG_DST," << dst_mem << "} });\n";
+            writer_.indentDec();
+            writer_ << "mkldnn_s.wait();\n";
+            
+            EMIT_REORDER(cmd_reorder_out, need_reorder_out, dst_mem, out_mem);
+
+            return;
+        }
+
     }
 
     if ((oplabel->getTypeNameLabel()).compare("Reshape") == 0) {
@@ -1090,6 +1271,74 @@ void Codegen::emitFuncCall(OpNode *op) {
         auto *B = ((TensorNode *)op->getParentNode(1))->getTensor();
         auto *C = ((TensorNode *)op->getChildNode(0))->getTensor();
 
+        if(config_.mkldnn) {
+            // mkldnn support more than 2 source operands with MKLDNN_ARG_MULTIPLE_SRC+i
+            auto out_dims = name + "_out_dims";
+            emit_mkldnn_memory_dims(out_dims, C->getDims()); 
+
+            auto src0_md = name+"_src0_md";
+            auto src1_md = name+"_src1_md";
+            auto out_md = name+"_out_md";
+            auto srcs_vec = name+"_srcs_vec";
+            auto scales_vec = name+"_scales_vec";
+            auto srcs_md = name+"_srcs_md";
+
+            emit_mkldnn_memory_desc(src0_md, out_dims, A);
+            emit_mkldnn_memory_desc(src1_md, out_dims, B);
+            std::string dtype = getTypeString(C);
+            std::string layout = C->getMemLayoutTag();
+            writer_ << "std::vector<memory::desc> " << srcs_vec << " = {"
+                << src0_md << ", " << src1_md << "};\n"; 
+            writer_ << "std::vector<" << dtype << "> " << scales_vec << " = {"
+                << "1.0f" << ", " << "1.0f" << "};\n"; 
+            writer_ << "\n";
+
+
+            /*
+            writer_ << "auto " << srcs_md << " = memory::desc({{" << srcs_vec << "}, " 
+                << dtype_mkldnn_datatype_map.at(dtype) << ", " 
+                << layout_mkldnn_format_tag_map.at(layout)
+                << "});\n";
+            writer_ << "\n";
+            */
+
+            emit_mkldnn_memory_desc(out_md, out_dims, C); 
+            writer_ << "\n";
+
+
+            // BatchNormalizatio primitive descriptor 
+            auto sum_pd = name + "_pd";
+            writer_ << "auto " << sum_pd << " = sum::primitive_desc("
+                << out_md << ", " 
+                << scales_vec << ", " << srcs_vec << ", " 
+                << mkldnn_engine << ");\n";
+            writer_ << "\n";
+
+            // memory objects: in(may skeep if exists)
+            auto src0_mem = name+"_src0_mem";
+            auto src1_mem = name+"_src1_mem";
+            auto out_mem = name+"_out_mem";
+            emit_mkldnn_memory(src0_mem, A, out_dims, mkldnn_engine, tensors_name_map_[A]); 
+            emit_mkldnn_memory(src1_mem, B, out_dims, mkldnn_engine, tensors_name_map_[B]); 
+            emit_mkldnn_memory(out_mem, C, out_dims,mkldnn_engine, tensors_name_map_[C]); 
+
+
+            // sum computation
+            auto cmd_sum = name + "_cmd";
+            writer_ << "auto " << cmd_sum << " = "
+                << "sum(" << sum_pd << ");\n";
+            writer_ << cmd_sum << ".execute(mkldnn_s, {\n";
+            writer_.indentInc();
+            writer_ << "{ MKLDNN_ARG_MULTIPLE_SRC+0," << src0_mem << "},\n"
+                << "{ MKLDNN_ARG_MULTIPLE_SRC+1," << src1_mem << "},\n"
+                << "{ MKLDNN_ARG_DST," << out_mem << "} });\n";
+            writer_.indentDec();
+            writer_ << "mkldnn_s.wait();\n";
+            writer_ << "\n";
+
+            return;
+        }
+
         auto num = A->size();
 
         writer_ << "vecAdd_" << dtype_flag << "(" << num << ", "
@@ -1109,6 +1358,142 @@ void Codegen::emitFuncCall(OpNode *op) {
         auto pads = conv_op->getPads();
         auto group = conv_op->getGroup();
 
+        if(config_.mkldnn) {
+            // if conv in is nhwc
+            auto idims = (input->getMemLayoutTag()=="nhwc") ?
+                input->getShuffledDims(NHWC2NCHW/*{0,3,1,2}*/) : input->getDims();
+            
+            auto in_dims = name+"_in_dims";
+            auto w_dims = name+"_w_dims";
+            auto b_dims = name+"_b_dims";
+            auto out_dims = name+"_out_dims";
+            auto strides_dims = name + "_strides_dims"; 
+            auto pads_dims = name + "_pads_dims"; 
+            emit_mkldnn_memory_dims(in_dims, idims); 
+            emit_mkldnn_memory_dims(w_dims, filter->getDims()); 
+            emit_mkldnn_memory_dims(b_dims, bias->getDims()); 
+            emit_mkldnn_memory_dims(out_dims, out->getDims()); 
+            emit_mkldnn_memory_dims(strides_dims, strides); 
+            emit_mkldnn_memory_dims(pads_dims, pads); 
+
+            auto in_md = name+"_in_md";
+            auto w_md = name+"_w_md";
+            auto b_md = name+"_b_md";
+            auto out_md = name+"_out_md";
+            emit_mkldnn_memory_desc(in_md, in_dims, input, true); // true implies format_tag::any 
+            emit_mkldnn_memory_desc(w_md, w_dims, filter, true); 
+            emit_mkldnn_memory_desc(b_md, b_dims, bias); 
+            emit_mkldnn_memory_desc(out_md, out_dims, out, true); 
+            writer_ << "\n";
+
+
+            // convolution descriptor
+            // typo
+            /*
+            mkldnn_convolution_forward_desc_init(&data,
+                        mkldnn::convert_to_c(aprop_kind), convert_to_c(aalgorithm),
+                        &src_desc.data, &weights_desc.data, &bias_desc.data,
+                        &dst_desc.data, &strides[0], &padding_l[0],
+                        &padding_r[0])
+            */
+            auto conv_desc = name+"_desc";
+            writer_ << "auto " << conv_desc << " = convolution_forward::desc(prop_kind::forward_inference, "
+                << "algorithm::convolution_direct, "
+                << in_md << ", "
+                << w_md << ", "
+                << b_md << ", "
+                << out_md << ", "
+                << strides_dims <<", "
+                << pads_dims << ", "
+                << pads_dims << ");\n";
+
+
+            // convolution primitive descriptor 
+            auto conv_pd = name + "_pd";
+            writer_ << "auto " << conv_pd << " = convolution_forward::primitive_desc("
+                << conv_desc << ", " << mkldnn_engine << ");\n";
+            writer_ << "\n";
+            
+
+            // memory objects
+            auto in_mem = name+"_in_mem";
+            auto w_mem = name+"_w_mem";
+            auto b_mem = name+"_b_mem";
+            auto out_mem = name+"_out_mem";
+            emit_mkldnn_memory(in_mem, input, in_dims, 
+                mkldnn_engine, tensors_name_map_[input]); 
+            emit_mkldnn_memory(w_mem, filter, w_dims, 
+                mkldnn_engine, tensors_name_map_[filter]); 
+            emit_mkldnn_memory(b_mem, bias, b_dims,
+                mkldnn_engine, tensors_name_map_[bias]); 
+            emit_mkldnn_memory(out_mem, out, out_dims,
+                mkldnn_engine, tensors_name_map_[out]); 
+            writer_ << "\n";
+
+
+            // actual src, weight, dst of mkl convolution memory
+            #define EMIT_NEED_REORDER(var, pd, obj, mem)    \
+                writer_ << "auto " << var << " = "         \
+                    << pd << "." << #obj << "_desc() != "  \
+                    << mem << ".get_desc();\n";
+            auto need_reorder_in = "need_reorder_" + name + "_in";
+            auto need_reorder_w = "need_reorder_" + name + "_w";
+            auto need_reorder_out = "need_reorder_" + name + "_out";
+            EMIT_NEED_REORDER(need_reorder_in, conv_pd, src, in_mem);
+            EMIT_NEED_REORDER(need_reorder_w, conv_pd, weights, w_mem);
+            EMIT_NEED_REORDER(need_reorder_out, conv_pd, dst, out_mem);
+            writer_ << "\n";
+
+
+            #define CREATE_CONV_MEM(cmem, flag, pd, obj, mem)                       \
+                writer_ << "auto " << cmem << " = " << flag << " ? "                \
+                    << "memory(" << pd << "." << #obj << "_desc(), mkldnn_eng)"  \
+                    << " : " << mem << ";\n";
+            auto src_mem = name+"_src_mem";
+            auto weight_mem = name+"_weights_mem";
+            auto dst_mem = name+"_dst_mem";
+            CREATE_CONV_MEM(src_mem, need_reorder_in, conv_pd, src, in_mem);
+            CREATE_CONV_MEM(weight_mem, need_reorder_w, conv_pd, weights, w_mem);
+            CREATE_CONV_MEM(dst_mem, need_reorder_out, conv_pd, dst, out_mem);
+            writer_ << "\n";
+
+
+            #define EMIT_REORDER(cmd, flag, from, to)                   \
+                writer_ << "if(" << flag<< ") {\n"                      \
+                    << "\t" << "auto "<< cmd << " = reorder("           \
+                    << from << ", " << to << ");\n";                    \
+                writer_ << "\t" << cmd << ".execute(mkldnn_s, {"        \
+                    << "{MKLDNN_ARG_FROM, " << from << "},"             \
+                    << "{MKLDNN_ARG_TO, " << to << "}});\n";           \
+                writer_ << "\t" << "mkldnn_s.wait();\n";                \
+                writer_ << "}\n";                                       \
+
+            auto cmd_reorder_in = "reorder_" + name + "_in";
+            auto cmd_reorder_w = "reorder_" + name + "_w";
+            auto cmd_reorder_out = "reorder_" + name + "_out";
+            EMIT_REORDER(cmd_reorder_in, need_reorder_in, in_mem, src_mem);
+            EMIT_REORDER(cmd_reorder_w, need_reorder_w, w_mem, weight_mem);
+            writer_ << "\n";
+
+             
+            // convolution computation
+            auto cmd_conv = name + "_forward";
+            writer_ << "auto " << cmd_conv << " = "
+                << "convolution_forward(" << conv_pd << ");\n";
+            writer_ << cmd_conv << ".execute(mkldnn_s, {\n";
+            writer_.indentInc();
+            writer_ << "{ MKLDNN_ARG_SRC," << src_mem << "},\n"
+                << "{ MKLDNN_ARG_WEIGHTS," << weight_mem <<  "},\n"
+                << "{ MKLDNN_ARG_BIAS,"<< b_mem <<  "},\n"
+                << "{ MKLDNN_ARG_DST," << dst_mem << "} });\n";
+            writer_.indentDec();
+            writer_ << "mkldnn_s.wait();\n";
+            
+            EMIT_REORDER(cmd_reorder_out, need_reorder_out, dst_mem, out_mem);
+
+            return;
+        }
+        
         auto iDims = op->name() + "_inDims";
         auto oDims = op->name() + "_outDims";
         auto fDims = op->name() + "_filterDims";
@@ -1188,6 +1573,70 @@ void Codegen::emitFuncCall(OpNode *op) {
         auto *bn_op = (BatchNormalizationOp *)op->getOp();
         float epsilon = bn_op->getEpsilon();
 
+        if(config_.mkldnn) {
+            auto channels = scale->getDims()[0];
+            auto in_dims = name+"_in_dims";
+            auto out_dims = name+"_out_dims";
+            auto scaleshift_dims = name+"_scaleshift_dims";
+            emit_mkldnn_memory_dims(in_dims, input->getDims()); 
+            emit_mkldnn_memory_dims(out_dims, out->getDims()); 
+            emit_mkldnn_memory_dims(scaleshift_dims, {2,channels}); 
+            writer_ << "\n";
+
+            auto in_md = name+"_in_md";
+            auto out_md = name+"_out_md";
+            emit_mkldnn_memory_desc(in_md, in_dims, input); 
+            writer_ << "\n";
+
+
+            // BatchNormalizatio primitive descriptor 
+            // only md arguments is src_md, and dst layout is the same as src
+            // so no need for format_tag::any and reorder
+            auto bn_desc  = name + "_desc";
+            writer_ << "auto " << bn_desc << " = batch_normalization_forward::desc("
+                << "prop_kind::forward_inference, "
+                << in_md << ", "
+                << std::setprecision(12) << epsilon << ","
+                << "normalization_flags::use_scale_shift" << ");\n";
+
+            // BatchNormalizatio primitive descriptor 
+            auto bn_pd = name + "_pd";
+            writer_ << "auto " << bn_pd << " = batch_normalization_forward::primitive_desc("
+                << bn_desc << ", " << mkldnn_engine << ");\n";
+            writer_ << "\n";
+
+            // memory objects: in(may skeep if exists)
+            auto in_mem = name+"_in_mem";
+            auto scaleshift_mem = name+"_scaleshift_mem";
+            auto out_mem = name+"_out_mem";
+            emit_mkldnn_memory(in_mem, input, in_dims, 
+                mkldnn_engine, tensors_name_map_[input]); 
+            // scaleshift_mem actually holds two tensors: scale and bias, so dims is a problem
+            // this can be only right when scale and bias are continuous
+            writer_ << "auto " << scaleshift_mem << " = memory({{" << scaleshift_dims << "}, "
+                << dtype_mkldnn_datatype_map.at("float") << ", "
+                << layout_mkldnn_format_tag_map.at("xy") << "}, "
+                << mkldnn_engine << ", " << tensors_name_map_[scale]<< ");\n";
+            emit_mkldnn_memory(out_mem, out, out_dims,
+                mkldnn_engine, tensors_name_map_[out]); 
+            writer_ << "\n";
+
+            
+            // bn computation
+            auto cmd_bn = name + "_forward";
+            writer_ << "auto " << cmd_bn << " = "
+                << "batch_normalization_forward(" << bn_pd << ");\n";
+            writer_ << cmd_bn << ".execute(mkldnn_s, {\n";
+            writer_.indentInc();
+            writer_ << "{ MKLDNN_ARG_SRC," << in_mem << "},\n"
+                << "{ MKLDNN_ARG_SCALE_SHIFT,"<< scaleshift_mem <<  "},\n"
+                << "{ MKLDNN_ARG_DST," << out_mem << "} });\n";
+            writer_.indentDec();
+            writer_ << "mkldnn_s.wait();\n";
+
+            return;
+        }
+
         auto iDims = op->name() + "_inDims";
         writer_ << emitArrayDefAndInit(iDims, input->getDims());
 
@@ -1208,6 +1657,98 @@ void Codegen::emitFuncCall(OpNode *op) {
         auto kernels = pool_op->getKernels();
         auto strides = pool_op->getStrides();
         auto pads = pool_op->getPads();
+        
+        if(config_.mkldnn) {
+            
+            auto in_dims = name+"_in_dims";
+            auto w_dims = name+"_w_dims";
+            auto b_dims = name+"_b_dims";
+            auto out_dims = name+"_out_dims";
+            auto strides_dims = name + "_strides_dims"; 
+            auto kernel_dims = name + "_kernel_dims"; 
+            auto pads_dims = name + "_pads_dims"; 
+            emit_mkldnn_memory_dims(in_dims, input->getDims()); 
+            emit_mkldnn_memory_dims(out_dims, out->getDims()); 
+            emit_mkldnn_memory_dims(strides_dims, strides); 
+            emit_mkldnn_memory_dims(kernel_dims, kernels); 
+            emit_mkldnn_memory_dims(pads_dims, pads); 
+
+            auto in_md = name+"_in_md";
+            auto out_md = name+"_out_md";
+            emit_mkldnn_memory_desc(in_md, in_dims, input);
+            //emit_mkldnn_memory_desc(out_md, out_dims, out, true); 
+            emit_mkldnn_memory_desc(out_md, out_dims, out); 
+            writer_ << "\n";
+
+            std::string pool_type = ((oplabel->getTypeNameLabel()) == "MaxPool") ?
+                "max" : "avg";
+            
+            auto pool_desc = name+"_desc";
+            writer_ << "auto " << pool_desc << " = pooling_forward::desc(prop_kind::forward_inference, "
+                // << "algorithm::pooling_max, " // todo pooling_avg
+                << "algorithm::pooling_" << pool_type << ", "
+                << in_md << ", "
+                << out_md << ", "
+                << strides_dims <<", "
+                << kernel_dims <<", "
+                << pads_dims << ", "
+                << pads_dims << ");\n";
+
+            // poololution primitive descriptor 
+            auto pool_pd = name + "_pd";
+            writer_ << "auto " << pool_pd << " = pooling_forward::primitive_desc("
+                << pool_desc << ", " << mkldnn_engine << ");\n";
+            writer_ << "\n";
+
+            // memory objects
+            auto in_mem = name+"_in_mem";
+            auto out_mem = name+"_out_mem";
+            emit_mkldnn_memory(in_mem, input, in_dims, 
+                mkldnn_engine, tensors_name_map_[input]); 
+            emit_mkldnn_memory(out_mem, out, out_dims,
+                mkldnn_engine, tensors_name_map_[out]); 
+            writer_ << "\n";
+
+            /*
+            // ok too
+            auto cmd_pool = name + "_forward";
+            writer_ << "auto " << cmd_pool << " = "
+                << "pooling_forward(" << pool_pd << ");\n";
+            writer_ << cmd_pool << ".execute(mkldnn_s, {\n";
+            writer_.indentInc();
+            writer_ << "{ MKLDNN_ARG_SRC," << in_mem << "},\n"
+                << "{ MKLDNN_ARG_DST," << out_mem << "} });\n";
+            writer_.indentDec();
+            writer_ << "mkldnn_s.wait();\n";
+            */
+
+            auto need_reorder_out = "need_reorder_" + name + "_out";
+            EMIT_NEED_REORDER(need_reorder_out, pool_pd, dst, out_mem);
+            writer_ << "\n";
+
+            auto dst_mem = name+"_dst_mem";
+            CREATE_CONV_MEM(dst_mem, need_reorder_out, pool_pd, dst, out_mem);
+            writer_ << "\n";
+
+            auto cmd_reorder_out = "reorder_" + name + "_out";
+            writer_ << "\n";
+
+            // pooling computation
+            auto cmd_pool = name + "_forward";
+            writer_ << "auto " << cmd_pool << " = "
+                << "pooling_forward(" << pool_pd << ");\n";
+            writer_ << cmd_pool << ".execute(mkldnn_s, {\n";
+            writer_.indentInc();
+            writer_ << "{ MKLDNN_ARG_SRC," << in_mem << "},\n"
+                << "{ MKLDNN_ARG_DST," << dst_mem << "} });\n";
+            writer_.indentDec();
+            writer_ << "mkldnn_s.wait();\n";
+            
+            EMIT_REORDER(cmd_reorder_out, need_reorder_out, dst_mem, out_mem);
+
+            return;
+        }
+        
 
         auto iDims = op->name() + "_inDims";
         auto oDims = op->name() + "_outDims";
@@ -1274,6 +1815,54 @@ void Codegen::emitFuncCall(OpNode *op) {
         auto *input = ((TensorNode *)op->getParentNode(0))->getTensor();
         auto *out = ((TensorNode *)op->getChildNode(0))->getTensor();
 
+        if(config_.mkldnn) {
+            auto in_dims = name+"_in_dims";
+
+            emit_mkldnn_memory_dims(in_dims, input->getDims()); 
+            writer_ << "\n";
+            auto in_md = name+"_in_md";
+            auto out_md = name+"_out_md";
+            emit_mkldnn_memory_desc(in_md, in_dims, input); 
+            writer_ << "\n";
+            
+            auto relu_desc  = name + "_desc";
+            // https://intel.github.io/mkl-dnn/dev_guide_eltwise.html
+            writer_ << "auto " << relu_desc << " = eltwise_forward::desc("
+                << "prop_kind::forward_inference, "
+                << "algorithm::eltwise_relu, "
+                << in_md << ", "
+                << "0" << ");\n";
+
+
+            // BatchNormalizatio primitive descriptor 
+            auto relu_pd = name + "_pd";
+            writer_ << "auto " << relu_pd << " = eltwise_forward::primitive_desc("
+                << relu_desc << ", " << mkldnn_engine << ");\n";
+            writer_ << "\n";
+
+            // memory objects: in(may skeep if exists)
+            auto in_mem = name+"_in_mem";
+            auto out_mem = name+"_out_mem";
+            emit_mkldnn_memory(in_mem, input, in_dims, 
+                mkldnn_engine, tensors_name_map_[input]); 
+            emit_mkldnn_memory(out_mem, out, in_dims,
+                mkldnn_engine, tensors_name_map_[out]); 
+            writer_ << "\n";
+
+            
+            // bn computation
+            auto cmd_relu = name + "_forward";
+            writer_ << "auto " << cmd_relu << " = "
+                << "eltwise_forward(" << relu_pd << ");\n";
+            writer_ << cmd_relu << ".execute(mkldnn_s, {\n";
+            writer_.indentInc();
+            writer_ << "{ MKLDNN_ARG_SRC," << in_mem << "},\n"
+                << "{ MKLDNN_ARG_DST," << out_mem << "} });\n";
+            writer_.indentDec();
+            writer_ << "mkldnn_s.wait();\n";
+
+            return;
+        }
         size_t size = input->size();
         writer_ << "relu_" << dtype_flag << "(" << tensors_name_map_[input]
                 << ", " << tensors_name_map_[out] << ", " << size << ");\n";
@@ -1294,6 +1883,45 @@ void Codegen::emitFuncCall(OpNode *op) {
         auto *input = ((TensorNode *)op->getParentNode(0))->getTensor();
         auto *out = ((TensorNode *)op->getChildNode(0))->getTensor();
 
+        if(config_.mkldnn) {
+            auto idims = (input->getMemLayoutTag()=="nhwc") ?
+                input->getShuffledDims(NHWC2NCHW/*{0,3,1,2}*/) : input->getDims();
+            auto odims = (out->getMemLayoutTag()=="nhwc") ?
+                out->getShuffledDims(NHWC2NCHW/*{0,3,1,2}*/) : out->getDims();
+
+            if(input->getMemLayoutTag()=="cn") {
+                idims = odims;
+            }
+
+            auto in_dims = name+"_in_dims";
+            auto out_dims = name+"_out_dims";
+            emit_mkldnn_memory_dims(in_dims, idims); 
+            emit_mkldnn_memory_dims(out_dims, odims); 
+            writer_ << "\n";
+
+            // memory objects
+            auto in_mem = name+"_in_mem";
+            auto out_mem = name+"_out_mem";
+            emit_mkldnn_memory(in_mem, input, in_dims, 
+                mkldnn_engine, tensors_name_map_[input]); 
+            emit_mkldnn_memory(out_mem, out, out_dims,
+                mkldnn_engine, tensors_name_map_[out]); 
+            writer_ << "\n";
+
+            
+            // bn computation
+            auto cmd_reorder = name + "_reorder";
+            writer_ << "auto " << cmd_reorder << " = "
+                << "reorder(" << in_mem << ", " << out_mem << ");\n";
+            writer_ << cmd_reorder << ".execute(mkldnn_s, {\n";
+            writer_.indentInc();
+            writer_ << "{ MKLDNN_ARG_FROM," << in_mem << "},\n"
+                << "{ MKLDNN_ARG_TO," << out_mem << "} });\n";
+            writer_.indentDec();
+            writer_ << "mkldnn_s.wait();\n";
+
+            return;
+        }
         auto *trans_op = (TransposeOp *)op->getOp();
         auto shuffle = trans_op->getShuffle();
 
@@ -1361,14 +1989,62 @@ void Codegen::emitFuncCall(OpNode *op) {
     }
     if ((oplabel->getTypeNameLabel()).compare("MatrixSoftmax") == 0) {
         // TODO assert
-        auto *A = ((TensorNode *)op->getParentNode(0))->getTensor();
-        auto *B = ((TensorNode *)op->getChildNode(0))->getTensor();
-        int m = A->getDim(0);
-        int n = A->getDim(1);
+        auto *input = ((TensorNode *)op->getParentNode(0))->getTensor();
+        auto *out = ((TensorNode *)op->getChildNode(0))->getTensor();
+
+        if(config_.mkldnn) {
+            auto in_dims = name+"_in_dims";
+
+            emit_mkldnn_memory_dims(in_dims, input->getDims()); 
+            writer_ << "\n";
+            auto in_md = name+"_in_md";
+            auto out_md = name+"_out_md";
+            emit_mkldnn_memory_desc(in_md, in_dims, input); 
+            writer_ << "\n";
+            
+            auto softmax_desc  = name + "_desc";
+            writer_ << "auto " << softmax_desc << " = softmax_forward::desc("
+                << "prop_kind::forward_inference, "
+                << in_md << ", "
+                << "1" << ");\n"; // currently only support nc axis=1
+
+
+            // softmax primitive descriptor 
+            auto softmax_pd = name + "_pd";
+            writer_ << "auto " << softmax_pd << " = softmax_forward::primitive_desc("
+                << softmax_desc << ", " << mkldnn_engine << ");\n";
+            writer_ << "\n";
+
+            // memory objects: in(may skeep if exists)
+            auto in_mem = name+"_in_mem";
+            auto out_mem = name+"_out_mem";
+            emit_mkldnn_memory(in_mem, input, in_dims, 
+                mkldnn_engine, tensors_name_map_[input]); 
+            emit_mkldnn_memory(out_mem, out, in_dims,
+                mkldnn_engine, tensors_name_map_[out]); 
+            writer_ << "\n";
+
+            
+            // bn computation
+            auto cmd_softmax = name + "_fwd"; // softmax_forward may conflict with mkldnn::softmax_forward()
+            writer_ << "auto " << cmd_softmax << " = "
+                << "softmax_forward(" << softmax_pd << ");\n";
+
+            writer_ << cmd_softmax << ".execute(mkldnn_s, {\n";
+            writer_.indentInc();
+            writer_ << "{ MKLDNN_ARG_SRC," << in_mem << "},\n"
+                << "{ MKLDNN_ARG_DST," << out_mem << "} });\n";
+            writer_.indentDec();
+            writer_ << "mkldnn_s.wait();\n";
+
+            return;
+        }
+        int m = input->getDim(0);
+        int n = input->getDim(1);
 
         writer_ << "matrixSoftmax_" << dtype_flag << "(" << m << ", " << n
-                << ", " << tensors_name_map_[A] << ", " << n << ", "
-                << tensors_name_map_[B] << ", " << n << ");\n";
+                << ", " << tensors_name_map_[input] << ", " << n << ", "
+                << tensors_name_map_[out] << ", " << n << ");\n";
     }
 
     if ((oplabel->getTypeNameLabel()).compare("MatrixSoftmaxWithLoss") == 0) {
@@ -1514,6 +2190,68 @@ void Codegen::emitMemFree() {
     }
     writer_ << "\n";
 }
+//----------------------------------------------------------
+// MKLDNN
+
+void Codegen::emit_mkldnn_memory_dims(std::string name, std::vector<size_t> dims) {
+    std::ostringstream os;
+    os << "memory::dims " << name << " = {";
+    for (auto dim : dims)
+        os << dim << ", ";
+
+    std::string str = os.str();
+    writer_ << str.substr(0, str.length() - 2) + "};\n";
+
+}
+// currently only supoort format_tag::any
+void Codegen::emit_mkldnn_memory_desc(std::string &name, std::string mkldnn_dims, Tensor *tensor, bool any) {
+    std::string dtype = getTypeString(tensor);
+    assert(dtype_mkldnn_datatype_map.count(dtype) && "mkldnn unsupported data type\n");
+    if(any) {
+        writer_ << "auto " << name << " = memory::desc({" << mkldnn_dims << "}, "
+            << dtype_mkldnn_datatype_map.at(dtype) << ", "
+            << "memory::format_tag::any);\n";
+    }
+    else if(tensors_mkldnn_mem_map_.count(tensor)) {
+        auto mkldnn_mem = tensors_mkldnn_mem_map_.at(tensor);
+        writer_ << "// " << name << " alias to " << mkldnn_mem << "\n"; 
+        writer_ << "auto " << name << " = " << mkldnn_mem + ".get_desc();\n";
+    }
+    else {
+        std::string layout = tensor->getMemLayoutTag();
+        writer_ << "auto " << name << " = memory::desc({" << mkldnn_dims << "}, "
+            << dtype_mkldnn_datatype_map.at(dtype) << ", "
+            << layout_mkldnn_format_tag_map.at(layout) << ");\n";
+
+    }
+}
+
+
+void Codegen::emit_mkldnn_memory(std::string &name, Tensor *tensor, std::string mkldnn_dims, std::string engine, std::string handle, std::string layout_tag) { 
+    if(tensors_mkldnn_mem_map_.count(tensor)) {
+        auto mkldnn_mem = tensors_mkldnn_mem_map_.at(tensor);
+        writer_ << "// " << name << " alis to " << mkldnn_mem << "\n"; 
+        name = mkldnn_mem;
+        return;
+    }
+    std::string dtype = getTypeString(tensor);
+    std::string layout = tensor->getMemLayoutTag();
+    SWLOG_DEBUG(10) << "emit_mkldnn_memory for " << name << " " << layout << "\n";
+    assert(dtype_mkldnn_datatype_map.count(dtype) && "mkldnn unsupported data type\n");
+
+    std::string format_tag = layout_tag.length()==0 ? 
+        layout_mkldnn_format_tag_map.at(layout) : "memory::format_tag::" + layout_tag;
+
+    writer_ << "auto " << name << " = memory({{" << mkldnn_dims<< "}, "
+        << dtype_mkldnn_datatype_map.at(dtype) << ", "
+        // << layout_mkldnn_format_tag_map.at(layout) << "}, "
+        << format_tag << "}, "
+        << engine << ", " << handle << ");\n";
+    
+    tensors_mkldnn_mem_map_[tensor] = name;  
+}
+    
+//----------------------------------------------------------
 
 void Codegen::emitFuncCallCUDA(OpNode *op) {
     std::string dtype_flag = dtype();

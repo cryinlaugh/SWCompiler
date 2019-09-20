@@ -47,7 +47,7 @@ class Codegen {
             << "\n";
     }
 
-    /// init Makefile wrt. CodegenConfig
+    /// init Makefile wrt. Config
     virtual void initMakefileBuilder();
 
     /// initialization before code emitting
@@ -55,6 +55,9 @@ class Codegen {
 
     /// emit CUDA related code. e.g. cuBlas handle, cudaStream creating
     void emitCUDAInit();
+
+    // emit mkldnn related code e.g. engine
+    void emitMKLDNNInit();
 
     /// Dataloader for batch executions
     void emitDataLoaderInit();
@@ -147,6 +150,16 @@ class Codegen {
 
     // int getMPISendRecvTag(Tensor *);
     // bool delMPISendRecvTag(Tensor *);
+    //----------------------------------------------------------
+    void emit_mkldnn_memory_dims(std::string name, std::vector<size_t> dims);
+    // we know layout by tensor->getMemLayoutTag()
+    // but we may initialize desc to be format_tag::any
+    // or we can use pre-defined memory
+    void emit_mkldnn_memory_desc(std::string &name, std::string dims, Tensor *tensor, bool any=false);
+    void emit_mkldnn_memory(std::string &name, Tensor *t, std::string dims, 
+        std::string engine, std::string handle, std::string layout_tag=std::string()); 
+    
+    //----------------------------------------------------------
 
 protected:
     void destroy();
@@ -171,6 +184,8 @@ protected:
     std::map<Tensor *, std::pair<std::string, uint64_t>>
         tensors_offset_map_;
 
+    /// for mkldnn memory
+    std::map<Tensor *, std::string> tensors_mkldnn_mem_map_;
 
     /// to use Device as key, we implement std::hash() of Device in common.h
     /// if implemented with std::map, we must define comparison of Device

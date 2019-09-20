@@ -276,7 +276,7 @@ void ParallelCodegen::emitTensorInitializations() {
         auto *tensor = tnode->getTensor();
         if (tensor->getTensorInitType() == TensorInitType::PARENTOP) {
             auto *parent = (OpNode *)tnode->getParentNode(0);
-            if (auto *scatter = dynamic_cast<ScatterOp *>(parent->getOp())) {
+            if (dynamic_cast<ScatterOp *>(parent->getOp())) {
                 writer_ << "// master to worker send statements\n";
                 masterWorkerDispatcher(parent, 0);
             }
@@ -297,7 +297,7 @@ void ParallelCodegen::emitTensorInitializations() {
         auto *tensor = tnode->getTensor();
         if (tensor->getTensorInitType() == TensorInitType::PARENTOP) {
             auto *parent = (OpNode *)tnode->getParentNode(0);
-            if (auto *scatter = dynamic_cast<ScatterOp *>(parent->getOp())) {
+            if (dynamic_cast<ScatterOp *>(parent->getOp())) {
                 writer_ << "// worker recv from master statements\n";
                 if (parent->runable())
                     masterWorkerDispatcher(parent, 1);
