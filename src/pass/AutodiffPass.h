@@ -97,7 +97,12 @@ class AutodiffPass {
                            size_t batch) {} 
     void show();
 
-    void run(IRGraph* graph_train);
+    // if graph_train == nullptr
+    //   do autodiff on original graph directly
+    // else
+    //   copy graph to graph_train (weights shallow clone)
+    //   do autodiff on graph_train
+    void run(IRGraph* graph_train=nullptr);
     void destroy();
 
 };

@@ -67,9 +67,14 @@ void AutodiffPass::getADAMParameters(float lr)
 
 void AutodiffPass::run(IRGraph* graph_train)
 {
-    SWLOG_DEBUG(4) << "AutodiffPass Run" << endl;
-    _graph->copyTo(graph_train);
-    //graph_train = _graph;
+    if(graph_train == nullptr) {
+        graph_train = _graph;
+        SWLOG_DEBUG(5) << "AutodiffPass[self-transformation] run\n";
+
+    }else {
+        _graph->copyTo(graph_train);
+        SWLOG_DEBUG(5) << "AutodiffPass[transform-to-graph_train] run\n"; 
+    }
 
     std::vector<IRNode*> topo_nodes;
     std::unordered_map<IRNode*, IRNode*> gradNodeMap;

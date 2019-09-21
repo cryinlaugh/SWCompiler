@@ -40,5 +40,6 @@
 // #include "../src/pass/ParallelingPass.h"
 #include "../src/pass/ParallelLabelingPass.h"
 #include "../src/pass/ParallelLoweringPass.h"
+#include "../src/pass/AutodiffPass.h"
 
 #endif

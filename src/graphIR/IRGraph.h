@@ -25,8 +25,8 @@ class IRNode;
  */
 class IRGraph {
   public:
-    IRGraph(){};
-    ~IRGraph(){};
+    IRGraph(){}
+    ~IRGraph(){}
 
     TensorNode *getTensorNode(int i) const { return _tensors[i]; }
     OpNode *getOpNode(int i) const { return _ops[i]; }
@@ -53,14 +53,14 @@ class IRGraph {
     void initTensorNodes();
 
     // GraphStructure Construct Interface
-    void pushTensorNode(){};
+    void pushTensorNode(){}
     template <typename T, typename... Types>
     void pushTensorNode(const T &firstArg, const Types &... args) {
         _tensors.push_back(firstArg);
         pushTensorNode(args...);
     }
 
-    void delTensorNode(){};
+    void delTensorNode(){}
     template <typename T, typename... Types>
     void delTensorNode(const T &firstArg, const Types &... args) {
         if (!delVecMember(_tensors, firstArg)) {
@@ -68,14 +68,14 @@ class IRGraph {
         }
         delTensorNode(args...);
     }
-    void pushOpNode(){};
+    void pushOpNode(){}
     template <typename T, typename... Types>
     void pushOpNode(const T &firstArg, const Types &... args) {
         _ops.push_back(firstArg);
         pushOpNode(args...);
     }
 
-    void delOpNode(){};
+    void delOpNode(){}
     template <typename T, typename... Types>
     void delOpNode(const T &firstArg, const Types &... args) {
         if (!delVecMember(_ops, firstArg)) {
@@ -84,7 +84,7 @@ class IRGraph {
         delOpNode(args...);
     }
 
-    void pushInNode(){};
+    void pushInNode(){}
     template <typename T, typename... Types>
     void pushInNode(const T &firstArg, const Types &... args) {
         _inNodes.push_back(firstArg);
@@ -96,7 +96,7 @@ class IRGraph {
         _outNodes.clear();
     }
 
-    void pushOutNode(){};
+    void pushOutNode(){}
     template <typename T, typename... Types>
     void pushOutNode(const T &firstArg, const Types &... args) {
         _outNodes.push_back(firstArg);
