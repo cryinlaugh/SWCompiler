@@ -148,7 +148,7 @@ int main()
 
     dotGen(lenet_train);
 
-    CodegenConfig config;
+    Config config;
     config.train_mode = true;
     config.train_config.train_data_file = "mnist_labels_images.bin";
     config.train_config.label_bytes = BytesProto::ONE_BYTE_AS_INT;

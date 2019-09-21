@@ -160,7 +160,7 @@ int main() {
     */
 
     dotGen(mlp);
-    CodegenConfig config;
+    Config config;
     std::cout << "dotgen ok\n";
     codegen::ParallelCodegen *cg = new codegen::ParallelCodegen(mlp, config);
     string code = cg->generate();

@@ -37,6 +37,8 @@
 #include "../src/pass/LoweringPass.h"
 #include "../src/pass/EliminationPass.h"
 #include "../src/pass/RenamingNodePass.h"
-#include "../src/pass/ParallelingPass.h"
+// #include "../src/pass/ParallelingPass.h"
+#include "../src/pass/ParallelLabelingPass.h"
+#include "../src/pass/ParallelLoweringPass.h"
 
 #endif
