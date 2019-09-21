@@ -24,6 +24,7 @@ enum BytesProto {
 };
 
 struct TrainingConfig {
+    std::string optimizer;
     float lr{0.001};
     float decay{0.001};
     float momentum{0.9};

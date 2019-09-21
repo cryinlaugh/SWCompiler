@@ -19,6 +19,7 @@
 #include "pass/RenamingNodePass.h"
 #include "pass/ParallelLabelingPass.h"
 #include "pass/ParallelLoweringPass.h"
+#include "pass/AutodiffPass.h"
 #include "SWLOG.h"
 #include "SWDSL.h"
 #include "codegen/Codegen.h"
@@ -62,14 +63,14 @@ void Backend::runInferPasses() {
     auto labelingpass = new LabelingPass(graph_); 
     auto loweringpass = new LoweringPass(graph_);
 
-    // renaming pass may be removed after i merge commits
-    // from master, dotGen with tensornode address rather than name
-    // in resnet, name will be dumplicated among nodes
-    passManager.add(renamingpass); 
     passManager.add(labelingpass);
     passManager.add(loweringpass);
     // run labeling again for new nodes from lowering
     passManager.add(labelingpass);
+    // renaming currently cannot be removed because
+    // Codegen use node name, but duplicated name
+    // may be introduced in lowering pass
+    passManager.add(renamingpass); 
 
     passManager.run();
 
@@ -77,6 +78,36 @@ void Backend::runInferPasses() {
 
 void Backend::runTrainPasses() {
 
+    auto config = graph_->getConfig();
+    std::string method = config.train_config.optimizer;
+    float lr =  config.train_config.lr;
+    float decay =  config.train_config.decay;
+    float momentum =  config.train_config.momentum;
+    float batch =  config.train_config.batch;
+    
+    auto diffpass = new AutodiffPass(graph_);
+    diffpass->getMethods(method, lr, decay, momentum, batch);
+    diffpass->show();
+    // autodiff on graph_ directly,
+    // after this pass, graph_ is a train graph
+    diffpass->run();
+
+    // update nodesByTopology 
+    graph_->findInOut();
+    graph_->updateTopology();
+
+    PassManager passManager;
+    auto labelingpass = new LabelingPass(graph_); 
+    auto loweringpass = new LoweringPass(graph_);
+    auto renamingpass = new RenamingNodePass(graph_); 
+
+    passManager.add(labelingpass);
+    passManager.add(loweringpass);
+    // run labeling again for new nodes from lowering
+    passManager.add(labelingpass);
+    passManager.add(renamingpass); 
+
+    passManager.run();
 }
 
 void Backend::runParallelPasses() {
