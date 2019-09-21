@@ -17,6 +17,8 @@
 #include "pass/LabelingPass.h"
 #include "pass/LoweringPass.h"
 #include "pass/RenamingNodePass.h"
+#include "pass/ParallelLabelingPass.h"
+#include "pass/ParallelLoweringPass.h"
 #include "SWLOG.h"
 #include "SWDSL.h"
 #include "codegen/Codegen.h"
@@ -33,16 +35,28 @@ void Backend::compile() {
 
     // labeling passes will set lowermark
     if(config.train_mode)
-        runPassesTrain();
+        runTrainPasses();
     else
-        runPassesInfer();
+        runInferPasses();
 
-    transform();
+    // parallelization should be done 
+    // before graph layout transformation
+    // since parallel strategies are generated
+    // according to einSum representation like "nchw"
+    if(config.mpi) {
+        runParallelPasses(); 
+    }
+
+    // transform mkl-dnn supported operators to
+    // nchw layout format
+    if(config.mkldnn)
+        transformForMKLDNN();
+
     optimize();
 
 }
 
-void Backend::runPassesInfer() {
+void Backend::runInferPasses() {
     PassManager passManager;
     auto renamingpass = new RenamingNodePass(graph_); 
     auto labelingpass = new LabelingPass(graph_); 
@@ -61,11 +75,28 @@ void Backend::runPassesInfer() {
 
 }
 
-void Backend::runPassesTrain() {
+void Backend::runTrainPasses() {
 
 }
 
-void Backend::transform() {
+void Backend::runParallelPasses() {
+
+    PassManager passManager;
+
+    auto para_labeling = new ParallelLabelingPass(graph_); 
+    auto para_lowering = new ParallelLoweringPass(graph_); 
+    auto renaming  = new RenamingNodePass(graph_);
+    auto eliming = new EliminationPass(graph_); 
+
+    passManager.add(para_labeling);
+    passManager.add(para_lowering);
+    passManager.add(renaming);
+    passManager.add(eliming);
+
+    passManager.run();
+}
+
+void Backend::transformForMKLDNN() {
     SWLOG_DEBUG(10) << "backend specific transform before codegen begin \n";
     auto config = graph_->getConfig();
 

@@ -23,10 +23,14 @@ public:
     virtual void compile();
     
     // Infer
-    void runPassesInfer();
-    void runPassesTrain();
+    void runInferPasses();
+    // Train
+    void runTrainPasses();
 
-    virtual void transform();
+    // parallelization
+    void runParallelPasses();
+
+    virtual void transformForMKLDNN();
     virtual void optimize();
     std::string genCode();
 
