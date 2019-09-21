@@ -22,6 +22,8 @@ class MakefileBuilder {
     void addIncDir(std::string dir) { include_dirs_.push_back(dir); }
     void addLibDir(std::string dir) { library_dirs_.push_back(dir); }
     void addLib(std::string lib) { libraries_.push_back(lib); }
+    std::string getExecutable() { return object_; }
+    void setRunCmd(std::string cmd) { run_cmd_ = cmd; }
 
   private:
     CodeWriter writer_;
@@ -34,6 +36,7 @@ class MakefileBuilder {
     std::vector<std::string> include_dirs_;
     std::vector<std::string> library_dirs_;
     std::vector<std::string> libraries_;
+    std::string run_cmd_{"./net.bin"};
 };
 
 } // namespace codegen

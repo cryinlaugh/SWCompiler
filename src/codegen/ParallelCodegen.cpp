@@ -68,6 +68,10 @@ bool ParallelCodegen::delMPISendRecvTag(Tensor *tensor) {
 void ParallelCodegen::initMakefileBuilder() {
     Codegen::initMakefileBuilder();
     makefile_builder_.setCXXCompiler("mpic++");
+    auto config = graph_->getConfig();
+    std::string run_cmd = "mpirun -n "  + std::to_string(config.mpi_size) 
+        +" " + makefile_builder_.getExecutable();
+    makefile_builder_.setRunCmd(run_cmd);
 }
 
 void ParallelCodegen::emitHeader() {
