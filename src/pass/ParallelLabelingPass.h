@@ -142,16 +142,14 @@ public:
 
     }
     void run() {
-        //SWLOG_DEBUG(4) << "Start Paralleling Pass." << std::endl;
+        SWLOG_DEBUG(4) << "Start Paralleling Pass." << std::endl;
 
-
-        runLabeling(2);
+        auto parallel_degree = _graph->getConfig().mpi_size;
+        assert(parallel_degree>1 && "error, degree of parallellism unset, please set config.mpi_size");
+        runLabeling(parallel_degree);
         //get startegy
-        //SWLOG_DEBUG(4) << "Finish Paralleling pass. " << std::endl;
+        SWLOG_DEBUG(4) << "Finish Paralleling pass. " << std::endl;
 
-        // //std::cout<<"test"<<std::endl;
-        // runTileLowering();
-        // SWLOG_INFO << "Finish Lowering Pass." << std::endl;
     }
 
 

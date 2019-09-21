@@ -164,18 +164,14 @@ public:
 // construct parallel zone
 
 
-
     void run() {
-        //SWLOG_DEBUG(4) << "Start Paralleling Pass." << std::endl;
-        runLowering(2);
-        //SWLOG_DEBUG(4) << "Finish Paralleling pass. " << std::endl;
+        SWLOG_DEBUG(4) << "Start Paralleling Pass." << std::endl;
+        auto parallel_degree = _graph->getConfig().mpi_size;
+        assert(parallel_degree>1 && "error, degree of parallellism unset, please set config.mpi_size");
+        runLowering(parallel_degree);
+        SWLOG_DEBUG(4) << "Finish Paralleling pass. " << std::endl;
 
-        // //std::cout<<"test"<<std::endl;
-        // runTileLowering();
-        // SWLOG_INFO << "Finish Lowering Pass." << std::endl;
     }
-
-
 
 };
 

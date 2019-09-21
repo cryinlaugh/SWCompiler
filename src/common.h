@@ -54,6 +54,7 @@ struct Config {
     bool cuda_stream{false};
 
     bool mpi{false};
+    int mpi_size{1};
 
     TrainingConfig train_config;
 };
