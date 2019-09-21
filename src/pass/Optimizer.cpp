@@ -8,6 +8,12 @@
  */
 
 #include "Optimizer.h"
+#include "LabelingPass.h"
+#include "LoweringPass.h"
+#include "RenamingNodePass.h"
+#include "AutodiffPass.h"
+#include "EliminationPass.h"
+#include "ParallelingPass.h"
 
 #include "SWLOG.h"
 
@@ -18,6 +24,7 @@ void pass::Optimizer::runOptimizer() {
     // runLabelingPass(0);
     // runLoweringPass();
     // runLabelingPass(0);
+    auto config = _graph->getConfig();
 
     SWLOG_DEBUG(4) << "Start doing optimization.\n" << std::endl;
     PassManager passManager;

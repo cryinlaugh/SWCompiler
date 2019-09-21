@@ -27,7 +27,7 @@ class Label {
     // This label is to mark those nodes that can not be
     // eliminated even the out rank is zero;
     // 0 by default
-    int _isOut;
+    int _isOut{0};
     
     TensorInitType _initTypeLabel;
     Device _dev;
@@ -55,7 +55,7 @@ class Label {
     void setTraining(int train) { _train = train; }
     bool needTraining() { return _train == 1; }
 
-    void setIsOut() { _isOut = 1; };
+    void setIsOut(int mark=1) { _isOut = mark; };
     int getIsOut() const { return _isOut; }
     
     std::string getNodeNameLabel() const { return _nodeNameLabel; }

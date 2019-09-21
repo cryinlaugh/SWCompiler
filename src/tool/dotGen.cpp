@@ -123,6 +123,8 @@ std::string dotGenTensorNode(TensorNode *tnode) {
             tensorInfo += ", ";
     }
     tensorInfo += "]\\l";
+    auto layout = tnode->getTensor()->getMemLayoutTag();
+    tensorInfo += "Layout: " + layout + "\\l";
     tensorInfo += "}\", ";
     tensorInfo += "color=cyan4, penwidth = 2";
     tensorInfo += "];\n";
@@ -144,8 +146,7 @@ std::string dotGenOpNode(OpNode *opnode) {
     else if (opnode->getOp()->getOpType() == TENSOR_OP)
         opType = "TENSOR_OP";
 
-    // generate the opInfo
-    opInfo += "label = \"Node's name: " + opNodeName + "\\n";
+
     /*
     int nInput = opnode->getOp()->getnInput();
     int nOutput = opnode->getOp()->getnOutput();
@@ -153,6 +154,10 @@ std::string dotGenOpNode(OpNode *opnode) {
     opInfo += "_nInput: " + std::to_string(nInput) + "\\n";
     opInfo += "_nOutput: " + std::to_string(nOutput) + "\", ";
     */
+
+    // generate the opInfo
+    opInfo += "label = \"Node's name: " + opNodeName + "\\n";
+
     SWLOG_DEBUG(1) << opNodeName << " getOpInfo: " << opnode->getOp()->getOpInfo() << "\n";
 
     opInfo += opnode->getOp()->getOpInfo() + "\", ";

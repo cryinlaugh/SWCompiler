@@ -329,6 +329,8 @@ void IRGraph::findInOut() {
         if ((*tnIter)->childNum() == 0)
             _outNodes.push_back(*tnIter);
     }
+
+    SWLOG_DEBUG(11) << "findInOut innodes:" << _inNodes.size() << " outnodes:" << _outNodes.size() << "\n";
     setOutMark();
 }
 
@@ -430,8 +432,6 @@ void IRGraph::copyTo(IRGraph* graph) const {
     graph->setDeviceLabel(_dev);
     graph->findInOut();
     graph->updateTopology();
-    graph->updateTopoNodeList();
-
 }
 
 IRGraph *IRGraph::clone() const {
@@ -516,6 +516,14 @@ void IRGraph::setDeviceLabel(Device dev) {
 void IRGraph::setOutMark() {
     for (unsigned int i = 0; i < _outNodes.size(); i++) {
         _outNodes[i]->getLabel()->setIsOut();
+        SWLOG_DEBUG(10) << "set out mark for " << _outNodes[i]->name() << "\n";
+    }
+}
+
+// if remove node from _outNodes, we need to clear its mark
+void IRGraph::clearOutMark() {
+    for(auto out : _outNodes) {
+        out->getLabel()->setIsOut(0);
     }
 }
 

@@ -215,12 +215,14 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
             graph_->pushTensorNode(bias);
         }
 
+        // The caffe 4d weights layout is oihw/nchw by default, we use nhwc
+        weight->setMemLayout(layout_nchw);
         std::string trans_op_name = "op_" + weight->name() + "_T";
         auto trans = new OpNode(trans_op_name, new TransposeOp(NCHW2NHWC));
         LINKUPPER(trans, weight);
 
         Tensor *wt =
-            new Tensor(weight->getTensor()->getShuffledTensorShape(NCHW2NHWC));
+            new Tensor(weight->getTensor()->getShuffledTensorShape(NCHW2NHWC), weight->getDataType(), layout_nhwc);
         std::string trans_name = weight->name() + "_T";
         auto w_trans = new TensorNode(trans_name, wt, trans);
 
@@ -393,7 +395,7 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
             LINKUPPER(trans_in, in);
 
             Tensor *inT =
-                new Tensor(in->getTensor()->getShuffledTensorShape(NHWC2NCHW));
+                new Tensor(in->getTensor()->getShuffledTensorShape(NHWC2NCHW), weight->getDataType(), layout_nhwc);
             std::string trans_in_name = in->name() + "_T";
             auto in_trans = new TensorNode(trans_in_name, inT, trans_in);
             opNode->exlinkUpperNode(in_trans, w_trans, bias);
@@ -493,6 +495,7 @@ void Caffe2Importer::loadTensor(const caffe2::OperatorDef &op) {
             std::cout << "tensor " << name << std::endl
                       << "\tpath: " << path << std::endl
                       << "\tdim : " << shape->size() << std::endl
+                      << "\tlay : " << tensor->getMemLayout() << std::endl
                       << "\tsize: " << tensor->size() << std::endl;
         }
     }

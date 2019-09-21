@@ -11,7 +11,8 @@
 #include <memory>
 #include <vector>
 #include <string>
-#include <limits.h>
+#include <map>
+#include <climits>
 
 enum class DataType { Float_t, Double_t, Int8_t, Int32_t };
 
@@ -41,9 +42,13 @@ struct TrainingConfig {
     size_t train_data_samples{0};
 };
 
-struct CodegenConfig {
+struct Config {
     bool train_mode{false};
 
+    // cpu codegen config
+    bool mkldnn{false};
+
+    // Nvidia cuda codegen config
     bool cuda{false};
     bool cublas{false};
     bool cuda_stream{false};
@@ -65,6 +70,36 @@ enum TensorType {
     D1 = 1,
     D0 = 0,
     UNKNOWN = -1
+};
+
+typedef enum {
+    layout_default = 0,
+
+    // for tensors
+    layout_nchw,
+    layout_nhwc,
+    layout_nc,
+    layout_cn
+} mem_layout_t;
+const std::map<int, std::string> MEM_LAYOUT = {{layout_default, "default"},
+    {layout_nchw, "nchw"},
+    {layout_nhwc, "nhwc"},
+    {layout_nc, "nc"},
+    {layout_cn, "cn"},
+};
+
+const std::map<std::string, std::string> dtype_mkldnn_datatype_map = {
+    {"float", "memory::data_type::f32"},
+    {"int", "memory::data_type::s32"}
+};
+
+const std::map<std::string, std::string> layout_mkldnn_format_tag_map = {
+    {"nhwc", "memory::format_tag::nhwc"},
+    {"nchw", "memory::format_tag::nchw"},
+    {"nc", "memory::format_tag::nc"},
+    {"cn", "memory::format_tag::cn"},
+    {"x", "memory::format_tag::x"},
+    {"xy", "memory::format_tag::nc"},
 };
 
 enum class TensorInitType { NONE, CONSTANT, ZERO, XAVIER, FILE, PARENTOP };

@@ -91,7 +91,11 @@ class IRGraph {
         pushInNode(args...);
     }
 
-    void clearOutNodes(){ _outNodes.clear(); }
+    void clearOutNodes() {
+        clearOutMark();
+        _outNodes.clear();
+    }
+
     void pushOutNode(){};
     template <typename T, typename... Types>
     void pushOutNode(const T &firstArg, const Types &... args) {
@@ -102,7 +106,9 @@ class IRGraph {
     // To mark out node to avoid to be eliminated
     // by EliminationPass
     void setOutMark();
-    
+    // if remove node from _outNodes, we need to clear its mark
+    void clearOutMark();
+
     inline int tensorNodeNum() const { return _tensors.size(); }
     inline int opNodeNum() const { return _ops.size(); }
     inline int inNodeNum() const { return _inNodes.size(); }
@@ -116,7 +122,7 @@ class IRGraph {
     void updateTopology();
     void updateTopoNodeList();
     void copyTo(IRGraph* graph) const;
-    
+
     IRGraph *clone() const;
     void setDeviceLabel(Device dev);
     Device getDeviceLabel() { return _dev; }
@@ -135,6 +141,8 @@ class IRGraph {
         addDisplayTensorNodes(args...);
     }
     std::vector<TensorNode*> getDisplayTensorNodes(){ return _display_nodes; }
+    void setConfig(Config config) { _config = config; }
+    Config getConfig() { return _config; }
 
   private:
     std::vector<TensorNode *> _tensors;
@@ -148,6 +156,9 @@ class IRGraph {
     TensorNode *_input_data_node{nullptr};
     TensorNode *_input_label_node{nullptr};
     std::vector <TensorNode*> _display_nodes;
+
+    // for backend compilation
+    Config _config;
 
     Device _dev;
 };

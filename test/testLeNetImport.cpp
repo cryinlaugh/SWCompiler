@@ -35,21 +35,27 @@ int main() {
 
     graph->pushOpNode(argmax_o, print_o);
     graph->pushTensorNode(top3_t);
+
+    auto *placeholder = new TensorNode("null", {0}, print_o);
+    graph->pushTensorNode(placeholder);
     //---------------------------------------------------------------
 
     graph->findInOut();
     graph->updateTopology();
 
-    // Optimizer is a must because Codegen need label
-    pass::Optimizer *opt = new pass::Optimizer(graph);
-    opt->runOptimizer();
+    Config config;
+    // default is 0(infer); this code explicitly set it
+    config.train_mode = 0; 
+    config.mkldnn = false;
 
-    dotGen(graph);
+    graph->setConfig(config);
 
-    CodegenConfig config;
-    codegen::Codegen *cg = new codegen::Codegen(graph, config);
-    string code = cg->generate();
-    cout << code;
+    Backend backend(graph); 
+    backend.compile();
+
+    dotGen(graph, "lenet_import_compiled.dot");
+    string code = backend.genCode();
+    // cout << code;
 
     return 0;
 }

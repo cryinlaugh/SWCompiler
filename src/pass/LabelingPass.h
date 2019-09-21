@@ -51,6 +51,8 @@ class swc::pass::LabelingPass : public swc::pass::OptimizePass {
         }
     }
     void setLoweringMark() {
+        Config config = _graph->getConfig();
+
         int nTensorNodes = _graph->tensorNodeNum();
         int nOpNodes = _graph->opNodeNum();
 
@@ -65,6 +67,9 @@ class swc::pass::LabelingPass : public swc::pass::OptimizePass {
             OpNode *node = _graph->getOpNode(i);
             Label *label = node->getLabel();
             if ((label->getTypeNameLabel()).compare("MatrixMatrixFCBias") == 0) {
+                if(config.mkldnn)
+                    continue;
+
                 SWLOG_DEBUG(2)
                     << label->getTypeNameLabel() << " "
                     << label->getNodeNameLabel()

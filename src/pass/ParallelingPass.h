@@ -15,10 +15,8 @@
 #include "parallel/ParallelPattern.h"
 namespace swc {
 namespace pass {
-class ParallelingPass;
-}
 
-class swc::pass::ParallelingPass: public swc::pass::OptimizePass {
+class ParallelingPass: public OptimizePass {
     using OptimizePass::_graph;
 public:
     ParallelingPass(IRGraph *graph): OptimizePass(graph) {
@@ -176,4 +174,5 @@ public:
 
 };
 
-}
+} // namespace pass
+} // namespace swc

@@ -1,3 +1,10 @@
+/*************************************************************************
+	> File Name: test/testBackend.cpp
+	> Author: wayne
+	> Mail:  
+	> Created Time: Sat 14 Sep 2019 11:08:12 AM UTC
+ ************************************************************************/
+
 #include <iostream>
 
 #include "SWC.h"
@@ -7,33 +14,6 @@ using namespace swc::op;
 using namespace std;
 
 int main() {
-    //============================
-    // Example of 2-layer
-    // fully connected network:
-    // data parallel, fc0 and tanh0
-    // run on GPU0 and GPU1
-    //
-    //  T:data0   T:weight0
-    //     \       /
-    //      \     /
-    //        O:fc0 -- T:bias0
-    //         |
-    //      T:data1
-    //         |
-    //      O:tanh0
-    //         |
-    //      T:data2
-    //                  T:weight1
-    //          \       /
-    //           \     /
-    //          O:fc1 -- T:bias1
-    //              |
-    //          T:data3
-    //              |
-    //          O: softmax
-    //              |
-    //          T:data4
-    //=============================
 
     TENSOR(data0, 8, 784);
     TENSOR(weight0, 784, 512);
@@ -82,27 +62,32 @@ int main() {
         new TensorNode("top3", new Tensor({8, 3}, DataType::Int32_t), argmax_o);
     auto *print_o = new OpNode("print", new DebugOp());
     print_o->exlinkUpperNode(top3_t);
+    auto *placeholder = new TensorNode("null", {0}, print_o);
 
     // define IR graph
     G(mlp);
-    GpT(mlp, data0, weight0, bias0, data1, data2, weight1, bias1, data3, data4,
-        top3_t);
+    GpT(mlp, data0, weight0, bias0, data1, data2, weight1, bias1, data3, data4, top3_t, placeholder);
     GpO(mlp, fc0, tanh0, fc1, softmax, argmax_o, print_o);
 
     //====================================================
     mlp->findInOut();
     mlp->updateTopology();
-    
-    pass::Optimizer *opt = new pass::Optimizer(mlp);
-    opt->runOptimizer();
 
     //====================================================
-    dotGen(mlp);
+    dotGen(mlp, "mlp_def.dot");
 
     //====================================================
     Config config;
-    codegen::Codegen *cg = new codegen::Codegen(mlp, config);
-    string code = cg->generate();
+    // config.mkldnn = true;
+    mlp->setConfig(config);
+
+	
+    Backend backend(mlp); 
+    backend.compile();
+
+    dotGen(mlp, "mlp_compiled.dot");
+
+    string code = backend.genCode();
     cout << code;
 
     return 0;
