@@ -612,6 +612,20 @@ void argMax_f(const float *input, int *idx, int m, int n, int top_k) {
     }
 }
 
+// pred : m * n prediction of label
+// label: m * 1 label
+void accuracy_i(const int* pred, const int *label, int *accum_cnt, int m, int n) {
+    for(int i=0; i<m; i++) {
+        accum_cnt[1] += 1; // cnt
+        for(int j=0; j<n; j++) {
+            if(pred[i*n+j] == label[i]) {
+                accum_cnt[0] += 1; //right_cnt
+                break;
+            }
+        }
+    }
+}
+
 template <typename T>
 void printMatrix(const T *a, int m, int n) {
     std::cout.flags(std::ios::fixed);

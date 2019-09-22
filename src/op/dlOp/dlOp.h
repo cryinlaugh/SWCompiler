@@ -740,6 +740,8 @@ public:
     ArgMaxOp(int topK) : Op(DL_OP, 1, 1, std::string("ArgMax")) {
         topK_ = topK;
         this->_einOp = 1;
+        // currently, parallel pass can only support float type tensor
+        // if lower this, int label will cause error
         this->_einRep.push_back("00");
         this->_einRep.push_back("00");
     }
@@ -747,6 +749,22 @@ public:
     int getTopK() {
         return topK_;
     }
+    void destroy() {}
+};
+
+// currently we let AccuracyOp link to ArgMaxOp.out and label
+// then we get topk accuracy
+// TODO: let accuray link to prob and label
+class AccuracyOp: public Op {
+
+public:
+    AccuracyOp() : Op(DL_OP, 2, 1, std::string("Accuracy")) {
+        this->_einOp = 1;
+        this->_einRep.push_back("i0");
+        this->_einRep.push_back("i0");
+        this->_einRep.push_back("0"); // cnt right_cnt
+    }
+    ~AccuracyOp() {}
     void destroy() {}
 };
 

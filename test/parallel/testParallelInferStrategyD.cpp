@@ -102,6 +102,12 @@ int main() {
     //====================================================
     mlp->findInOut();
     mlp->updateTopology();
+
+    Config config;
+    config.mpi = true;
+    config.mpi_size = 2;
+    mlp->setConfig(config);
+
     pass::Optimizer *opt = new pass::Optimizer(mlp);
     opt->runOptimizer();
 
@@ -151,7 +157,6 @@ int main() {
     dotGen(mlp);
 
     //====================================================
-    Config config;
     codegen::ParallelCodegen *cg = new codegen::ParallelCodegen(mlp, config);
     string code = cg->generate();
     cout << code;

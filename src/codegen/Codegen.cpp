@@ -2098,9 +2098,24 @@ void Codegen::emitFuncCall(OpNode *op) {
         auto *argmax_Op = (ArgMaxOp *)op->getOp();
         auto topK = argmax_Op->getTopK();
 
+        assert((size_t)topK==B->getDim(1) && "ArgMax topK != output.dim(2)");
+
         writer_ << "argMax_" << dtype_flag << "(" << tensors_name_map_[A]
                 << ", " << tensors_name_map_[B] << ", " << m << ", " << n
                 << ", " << topK << ");\n";
+    }
+
+    if ((oplabel->getTypeNameLabel()).compare("Accuracy") == 0) {
+        auto *pred = ((TensorNode *)op->getParentNode(0))->getTensor();
+        auto *label = ((TensorNode *)op->getParentNode(1))->getTensor();
+        auto *accum = ((TensorNode *)op->getChildNode(0))->getTensor();
+        int m = pred->getDim(0);
+        int n = pred->getDim(1);
+
+        writer_ << "accuracy_" << dtype_flag << "(" << tensors_name_map_[pred] << ", " 
+                << tensors_name_map_[label] << ", " 
+                << tensors_name_map_[accum] << ", " 
+                << m << ", " << n << ");\n";
     }
 
     if ((oplabel->getTypeNameLabel()).compare("Debug") == 0) {
