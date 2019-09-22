@@ -134,6 +134,14 @@ class IRGraph {
     TensorNode *getTrainLabelNode() { return _input_label_node; }
     TensorNode *getTrainDataNode() { return _input_data_node; }
 
+    // For Inference, if we want to run batches of test
+    void setInferDataNodes(TensorNode *label, TensorNode *data) {
+        _infer_label_node = label;
+        _infer_data_node = data;
+    }
+    TensorNode *getInferLabelNode() { return _infer_label_node; }
+    TensorNode *getInferDataNode() { return _infer_data_node; }
+
     void addDisplayTensorNodes(){}
     template <typename T, typename... Types>
     void addDisplayTensorNodes(const T &firstArg, const Types &... args) {
@@ -156,6 +164,10 @@ class IRGraph {
     TensorNode *_input_data_node{nullptr};
     TensorNode *_input_label_node{nullptr};
     std::vector <TensorNode*> _display_nodes;
+    // for inference, maybe the same node as training
+    // if we want to test during train
+    TensorNode *_infer_data_node{nullptr};
+    TensorNode *_infer_label_node{nullptr};
 
     // for backend compilation
     Config _config;

@@ -59,8 +59,11 @@ class Codegen {
     // emit mkldnn related code e.g. engine
     void emitMKLDNNInit();
 
-    /// Dataloader for batch executions
+    /// Dataloader for train batch executions
     virtual void emitDataLoaderInit();
+    // Dataloader for infer batch executions
+    // TODO: modify config and merge this with emitDataLoaderInit() 
+    virtual void emitInferDataLoaderInit();
 
     /// create allocators for devices according to config
     /// and set baseptr name

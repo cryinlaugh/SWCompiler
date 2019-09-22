@@ -204,6 +204,10 @@ void Codegen::initMakefileBuilder() {
         makefile_builder_.addLib("pthread");
     }
 
+    if(config_.use_dataloader) {
+        makefile_builder_.addCXXSrc("utils/DataLoader.cpp");
+    }
+
     if(config_.mkldnn) {
         makefile_builder_.addIncDir("$(HOME)/install/mkldnn_lnx_1.0.2_cpu_gomp/include");
         makefile_builder_.addLibDir("$(HOME)/install/mkldnn_lnx_1.0.2_cpu_gomp/lib");
@@ -256,6 +260,10 @@ void Codegen::emitHeader() {
             << "#include \"utils/utils.h\"\n";
     }
 
+    if(config_.use_dataloader) {
+        headerWriter_ << "#include \"utils/DataLoader.h\"\n";
+    }
+
     // namespace
     headerWriter_ << "using namespace std;\n";
     if(config_.mkldnn) {
@@ -293,6 +301,12 @@ std::string Codegen::generate() {
 
     writer_ << "\n// variable declaration and initiation\n";
     emitMemAllocs();
+
+    if (config_.train_mode)
+        emitDataLoaderInit();
+    else if(config_.use_dataloader) {
+        emitInferDataLoaderInit();
+    }
 
     writer_ << "\n// call op routine functions\n";
     emitExecute();
@@ -336,9 +350,6 @@ void Codegen::emitMemAllocs() {
     emitMemAllocations();
 
     emitTensorAddresses();
-
-    if (config_.train_mode)
-        emitDataLoaderInit();
 
     emitTensorInitializations();
 }
@@ -773,7 +784,10 @@ void Codegen::emitSaveSnapshot() {
 
 void Codegen::emitPrintGraphOutputs() {
     writer_ << "\n";
-    writer_ << "if(iter % " << config_.train_config.display<< " == 0) {\n";
+    if(config_.train_mode)
+        writer_ << "if(iter % " << config_.train_config.display<< " == 0) {\n";
+    else if(config_.use_dataloader)
+        writer_ << "if(iter % " << config_.display<< " == 0) {\n";
     writer_.indentInc();
 
     writer_ << R"(std::cout << "iterations " << iter << "\n";)"
@@ -858,18 +872,43 @@ std::string Codegen::getInitialLizerString(const std::vector<size_t> &dims) {
 void Codegen::emitDataLoaderInit() {
     TensorNode *label = graph_->getTrainLabelNode();
     TensorNode *data = graph_->getTrainDataNode();
+    assert((label && data) && "Train label or data null");
     // DataLoader loader(filename, BytesProto::ONE_BYTE_AS_INT,
     // BytesProto::FOUR_BYTES_AS_FLOAT, 1, 60000, {8u}, {8u, 28u, 28u, 1u});
     //
-    writer_ << "std::string train_data_file = \""
+    std::string var_file = UniqueName("dataloader_train_source");
+    writer_ << "std::string " << var_file << " = \""
             << config_.train_config.train_data_file << "\";\n";
     writer_ << "DataLoader loader(";
     // writer_ << "\"" << config_.train_config.train_data_file << "\", ";
-    writer_ << "train_data_file, ";
+    writer_ << var_file << ", ";
     writer_ << getBytesProtoString(config_.train_config.label_bytes) << ", ";
     writer_ << getBytesProtoString(config_.train_config.data_bytes) << ", ";
     writer_ << config_.train_config.max_epoch << ", ";
     writer_ << config_.train_config.train_data_samples << ", ";
+    writer_ << getInitialLizerString(label->getDims()) << ", ";
+    writer_ << getInitialLizerString(data->getDims());
+    writer_ << ");\n";
+
+    writer_ << "size_t iter = 0; "
+            << "\n\n";
+}
+
+void Codegen::emitInferDataLoaderInit() {
+    TensorNode *label = graph_->getInferLabelNode();
+    TensorNode *data = graph_->getInferDataNode();
+    assert((label && data) && "Test label or data null");
+
+    std::string var_file = UniqueName("dataloader_infer_source");
+    writer_ << "std::string " << var_file << " = \""
+            << config_.dataloader_src<< "\";\n";
+    writer_ << "DataLoader loader(";
+    writer_ << var_file << ", ";
+    writer_ << getBytesProtoString(config_.label_bytes) << ", ";
+    writer_ << getBytesProtoString(config_.data_bytes) << ", ";
+    // writer_ << config_.train_config.max_epoch << ", ";
+    writer_ << "1, ";
+    writer_ << config_.dataloader_samples << ", ";
     writer_ << getInitialLizerString(label->getDims()) << ", ";
     writer_ << getInitialLizerString(data->getDims());
     writer_ << ");\n";
@@ -904,6 +943,20 @@ void Codegen::emitExecute() {
                 << ")) {\n";
 
         writer_.indentInc();
+    } else if (config_.use_dataloader) {
+        TensorNode *label = graph_->getInferLabelNode();
+        TensorNode *data = graph_->getInferDataNode();
+
+        assert(tensors_name_map_.count(label->getTensor()) && "label not allocated");
+        assert(tensors_name_map_.count(data->getTensor()) && "data not allocated");
+
+        std::string label_var = tensors_name_map_.at(label->getTensor());
+        std::string data_var = tensors_name_map_.at(data->getTensor());
+
+        writer_ << "while(loader.next(" << label_var << ", " << data_var
+                << ")) {\n";
+
+        writer_.indentInc();
     }
 
     emitFuncCalls();
@@ -923,6 +976,17 @@ void Codegen::emitExecute() {
         writer_.indentDec();
 
         writer_ << "} //while\n";
+    }else if(config_.use_dataloader) {
+        writer_ << "\n";
+        writer_ << "iter++;\n";
+
+        if(config_.display > 0) {
+            emitPrintGraphOutputs();
+        }
+
+        writer_.indentDec();
+        writer_ << "} //while\n";
+
     }
     SWLOG_DEBUG(4) << "begin emitExecute ...\n";
 }

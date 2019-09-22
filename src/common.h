@@ -41,6 +41,7 @@ struct TrainingConfig {
     BytesProto data_bytes{FOUR_BYTES_AS_FLOAT};
     std::string train_data_file;
     size_t train_data_samples{0};
+
 };
 
 struct Config {
@@ -58,6 +59,14 @@ struct Config {
     int mpi_size{1};
 
     TrainingConfig train_config;
+
+    // dumplicate member as train
+    bool use_dataloader{false};
+    std::string dataloader_src;
+    BytesProto label_bytes{ONE_BYTE_AS_INT};
+    BytesProto data_bytes{FOUR_BYTES_AS_FLOAT};
+    size_t dataloader_samples{0};
+    size_t display{0};
 };
 
 enum OpType { TENSOR_OP, BASIC_OP, DL_OP };
