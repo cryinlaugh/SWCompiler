@@ -175,9 +175,11 @@ void Caffe2Importer::loadNetwork(caffe2::NetDef &net) {
 }
 void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
     std::string opType = op.type();
-    // std::string opName = op.name().length() ? op.name() : op.output(0);
-    //
     std::string opName = opType;
+
+    // check if this op is supported now
+    checkSupported(opType);
+
     std::transform(opName.begin(), opName.end(), opName.begin(), ::tolower);
 
     std::cout << opName << " " << op.output(0) << std::endl
@@ -437,9 +439,32 @@ void Caffe2Importer::loadOp(const caffe2::OperatorDef &op) {
         std::string res_name = op.output(0);
         auto *tshape = in->getTensor()->getTensorShape();
         auto *out_tnode = new TensorNode(res_name, new Tensor(tshape), opNode);
-        name_tNode_map_[opName] = out_tnode;
+        name_tNode_map_[res_name] = out_tnode;
         graph_->pushTensorNode(out_tnode);
     }
+
+    if (opType == "Dropout") {
+        std::string iname = op.input(0);
+        auto *in = name_tNode_map_[iname];
+
+        float ratio = 0.5f;
+        if (args.count("ratio")) {
+            ratio = args.at("ratio")->f();
+        }
+        Tensor *mask_t =
+            new Tensor(in->getTensor()->getTensorShape(), in->getDataType());
+        auto mask = new TensorNode(opName+"_mask", mask_t);
+
+        opNode = new OpNode(opName, new DropoutOp(ratio));
+        LINKUPPER(opNode, in, mask);
+
+        std::string res_name = op.output(0);
+        auto *tshape = in->getTensor()->getTensorShape();
+        auto *out_tnode = new TensorNode(res_name, new Tensor(tshape), opNode);
+        name_tNode_map_[res_name] = out_tnode;
+        graph_->pushTensorNode(mask, out_tnode);
+    }
+
 
     name_opNode_map_[opName] = opNode;
     graph_->pushOpNode(opNode);
@@ -539,6 +564,15 @@ void Caffe2Importer::loadTensor(const caffe2::OperatorDef &op) {
         graph_->pushTensorNode(tnode);
         name_tNode_map_[name] = tnode;
     }
+}
+
+bool Caffe2Importer::checkSupported(std::string opType) {
+    if(std::find(supported_ops_.begin(), supported_ops_.end(), opType) != supported_ops_.end())
+        return true;
+
+    SWLOG_INFO << "UnSpported Caffe2 Op " << opType << "\n";
+    exit(EXIT_FAILURE);
+
 }
 
 } // namespace swc
