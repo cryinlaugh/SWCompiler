@@ -260,7 +260,8 @@ void IRGraph::initTensorNodes() {
                     out->setTensor(new Tensor({idims[0], idims[1]}));
                 }
 
-                if (dynamic_cast<ReluOp *>(op)) {
+                if (dynamic_cast<ReluOp *>(op) || 
+                    dynamic_cast<DropoutOp*>(op) ) {
 
                     auto *in = (TensorNode *)node->getParentNode(0);
                     auto *out = (TensorNode *)node->getChildNode(0);

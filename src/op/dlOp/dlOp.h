@@ -222,6 +222,25 @@ class MatrixSoftmaxWithLossGradOp : public Op {
     void destroy() {}
 };
 
+class DropoutOp: public Op {
+  float ratio_;
+  public:
+    DropoutOp(float ratio) : Op(DL_OP, 2, 1, std::string("Dropout")) {
+        ratio_ = ratio;
+        this->_inputNDims.push_back(2);
+        this->_inputNDims.push_back(2); // _mask
+        this->_outputNDims.push_back(2);
+        
+    };
+    ~DropoutOp();
+    float getRatio() { return ratio_; }
+    void destroy(){}
+    void autoDiff(IRGraph* graph,
+        IRNode* opNode,
+        std::unordered_map<IRNode*, IRNode*>&gradNodeMap);
+};
+
+
 class SGDOp : public Op {
     // weight weight_grad momentum
     // weight

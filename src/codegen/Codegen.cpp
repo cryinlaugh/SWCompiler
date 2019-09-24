@@ -1149,7 +1149,8 @@ void Codegen::emitFuncCall(OpNode *op) {
         break;
     default:
         dtype_flag = "f";
-        SWLOG_ERROR << "UNKNOWN DataType\n";
+        SWLOG_ERROR << "UNKNOWN DataType " << op->name() << "'s parent "
+            << op->getParentNode(0)->name() << " "<< static_cast<int>(dtype) << "\n";
     }
     auto name = op->name();
     Label *oplabel = op->getLabel();

@@ -318,3 +318,37 @@ void Conv2dOp::autoDiff(IRGraph* graph,
         graph->pushTensorNode(N);
     }
 }
+
+void DropoutOp::autoDiff(IRGraph* graph, IRNode* opNode, std::unordered_map<IRNode*, IRNode*>&gradNodeMap)
+{
+    SWLOG_DEBUG(4) << "autoDiff: " << _opClassName   << std::endl;
+    auto *x = opNode->getParentNode(0);
+    auto *mask = opNode->getParentNode(1);
+    auto *output = opNode->getChildNode(0);
+
+    assert(gradNodeMap.count(output) &&
+            "grad of Conv2d output unfound\n");
+    auto *outputGrad = gradNodeMap[output];
+
+    auto *N = new OpNode(opNode->name() + "_grad",
+            new ElementMulOp());
+    N->exlinkUpperNode(x, mask, output, outputGrad);
+
+    gradNodeMap[opNode] = N;
+    graph->pushOpNode(N);
+
+    for (int i = 0; i < opNode->parentNum(); i++) {
+
+        auto *tnode = (TensorNode *)(opNode->getParentNode(i));
+        auto *tensor = tnode->getTensor();
+        auto *N = new TensorNode(tnode->name() + "_grad",
+                new Tensor(tensor->getTensorShape()),
+                gradNodeMap[opNode]);
+
+        SWLOG_DEBUG(4) << "get Gradient node for " << opNode->name()
+            << " input " << tnode->name() << "\n";
+
+        gradNodeMap[tnode] = N;
+        graph->pushTensorNode(N);
+    }
+}
