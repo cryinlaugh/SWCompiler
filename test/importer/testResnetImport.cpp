@@ -45,7 +45,7 @@ int main() {
     graph->updateTopology();
 
     Config config;
-    config.mkldnn = true;
+    config.mkldnn = false;
     graph->setConfig(config);
 
     Backend backend(graph); 
