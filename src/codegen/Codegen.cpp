@@ -302,12 +302,6 @@ std::string Codegen::generate() {
     writer_ << "\n// variable declaration and initiation\n";
     emitMemAllocs();
 
-    if (config_.train_mode)
-        emitDataLoaderInit();
-    else if(config_.use_dataloader) {
-        emitInferDataLoaderInit();
-    }
-
     writer_ << "\n// call op routine functions\n";
     emitExecute();
 
@@ -350,6 +344,15 @@ void Codegen::emitMemAllocs() {
     emitMemAllocations();
 
     emitTensorAddresses();
+
+    // emitDataLoader here, because if restore from snapshot,
+    // dataloader.shift() will be called 
+    if (config_.train_mode)
+        emitDataLoaderInit();
+    else if(config_.use_dataloader) {
+        emitInferDataLoaderInit();
+    }
+
 
     emitTensorInitializations();
 }
@@ -1186,16 +1189,29 @@ void Codegen::emitFuncCall(OpNode *op) {
 
 
         if(config_.mkldnn) {
+            /* for mkldnn
+             * 1. w already tranposed to oCiC in Backend::transformForMKLDNN()
+             * 2. in tensor may be nchw(caffe2, without reshape) | nhwc (swc) | nc
+             *
+             * */
             auto in_dims = name+"_in_dims";
             auto w_dims = name+"_w_dims";
             auto b_dims = name+"_b_dims";
             auto out_dims = name+"_out_dims";
             auto strides_dims = name + "_strides_dims"; 
             auto pads_dims = name + "_pads_dims"; 
-            emit_mkldnn_memory_dims(in_dims, in->getDims()); 
-            // e.g. in:(8, 50, 4, 4) w:(500,800)
-            auto logical_w_dims = in->getDims(); logical_w_dims[0] = w->getDim(0);
-            emit_mkldnn_memory_dims(w_dims,logical_w_dims); 
+
+            std::vector<size_t> idims;
+            if(in->getNDim() == 4) {
+                // in may be nhwc(swc defined), or nchw(caffe2 imported)
+                auto dim2 = in->viewAs2D(1);    
+                idims = {dim2.first, dim2.second};
+            }else if(in->getNDim() ==2) {
+                idims = in->getDims();
+            }
+
+            emit_mkldnn_memory_dims(in_dims, idims); 
+            emit_mkldnn_memory_dims(w_dims, w->getDims()); 
             emit_mkldnn_memory_dims(b_dims, b->getDims()); 
             emit_mkldnn_memory_dims(out_dims, out->getDims()); 
             
@@ -1203,10 +1219,10 @@ void Codegen::emitFuncCall(OpNode *op) {
             auto w_md = name+"_w_md";
             auto b_md = name+"_b_md";
             auto out_md = name+"_out_md";
-            emit_mkldnn_memory_desc(in_md, in_dims, in, true); // true implies format_tag::any 
-            emit_mkldnn_memory_desc(w_md, w_dims, w, true); 
-            emit_mkldnn_memory_desc(b_md, b_dims, b, true); 
-            emit_mkldnn_memory_desc(out_md, out_dims, out, true); 
+            emit_mkldnn_memory_desc(in_md, in_dims, in, "any"); // true implies format_tag::any 
+            emit_mkldnn_memory_desc(w_md, w_dims, w, "any"); 
+            emit_mkldnn_memory_desc(b_md, b_dims, b, "any"); 
+            emit_mkldnn_memory_desc(out_md, out_dims, out, "any"); 
             writer_ << "\n";
 
             auto fc_desc = name+"_desc";
@@ -1229,11 +1245,9 @@ void Codegen::emitFuncCall(OpNode *op) {
             auto b_mem = name+"_b_mem";
             auto out_mem = name+"_out_mem";
             emit_mkldnn_memory(in_mem, in, in_dims, 
-                mkldnn_engine, tensors_name_map_[in]); 
-            if(in->getNDim() == 4)
-                emit_mkldnn_memory(w_mem, w, w_dims, mkldnn_engine, tensors_name_map_[w], "nchw"); 
-            else
-                emit_mkldnn_memory(w_mem, w, w_dims, mkldnn_engine, tensors_name_map_[w], "nc"); // nc 
+                mkldnn_engine, tensors_name_map_[in], "nc"); 
+            emit_mkldnn_memory(w_mem, w, w_dims, 
+                mkldnn_engine, tensors_name_map_[w], "nc"); // nc 
             emit_mkldnn_memory(b_mem, b, b_dims,
                 mkldnn_engine, tensors_name_map_[b]); 
             emit_mkldnn_memory(out_mem, out, out_dims,
@@ -1472,10 +1486,10 @@ void Codegen::emitFuncCall(OpNode *op) {
             auto w_md = name+"_w_md";
             auto b_md = name+"_b_md";
             auto out_md = name+"_out_md";
-            emit_mkldnn_memory_desc(in_md, in_dims, input, true); // true implies format_tag::any 
-            emit_mkldnn_memory_desc(w_md, w_dims, filter, true); 
+            emit_mkldnn_memory_desc(in_md, in_dims, input, "any"); // true implies format_tag::any 
+            emit_mkldnn_memory_desc(w_md, w_dims, filter, "any"); 
             emit_mkldnn_memory_desc(b_md, b_dims, bias); 
-            emit_mkldnn_memory_desc(out_md, out_dims, out, true); 
+            emit_mkldnn_memory_desc(out_md, out_dims, out, "any"); 
             writer_ << "\n";
 
 
@@ -1981,13 +1995,14 @@ void Codegen::emitFuncCall(OpNode *op) {
             auto odims = (out->getMemLayoutTag()=="nhwc") ?
                 out->getShuffledDims(NHWC2NCHW/*{0,3,1,2}*/) : out->getDims();
 
-            if(input->getMemLayoutTag()=="cn") {
+            if(out->getMemLayoutTag()=="nc") {
+                input->setMemLayout(layout_cn);
                 idims = odims;
             }
 
             auto in_dims = name+"_in_dims";
             auto out_dims = name+"_out_dims";
-            emit_mkldnn_memory_dims(in_dims, idims); 
+            emit_mkldnn_memory_dims(in_dims, odims); 
             emit_mkldnn_memory_dims(out_dims, odims); 
             writer_ << "\n";
 
@@ -2311,40 +2326,50 @@ void Codegen::emit_mkldnn_memory_dims(std::string name, std::vector<size_t> dims
 
 }
 // currently only supoort format_tag::any
-void Codegen::emit_mkldnn_memory_desc(std::string &name, std::string mkldnn_dims, Tensor *tensor, bool any) {
+void Codegen::emit_mkldnn_memory_desc(std::string &name, std::string mkldnn_dims, Tensor *tensor, std::string layout_tag) {
     std::string dtype = getTypeString(tensor);
     assert(dtype_mkldnn_datatype_map.count(dtype) && "mkldnn unsupported data type\n");
-    if(any) {
+
+    std::string layout = layout_tag.length()==0 ?
+        tensor->getMemLayoutTag() : layout_tag;
+
+    auto tensor_layout = std::make_pair(tensor, layout);
+
+    if(layout_tag == "any") {
         writer_ << "auto " << name << " = memory::desc({" << mkldnn_dims << "}, "
             << dtype_mkldnn_datatype_map.at(dtype) << ", "
             << "memory::format_tag::any);\n";
     }
-    else if(tensors_mkldnn_mem_map_.count(tensor)) {
-        auto mkldnn_mem = tensors_mkldnn_mem_map_.at(tensor);
+    else if(tensors_mkldnn_mem_map_.count(tensor_layout)) {
+        auto mkldnn_mem = tensors_mkldnn_mem_map_.at(tensor_layout);
         writer_ << "// " << name << " alias to " << mkldnn_mem << "\n"; 
         writer_ << "auto " << name << " = " << mkldnn_mem + ".get_desc();\n";
     }
     else {
-        std::string layout = tensor->getMemLayoutTag();
         writer_ << "auto " << name << " = memory::desc({" << mkldnn_dims << "}, "
             << dtype_mkldnn_datatype_map.at(dtype) << ", "
             << layout_mkldnn_format_tag_map.at(layout) << ");\n";
-
     }
 }
 
 
 void Codegen::emit_mkldnn_memory(std::string &name, Tensor *tensor, std::string mkldnn_dims, std::string engine, std::string handle, std::string layout_tag) { 
-    if(tensors_mkldnn_mem_map_.count(tensor)) {
-        auto mkldnn_mem = tensors_mkldnn_mem_map_.at(tensor);
+    std::string dtype = getTypeString(tensor);
+    assert(dtype_mkldnn_datatype_map.count(dtype) && "mkldnn unsupported data type\n");
+
+    std::string layout = layout_tag.length()==0 ?
+        tensor->getMemLayoutTag() : layout_tag;
+
+    SWLOG_DEBUG(10) << "emit_mkldnn_memory for " << name << " " << layout << "\n";
+
+    auto tensor_layout = std::make_pair(tensor, layout);
+
+    if(tensors_mkldnn_mem_map_.count(tensor_layout)) {
+        auto mkldnn_mem = tensors_mkldnn_mem_map_.at(tensor_layout);
         writer_ << "// " << name << " alis to " << mkldnn_mem << "\n"; 
         name = mkldnn_mem;
         return;
     }
-    std::string dtype = getTypeString(tensor);
-    std::string layout = tensor->getMemLayoutTag();
-    SWLOG_DEBUG(10) << "emit_mkldnn_memory for " << name << " " << layout << "\n";
-    assert(dtype_mkldnn_datatype_map.count(dtype) && "mkldnn unsupported data type\n");
 
     std::string format_tag = layout_tag.length()==0 ? 
         layout_mkldnn_format_tag_map.at(layout) : "memory::format_tag::" + layout_tag;
@@ -2355,7 +2380,7 @@ void Codegen::emit_mkldnn_memory(std::string &name, Tensor *tensor, std::string 
         << format_tag << "}, "
         << engine << ", " << handle << ");\n";
     
-    tensors_mkldnn_mem_map_[tensor] = name;  
+    tensors_mkldnn_mem_map_[tensor_layout] = name;  
 }
     
 //----------------------------------------------------------

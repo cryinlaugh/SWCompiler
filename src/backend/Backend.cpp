@@ -240,6 +240,12 @@ void Backend::transformForMKLDNN() {
              * 1. trans w from iCoC to oCiC
              * 2. when codegen, if in 4D, view w as 4D-nchw/oihw
             */
+            /*
+             * if Caffe2 imported, in already NCHW
+             * if user defined, its possible in is NHWC   
+             */
+            // auto in = (TensorNode*)node->getParentNode(0); 
+
             auto weight = (TensorNode*)node->getParentNode(1); 
             SWLOG_DEBUG(10) << weight->name() << " mem layout: " << MEM_LAYOUT.at(weight->getTensor()->getMemLayout()) << "\n";
             weight->setMemLayout(layout_cn); // in SWC MM, we call iCoC as cn

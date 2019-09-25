@@ -158,7 +158,7 @@ class Codegen {
     // we know layout by tensor->getMemLayoutTag()
     // but we may initialize desc to be format_tag::any
     // or we can use pre-defined memory
-    void emit_mkldnn_memory_desc(std::string &name, std::string dims, Tensor *tensor, bool any=false);
+    void emit_mkldnn_memory_desc(std::string &name, std::string dims, Tensor *tensor, std::string layout_tag = std::string());
     void emit_mkldnn_memory(std::string &name, Tensor *t, std::string dims, 
         std::string engine, std::string handle, std::string layout_tag=std::string()); 
     
@@ -190,7 +190,7 @@ protected:
         tensors_offset_map_;
 
     /// for mkldnn memory
-    std::map<Tensor *, std::string> tensors_mkldnn_mem_map_;
+    std::map<std::pair<Tensor *, std::string>, std::string> tensors_mkldnn_mem_map_;
 
     /// to use Device as key, we implement std::hash() of Device in common.h
     /// if implemented with std::map, we must define comparison of Device

@@ -4,7 +4,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include <stdlib.h>
+#include <cstdlib>
 
 #include "graphIR/IRGraph.h"
 #include "graphIR/OpNode.h"
@@ -14,7 +14,7 @@
 
 namespace swc {
 
-std::string dotGenIRNode(IRNode *irnode, std::string tensorInfo,
+    std::string dotGenIRNode(IRNode *irnode, std::string tensorInfo,
                          std::string opInfo) {
 
     std::string thisNode;
@@ -64,10 +64,7 @@ std::string dotGenIRNode(IRNode *irnode, std::string tensorInfo,
     str_total = str_total + str_tmp;
 
     // Generate -> Children
-    // for (int i = 0; i < irnode->childNum(); ++i) {
-    //     str_tmp = "    " + thisNode + " -> " + childNodes[i] + ";\n";
-    //     str_total = str_total + str_tmp;
-    // }
+    /*
     for (int i = 0; i < irnode->childNum(); ++i) {
         os.str("");
         os << irnode->getChildNode(i);
@@ -75,6 +72,7 @@ std::string dotGenIRNode(IRNode *irnode, std::string tensorInfo,
         str_tmp = "\t" + node_id_str + " -> " + child_id_str + ";\n";
         str_total = str_total + str_tmp;
     }
+    */
 
     str_total = str_total + "\n";
 
@@ -189,6 +187,22 @@ void dotGen(IRGraph *graph, std::string dotFileName) {
                             dotGenOpNode((OpNode *)graph->getNodeInTopo(i, j));
         }
     }
+
+    std::ostringstream os;
+    for (int i = 0; i < graph->topologyNum(); i++) {
+        for (int j = 0; j < graph->getNumInTopoLevel(i); j++) {
+            auto from = graph->getNodeInTopo(i, j);
+
+            for (int i = 0; i < from->childNum(); ++i) {
+                auto to = from->getChildNode(i);
+                os  << "node_" << from << " -> " 
+                    << "node_" << to << "\n";
+
+            }
+        }
+    }
+
+    dot_Total += os.str();
 
     std::string dot_title = "digraph CG { \n";
     std::string dot_end = "\n}";
