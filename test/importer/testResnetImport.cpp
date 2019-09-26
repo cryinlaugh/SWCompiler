@@ -50,11 +50,11 @@ int main() {
     config.mkldnn = false;
     graph->setConfig(config);
 
-    Backend backend(graph); 
-    backend.compile();
+    Engine engine(graph); 
+    engine.compile();
 
     dotGen(graph);
-    string code = backend.genCode();
+    string code = engine.genCode();
 
     return 0;
 }

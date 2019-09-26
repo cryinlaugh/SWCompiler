@@ -1,11 +1,11 @@
 /*************************************************************************
-	> File Name: Backend.h
+	> File Name: Engine.h
 	> Author: wayne
 	> Mail:  
 	> Created Time: Sat 14 Sep 2019 10:30:55 AM UTC
  ************************************************************************/
-#ifndef _BACKEND_H_
-#define _BACKEND_H_
+#ifndef ENGINE_H_
+#define ENGINE_H_
 #include <string>
 
 namespace swc {
@@ -14,10 +14,10 @@ class Codegen;
 }
 class IRGraph;
 
-class Backend {
+class Engine {
 public:
-    Backend() = delete;
-    Backend(IRGraph *graph) : graph_(graph) {}
+    Engine() = delete;
+    Engine(IRGraph *graph) : graph_(graph) {}
 
     /// backend-specific transformations on graphs
     virtual void compile();

@@ -50,11 +50,11 @@ int main() {
     config.mkldnn = true;
     graph->setConfig(config);
 
-    Backend backend(graph); 
-    backend.compile();
+    Engine engine(graph); 
+    engine.compile();
 
     dotGen(graph, "vgg19-compiled.dot");
-    string code = backend.genCode();
+    string code = engine.genCode();
 
     return 0;
 }

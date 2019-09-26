@@ -113,12 +113,12 @@ int main() {
     dotGen(mlp, "mlp_def.dot");
 
 
-    Backend backend(mlp);
-    backend.compile();
+    Engine engine(mlp);
+    engine.compile();
 
     dotGen(mlp, "mlp_train.dot");
 
-    string code = backend.genCode();
+    string code = engine.genCode();
     // cout << code;
 
     return 0;

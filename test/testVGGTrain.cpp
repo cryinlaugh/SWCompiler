@@ -517,12 +517,12 @@ int main()
 
     dotGen(vgg19, "vgg19_infer.dot");
 
-    Backend backend(vgg19);
-    backend.compile();
+    Engine engine(vgg19);
+    engine.compile();
 
     dotGen(vgg19, "vgg19_train.dot");
 
-    string code = backend.genCode();
+    string code = engine.genCode();
     // cout << code << "\n";
 
     return 0;

@@ -1190,7 +1190,7 @@ void Codegen::emitFuncCall(OpNode *op) {
 
         if(config_.mkldnn) {
             /* for mkldnn
-             * 1. w already tranposed to oCiC in Backend::transformForMKLDNN()
+             * 1. w already tranposed to oCiC in Engine::transformForMKLDNN()
              * 2. in tensor may be nchw(caffe2, without reshape) | nhwc (swc) | nc
              *
              * */

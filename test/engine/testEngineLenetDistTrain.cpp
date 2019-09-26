@@ -122,12 +122,12 @@ int main()
 
     dotGen(lenet, "lenet_infer.dot");
 
-    Backend backend(lenet);
-    backend.compile();
+    Engine engine(lenet);
+    engine.compile();
 
     dotGen(lenet, "lenet_train.dot");
 
-    string code = backend.genCode();
+    string code = engine.genCode();
     // cout << code << "\n";
 
     return 0;

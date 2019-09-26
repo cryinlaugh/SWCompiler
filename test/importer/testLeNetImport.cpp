@@ -50,11 +50,11 @@ int main() {
 
     graph->setConfig(config);
 
-    Backend backend(graph); 
-    backend.compile();
+    Engine engine(graph); 
+    engine.compile();
 
     dotGen(graph, "lenet_import_compiled.dot");
-    string code = backend.genCode();
+    string code = engine.genCode();
     // cout << code;
 
     return 0;

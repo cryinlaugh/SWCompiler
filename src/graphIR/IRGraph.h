@@ -169,7 +169,7 @@ class IRGraph {
     TensorNode *_infer_data_node{nullptr};
     TensorNode *_infer_label_node{nullptr};
 
-    // for backend compilation
+    // for compilation
     Config _config;
 
     Device _dev;

@@ -1,10 +1,10 @@
 /*************************************************************************
-	> File Name: Backend.cpp
+	> File Name: Engine.cpp
 	> Author: wayne
 	> Mail:  
 	> Created Time: Sat 14 Sep 2019 10:40:39 AM UTC
  ************************************************************************/
-#include "Backend.h"
+#include "Engine.h"
 #include "graphIR/IRGraph.h"
 #include "graphIR/IRNode.h"
 #include "graphIR/OpNode.h"
@@ -31,7 +31,7 @@ using namespace op;
 using namespace codegen;
 using namespace pass;
 
-void Backend::compile() {
+void Engine::compile() {
     auto config = graph_->getConfig();
 
     // labeling passes will set lowermark
@@ -57,7 +57,7 @@ void Backend::compile() {
 
 }
 
-void Backend::runInferPasses() {
+void Engine::runInferPasses() {
     PassManager passManager;
     auto renamingpass = new RenamingNodePass(graph_); 
     auto labelingpass = new LabelingPass(graph_); 
@@ -76,7 +76,7 @@ void Backend::runInferPasses() {
 
 }
 
-void Backend::runTrainPasses() {
+void Engine::runTrainPasses() {
 
     auto config = graph_->getConfig();
     std::string method = config.train_config.optimizer;
@@ -110,7 +110,7 @@ void Backend::runTrainPasses() {
     passManager.run();
 }
 
-void Backend::runParallelPasses() {
+void Engine::runParallelPasses() {
 
     PassManager passManager;
 
@@ -127,8 +127,8 @@ void Backend::runParallelPasses() {
     passManager.run();
 }
 
-void Backend::transformForMKLDNN() {
-    SWLOG_DEBUG(10) << "backend specific transform before codegen begin \n";
+void Engine::transformForMKLDNN() {
+    SWLOG_DEBUG(10) << "engine specific transform before codegen begin \n";
     auto config = graph_->getConfig();
 
     // currently only do tranform for MKLDNN
@@ -369,10 +369,10 @@ void Backend::transformForMKLDNN() {
     pass::LabelingPass labelingpass(graph_);
     labelingpass.run();
 
-    SWLOG_DEBUG(10) << "backend specific transform before codegen end\n";
+    SWLOG_DEBUG(10) << "engine specific transform before codegen end\n";
 }
 
-void Backend::optimize() {
+void Engine::optimize() {
 
     pass::ElimTransposePass elimpass(graph_); 
     elimpass.run();
@@ -381,7 +381,7 @@ void Backend::optimize() {
     elim.run();
 }
 
-std::string Backend::genCode() {
+std::string Engine::genCode() {
 
     if(generator_ == nullptr) {
         Config config = graph_->getConfig();

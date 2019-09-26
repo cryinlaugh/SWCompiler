@@ -30,7 +30,7 @@
 
 #include "../src/codegen/Codegen.h"
 
-#include "../src/backend/Backend.h"
+#include "../src/engine/Engine.h"
 
 #include "../src/pass/OptimizePass.h"
 #include "../src/pass/LabelingPass.h"

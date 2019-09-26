@@ -1,5 +1,5 @@
 /*************************************************************************
-	> File Name: test/testBackend.cpp
+	> File Name: test/testEngine.cpp
 	> Author: wayne
 	> Mail:  
 	> Created Time: Sat 14 Sep 2019 11:08:12 AM UTC
@@ -94,12 +94,12 @@ int main() {
 
     mlp->setConfig(config);
 	
-    Backend backend(mlp); 
-    backend.compile();
+    Engine engine(mlp); 
+    engine.compile();
 
     //dotGen(mlp, "mlp_compiled.dot");
 
-    string code = backend.genCode();
+    string code = engine.genCode();
     cout << code;
 
     return 0;
