@@ -624,7 +624,6 @@ void ParallelCodegen::masterWorkerDispatcher(OpNode *op,
 }
 
 void ParallelCodegen::transformOpDispatcher(OpNode *node) {
-
     auto *transform = dynamic_cast<TransformOp*>(node->getOp());
     int ki = transform->getPreAxis();
     int ko = transform->getPostAxis();
@@ -652,6 +651,10 @@ void ParallelCodegen::transformOpDispatcher(OpNode *node) {
 
 
     if(ki>=0 && ko>=0) {
+
+        if(config_.comm_op_annotation)
+            writer_ << "/*\n";
+
         assert(in_count == out_count && "in_tensor size() inequal to out_tensor");
 
         assert((ki>=0 && ki<n && ko>=0 && ko<n) && "illegal strategy");
@@ -717,6 +720,9 @@ void ParallelCodegen::transformOpDispatcher(OpNode *node) {
         writer_.indentDec();
         writer_ << "} // for\n";
 
+        if(config_.comm_op_annotation)
+            writer_ << "*/\n";
+
         return;
     }
     if(ki==-2 && ko>=0) {
@@ -780,6 +786,9 @@ void ParallelCodegen::transformOpDispatcher(OpNode *node) {
 }
 
 void ParallelCodegen::reduceOpDispatcher(OpNode *op) {
+    if(config_.comm_op_annotation)
+        writer_ << "/*\n";
+
     auto *from = ((TensorNode *)op->getParentNode(0));
     auto *from_tensor = from->getTensor();
     auto *to = ((TensorNode *)op->getChildNode(0));
@@ -796,6 +805,9 @@ void ParallelCodegen::reduceOpDispatcher(OpNode *op) {
     writer_ << "MPI_Reduce(" << fname << ", " << tname << ", "
         << count << ", " << DTYPE_MPI_DATATYPE_MAP.at(dtype) << ", "
         << "MPI_SUM, " << 0 << ", MPI_COMM_WORLD);\n";
+
+    if(config_.comm_op_annotation)
+        writer_ << "*/\n";
 }
 
 void ParallelCodegen::emitTensorInitialization(TensorNode *tnode) {
@@ -922,6 +934,9 @@ void ParallelCodegen::heteroEnd() {
     workerWriter_.indentDec();
     workerWriter_ << "} // if rank != 0\n";
 
+    if(config_.comm_op_annotation)
+        writer_ << "/*\n";
+
     writer_ << masterWriter_.get_code()
             << workerWriter_.get_code();
 
@@ -930,6 +945,9 @@ void ParallelCodegen::heteroEnd() {
 
     writer_ << masterWriter_.get_code()
             << workerWriter_.get_code();
+
+    if(config_.comm_op_annotation)
+        writer_ << "*/\n";
 
     hetero_pending_ = false;
 }

@@ -23,6 +23,7 @@ enum BytesProto {
     FOUR_BYTES_AS_FLOAT
 };
 
+
 struct TrainingConfig {
     std::string optimizer;
     float lr{0.001};
@@ -67,6 +68,10 @@ struct Config {
     BytesProto data_bytes{FOUR_BYTES_AS_FLOAT};
     size_t dataloader_samples{0};
     size_t display{0};
+
+    // comment compute function calls to get pure communication time 
+    bool compute_op_annotation{false};
+    bool comm_op_annotation{false};
 };
 
 enum OpType { TENSOR_OP, BASIC_OP, DL_OP };

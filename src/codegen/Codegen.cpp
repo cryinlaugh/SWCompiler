@@ -1131,6 +1131,10 @@ void Codegen::emitMemcpyFromTo(Tensor *from, Device from_dev,
 }
 
 void Codegen::emitFuncCall(OpNode *op) {
+    if(config_.compute_op_annotation) {
+        writer_ << "/*\n";
+    }
+    
     DataType dtype =
         op->parentNum() > 0
             ? ((TensorNode *)op->getParentNode(0))->getTensor()->getDataType()
@@ -2279,6 +2283,10 @@ void Codegen::emitFuncCall(OpNode *op) {
                 << decay << ", " << momentum << ", " << batch << ");\n";
     }
     SWLOG_DEBUG(2) << "end genKernelCall for " << op->name() << "\n";
+
+    if(config_.compute_op_annotation) {
+        writer_ << "*/\n";
+    }
 }
 
 // TODO depreciate this function
