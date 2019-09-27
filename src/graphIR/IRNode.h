@@ -104,6 +104,7 @@ class IRNode {
     inline NodeType nodeType() const { return _nodeType; }
     inline void setNodeType(NodeType nodeType) { _nodeType = nodeType; }
 
+    // called by tensornode, node order in [this->children's parents] matters
     void replaceUseKeepOrder(IRNode *node) {
         /*
         for(auto p : _parentNodes){
@@ -126,13 +127,15 @@ class IRNode {
             }
         }
     }
+    // called by tensornode, node order in [spec_child's parents] matters
     void replaceUseKeepOrder(IRNode *spec_child, IRNode *node) {
-        std::cout << "[[[replaceUseKeepOrder]]]\n";
+        SWLOG_DEBUG(4) << "replaceUseKeepOrder: " << spec_child->name() << " parent " 
+            << this->name() << "->" << node->name() <<"\n" ;
         if(std::find(_childNodes.begin(), _childNodes.end(), spec_child) == _childNodes.end())
             return;
-        for(auto n : spec_child->getParentNodes())
-            std::cout<< n->name() << "\n";
-        std::cout << "replaceUseKeepOrder begin\n";
+        // for(auto n : spec_child->getParentNodes())
+        //     std::cout<< n->name() << "\n";
+        // std::cout << "replaceUseKeepOrder for " << this->name() <<  " begin\n";
         for (auto &cp : spec_child->getParentNodes()) {
             if (cp == this) {
                 // order of parent matter
@@ -143,8 +146,17 @@ class IRNode {
                 node->pushChildNode(spec_child);
             }
         }
-        for(auto n : spec_child->getParentNodes())
-            std::cout<< n->name() << "\n";
+        // for(auto n : spec_child->getParentNodes())
+        //     std::cout<< n->name() << "\n";
+    }
+
+    // called by opnode, node order in this->children matters
+    void replaceOutKeepOrder(IRNode *node, int n) {
+        SWLOG_DEBUG(4) << "replaceOutKeepOrder: " << this->name() << " 's out " << n <<"\n" ;
+        
+        auto *orig_child = _childNodes.at(n);
+        _childNodes[n] = node;
+        orig_child->delParentNode(this);
     }
 
     void setLabel(Label *label) { _label = label; }
