@@ -2063,6 +2063,43 @@ void Codegen::emitFuncCall(OpNode *op) {
         auto *input = ((TensorNode *)op->getParentNode(0))->getTensor();
         auto *out = ((TensorNode *)op->getChildNode(0))->getTensor();
 
+        // TODO: copy and modify this from Transpose
+        // no test yet, bug may exist
+        if(config_.mkldnn) {
+            auto odims = out->getDims();
+
+            auto in_dims = name+"_in_dims";
+            auto out_dims = name+"_out_dims";
+            emit_mkldnn_memory_dims(in_dims, odims); 
+            emit_mkldnn_memory_dims(out_dims, odims); 
+            writer_ << "\n";
+
+            // memory objects
+            auto in_mem = name+"_in_mem";
+            auto out_mem = name+"_out_mem";
+            emit_mkldnn_memory(in_mem, input, in_dims, 
+                mkldnn_engine, tensors_name_map_[input], "cn"); 
+            emit_mkldnn_memory(out_mem, out, out_dims,
+                mkldnn_engine, tensors_name_map_[out], "nc"); 
+            writer_ << "\n";
+
+            
+            // bn computation
+            auto cmd_reorder = name + "_reorder";
+            writer_ << "auto " << cmd_reorder << " = "
+                << "reorder(" << in_mem << ", " << out_mem << ");\n";
+            writer_ << cmd_reorder << ".execute(mkldnn_s, {\n";
+            writer_.indentInc();
+            writer_ << "{ MKLDNN_ARG_FROM," << in_mem << "},\n"
+                << "{ MKLDNN_ARG_TO," << out_mem << "} });\n";
+            writer_.indentDec();
+            writer_ << "mkldnn_s.wait();\n";
+
+            return;
+        }
+
+        // assert(input->getNDim()==2 && "MatrixTranspose input.dim should be 2");
+
         std::vector<size_t> shuffle = {1, 0};
 
         auto iDims = op->name() + "_inDims";
@@ -2087,6 +2124,7 @@ void Codegen::emitFuncCall(OpNode *op) {
                     << ", " << shuffleDims << ");\n";
         }
     }
+
     if ((oplabel->getTypeNameLabel()).compare("MatrixTanh") == 0) {
         // TODO assert
         auto *A = ((TensorNode *)op->getParentNode(0))->getTensor();
