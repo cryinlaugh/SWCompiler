@@ -10,7 +10,7 @@
 
 #include "EliminationPass.h"
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <string>
 
 #include "SWLOG.h"
@@ -42,7 +42,7 @@ void EliminationPass::run()
     for (int i = 0; i < _graph->topologyNum(); i++) {
         for (int j = 0; j < _graph->getNumInTopoLevel(i); j++) {
             auto node = _graph->getNodeInTopo(i, j);
-            SWLOG_DEBUG(4) << "TopoLevel.." << i << "\tType..."
+            SWLOG_DEBUG(2) << "TopoLevel.." << i << "\tType..."
                 << (node->nodeType() == TENSOR_NODE ? "TENSOR\t" : "OP\t")
                 << (node->name()) << std::endl;
             topo_nodes.push_back(node);
@@ -59,7 +59,7 @@ void EliminationPass::run()
             if ((irnode->getLabel()->getIsOut() == 0) &&
                     (irnode->childNum() == 0)) {
 
-                SWLOG_DEBUG(4) << "Node " << irnode->name()
+                SWLOG_DEBUG(2) << "Node " << irnode->name()
                     << " is not marked out node and the out rank is zero. "
                     << " Eliminate it!" << std::endl;
 

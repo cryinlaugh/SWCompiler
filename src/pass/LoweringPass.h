@@ -48,7 +48,7 @@ class swc::pass::LoweringPass : public OptimizePass {
 
         for (auto opnode : opNodes) {
             Label *tlabel = opnode->getLabel();
-            SWLOG_DEBUG(10) << opnode->name() << " of " << 
+            SWLOG_DEBUG(4) << opnode->name() << " of " << 
                nOpNodes  << " lowering mark "
                 << tlabel->getLowerMark() << "\n";
             if (tlabel->getLowerMark()) {
