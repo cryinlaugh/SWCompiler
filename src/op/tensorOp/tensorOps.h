@@ -125,7 +125,10 @@ class MatrixTransposeOp : public Op {
     MatrixTransposeOp() : Op(TENSOR_OP, 1, 1, std::string("MatrixTranspose")) {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
-        this->_einOp = 0;
+
+        this->_einOp = 1;
+        this->_einRep.push_back("ij");
+        this->_einRep.push_back("ji");
     }
     ~MatrixTransposeOp() {}
     void destroy(){};

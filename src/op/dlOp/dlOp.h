@@ -151,10 +151,10 @@ class MatrixTanhGradOp : public Op {
   public:
     MatrixTanhGradOp() : Op(DL_OP, 3, 1, std::string("MatrixTanhGrad")) {
         this->_einOp = 1;
-        this->_einRep.push_back("00");
-        this->_einRep.push_back("00");
-        this->_einRep.push_back("00");
-        this->_einRep.push_back("00");
+        this->_einRep.push_back("ij");
+        this->_einRep.push_back("ij");
+        this->_einRep.push_back("ij");
+        this->_einRep.push_back("ij");
     }
     ~MatrixTanhGradOp();
     void destroy() {}
@@ -195,10 +195,10 @@ class MatrixSoftmaxWithLossOp : public Op {
         this->_outputNDims.push_back(1);
 
         this->_einOp = 1;
-        this->_einRep.push_back("00");
-        this->_einRep.push_back("00");
-        this->_einRep.push_back("00");
-        this->_einRep.push_back("00");
+        this->_einRep.push_back("i0"); // input
+        this->_einRep.push_back("i"); // label
+        this->_einRep.push_back("i0"); // output
+        this->_einRep.push_back("0"); // loss scalar // error, shoudl not reduce, but mean... 
     };
     ~MatrixSoftmaxWithLossOp();
     void checkValid(OpNode *node);
@@ -212,7 +212,7 @@ class MatrixSoftmaxWithLossGradOp : public Op {
   public:
     MatrixSoftmaxWithLossGradOp() : Op(DL_OP, 4, 1, std::string("MatrixSoftmaxWithLossGrad")){
         this->_einOp = 1;
-        this->_einRep.push_back("00");
+        this->_einRep.push_back("00"); //
         this->_einRep.push_back("00");
         this->_einRep.push_back("00");
         this->_einRep.push_back("00");
@@ -732,6 +732,10 @@ public:
     BatchedReduceAddOp() : Op(DL_OP, 1, 1, std::string("BatchedReduceAdd")) {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(1);
+
+        this->_einOp = 1;
+        this->_einRep.push_back("ij");
+        this->_einRep.push_back("j");
     }
     ~BatchedReduceAddOp();
     void destroy() {}
