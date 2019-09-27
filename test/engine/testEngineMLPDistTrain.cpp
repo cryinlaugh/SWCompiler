@@ -1,4 +1,5 @@
 #include <iostream>
+#include <ctime>
 
 #include "SWC.h"
 
@@ -6,6 +7,8 @@ using namespace swc;
 using namespace swc::op;
 using namespace swc::pass;
 using namespace std;
+
+#define MINIBATCH 128 
 
 int main() {
     //============================
@@ -32,7 +35,7 @@ int main() {
     //          T:data4
     //=============================
 
-    TENSOR(data0, 8, 784);
+    TENSOR(data0, MINIBATCH, 784);
     TENSOR(weight0, 784, 512);
     TENSOR(bias0, 512);
     weight0_Tensor->setTensorInit(TensorInitType::XAVIER, 784);
@@ -47,13 +50,13 @@ int main() {
     OP(fc0, MatrixMatrixFCBiasOp);
     LINKUPPER(fc0, data0, weight0, bias0);
 
-    TENSOR(data1, 8, 512);
+    TENSOR(data1, 0);
     LINKUPPER(data1, fc0);
 
     OP(tanh0, MatrixTanhOp);
     LINKUPPER(tanh0, data1);
 
-    TENSOR(data2, 8, 512);
+    TENSOR(data2, 0);
     LINKUPPER(data2, tanh0);
 
     // define IR graph
@@ -61,7 +64,7 @@ int main() {
     GpT(mlp, data0, data1, data2, weight0, bias0);
     GpO(mlp, fc0, tanh0);
 
-    TENSOR(weight1, 512, 10);
+    TENSOR(weight1, 0, 10);
     TENSOR(bias1, 10);
     weight1_Tensor->setTensorInit(TensorInitType::XAVIER, 512);
     bias1_Tensor->setTensorInit(TensorInitType::CONSTANT, 0);
@@ -71,15 +74,15 @@ int main() {
     OP(fc1, MatrixMatrixFCBiasOp);
     LINKUPPER(fc1, data2, weight1, bias1);
 
-    TENSOR(data3, 8, 10);
+    TENSOR(data3, 0);
     LINKUPPER(data3, fc1);
 
-    Tensor *labelt = new Tensor({8}, DataType::Int32_t);
+    Tensor *labelt = new Tensor({MINIBATCH}, DataType::Int32_t);
     TensorNode *label = new TensorNode("selected", labelt);
 
     OP(softmax, MatrixSoftmaxWithLossOp);
     LINKUPPER(softmax, data3, label);
-    TENSOR(data4, 8, 10);
+    TENSOR(data4, 0);
     LINKUPPER(data4, softmax);
     TENSOR(loss, 1);
     LINKUPPER(loss, softmax);
@@ -90,6 +93,8 @@ int main() {
 
     mlp->findInOut();
     mlp->updateTopology();
+
+    mlp->initTensorNodes();
 
     mlp->setTrainDataNodes(label, data0);
     mlp->addDisplayTensorNodes(loss);
@@ -104,8 +109,13 @@ int main() {
     config.train_config.label_bytes = BytesProto::ONE_BYTE_AS_INT;
     config.train_config.data_bytes = BytesProto::FOUR_BYTES_AS_FLOAT;
     config.train_config.train_data_samples = 60000;
-    config.train_config.snapshot = 1000;
+    // config.train_config.snapshot = 1000;
+    config.train_config.max_iters = 100;
     config.train_config.display = 500;
+    // config.compute_op_annotation = true;
+    // config.comm_op_annotation = true;
+    config.parallel_preference = COMM_SAVING;
+    // config.parallel_preference = MEM_SAVING;
 
     mlp->setConfig(config);
 
@@ -117,6 +127,9 @@ int main() {
     engine.compile();
 
     dotGen(mlp, "mlp_train.dot");
+
+    cout << mlp->getCommTrace() << "\n";
+    cout << mlp->getCommCost() << "\n";
 
     string code = engine.genCode();
     // cout << code;

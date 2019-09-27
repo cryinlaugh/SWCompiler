@@ -16,7 +16,13 @@
 
 enum class DataType { Float_t, Double_t, Int8_t, Int32_t };
 
-enum ParallelStrategy { SLICE, TILING };
+// TODO: remove SLICE, TILING and Use case
+enum ParallelStrategy { 
+    SLICE, 
+    TILING,  
+    MEM_SAVING,
+    COMM_SAVING
+};
 
 enum BytesProto {
     ONE_BYTE_AS_INT,
@@ -68,6 +74,10 @@ struct Config {
     BytesProto data_bytes{FOUR_BYTES_AS_FLOAT};
     size_t dataloader_samples{0};
     size_t display{0};
+
+
+    // for parallel strategy selection
+    ParallelStrategy parallel_preference{MEM_SAVING}; 
 
     // comment compute function calls to get pure communication time 
     bool compute_op_annotation{false};

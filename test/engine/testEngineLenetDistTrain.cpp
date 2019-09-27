@@ -6,9 +6,12 @@ using namespace swc::op;
 using namespace swc::pass;
 using namespace std;
 
+#define MINIBATCH 64
+
 int main()
 {
-    TENSOR(data0, 8, 28, 28, 1);
+
+    TENSOR(data0, MINIBATCH, 28, 28, 1);
 
     TENSOR(conv0_w, 16, 5, 5, 1);
     TENSOR(conv0_b, 16);
@@ -76,7 +79,7 @@ int main()
     LINKUPPER(data7, fc0);
 
 
-    Tensor *label_t = new Tensor({8}, DataType::Int32_t);
+    Tensor *label_t = new Tensor({MINIBATCH}, DataType::Int32_t);
     TensorNode *label = new TensorNode("selected", label_t);
 
     // OP(softmax, MatrixSoftmaxOp);
@@ -98,10 +101,11 @@ int main()
     	conv1, pool1, relu1,
     	fc0, softmax);
 
-    lenet->initTensorNodes();
 
     lenet->findInOut();
     lenet->updateTopology();
+
+    lenet->initTensorNodes();
 
     lenet->setTrainDataNodes(label, data0);
     lenet->addDisplayTensorNodes(loss);
@@ -109,14 +113,17 @@ int main()
     Config config;
     config.train_mode = true;
     config.mpi = true;
-    config.mpi_size = 2;
+    config.mpi_size = 4;
     config.train_config.optimizer = "sgd";
     config.train_config.train_data_file = "mnist_labels_images.bin";
     config.train_config.label_bytes = BytesProto::ONE_BYTE_AS_INT;
     config.train_config.data_bytes = BytesProto::FOUR_BYTES_AS_FLOAT;
     config.train_config.train_data_samples = 60000;
-    config.train_config.snapshot = 1000;
+    config.train_config.max_iters= 1000;
+    // config.train_config.snapshot = 1000;
     config.train_config.display = 500;
+    // config.compute_op_annotation = true;
+    // config.comm_op_annotation = true;
 
     lenet->setConfig(config);
 
@@ -126,6 +133,10 @@ int main()
     engine.compile();
 
     dotGen(lenet, "lenet_train.dot");
+
+    cout << lenet->getCommTrace() << "\n";
+    cout << lenet->getCommCost() << "\n";
+
 
     string code = engine.genCode();
     // cout << code << "\n";

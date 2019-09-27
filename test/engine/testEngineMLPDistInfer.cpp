@@ -79,6 +79,7 @@ int main() {
     config.mpi = true;
     config.mpi_size = 4;
     // config.mkldnn = true;
+    // config.parallel_preference = COMM_SAVING;
     mlp->setConfig(config);
 
 	

@@ -66,6 +66,7 @@ public:
         tlabel->setCurrentNode(tilenode);
         tlabel->setCurrentStrategy(strategy);
         tlabel->setApplied();
+
     }
 };
 
@@ -96,12 +97,25 @@ public:
 
         OpNode *opnode = new OpNode(_tensornode->name() + "_transform");
         opnode->setOp(new TransformOp(pre_strategy, strategy, _num));
+
+        TensorNode * pre_par_tnode;
+        if(!tlabel->strategyExist(pre_strategy)) {
+            // currently, we do not manage _strategy_parnode_map 
+            // when MEM_SAVING
+            pre_par_tnode = tlabel->getCurrentNode();
+        }else {
+            pre_par_tnode = tlabel->getStrategyParNode(pre_strategy);
+        }
+
+        opnode->exlinkUpperNode(pre_par_tnode);
         tilenode->exlinkUpperNode(opnode);
-        opnode->exlinkUpperNode(tlabel->getCurrentNode());
+        // opnode->exlinkUpperNode(tlabel->getCurrentNode());
 
         irgraph->pushTensorNode(tilenode);
         irgraph->pushOpNode(opnode);
 
+        //TODO: this updateTopology seems redundency and frequent
+        //wait for checks to rm
         irgraph->updateTopology();
         tlabel->setCurrentNode(tilenode);
         tlabel->setCurrentStrategy(strategy);
@@ -151,6 +165,7 @@ public:
         tlabel->setCurrentNode(tilenode);
         tlabel->setCurrentStrategy(strategy);
         tlabel->setApplied();
+        SWLOG_DEBUG(4) << "Finish JoinPattern on tensor " << _tensornode->name() << ", strategy= " << strategy << "\n";
     }
 };
 
