@@ -74,6 +74,10 @@ void Engine::runInferPasses() {
 
     passManager.run();
 
+    // update nodesByTopology 
+    // because new nodes added
+    graph_->findInOut();
+    graph_->updateTopology();
 }
 
 void Engine::runTrainPasses() {
@@ -87,7 +91,7 @@ void Engine::runTrainPasses() {
     
     auto diffpass = new AutodiffPass(graph_);
     diffpass->getMethods(method, lr, decay, momentum, batch);
-    diffpass->show();
+    // diffpass->show();
     // autodiff on graph_ directly,
     // after this pass, graph_ is a train graph
     diffpass->run();
@@ -108,6 +112,11 @@ void Engine::runTrainPasses() {
     passManager.add(renamingpass); 
 
     passManager.run();
+
+    // update nodesByTopology 
+    // because new nodes added
+    graph_->findInOut();
+    graph_->updateTopology();
 }
 
 void Engine::runParallelPasses() {
@@ -125,6 +134,11 @@ void Engine::runParallelPasses() {
     passManager.add(eliming);
 
     passManager.run();
+
+    // update nodesByTopology 
+    // because new nodes added
+    graph_->findInOut();
+    graph_->updateTopology();
 }
 
 void Engine::transformForMKLDNN() {

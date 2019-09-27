@@ -39,14 +39,16 @@ public:
         SWLOG_DEBUG(4) << "ForkPattern on tensor " << _tensornode->name() << ", strategy= " << strategy << "\n";
         TilingLabel * tlabel = _tensornode->getTilingLabel();
         TensorShape * originshape = _tensornode->getTensor()->getTensorShape();
+        DataType dtype = _tensornode->getDataType();
+
         TensorNode *tilenode;
         if(strategy >= 0) {
             TensorShape* tileTensorShape = originshape->getTiledShape(strategy, _num);
-            tilenode = new TensorNode(_tensornode->name() + "_tile", new Tensor(tileTensorShape));
+            tilenode = new TensorNode(_tensornode->name() + "_tile", new Tensor(tileTensorShape, dtype));
         } else if (strategy == -1) {
-            tilenode = new TensorNode(_tensornode->name() + "_replicate", new Tensor(originshape));
+            tilenode = new TensorNode(_tensornode->name() + "_replicate", new Tensor(originshape, dtype));
         } else
-            tilenode = new TensorNode(_tensornode->name() + "_unknown", new Tensor(originshape));
+            tilenode = new TensorNode(_tensornode->name() + "_unknown", new Tensor(originshape, dtype));
 
         tilenode->getLabel()->setDeviceLabel(_p_dev);
 
@@ -79,14 +81,16 @@ public:
         SWLOG_DEBUG(4) << "TransformPattern on tensor " << _tensornode->name() << ", strategy= " << strategy << "\n";
         TilingLabel * tlabel = _tensornode->getTilingLabel();
         TensorShape * originshape = _tensornode->getTensor()->getTensorShape();
+        DataType dtype = _tensornode->getDataType();
+
         TensorNode *tilenode;
         if(strategy >= 0) {
             TensorShape* tileTensorShape = originshape->getTiledShape(strategy, _num);
-            tilenode = new TensorNode(_tensornode->name() + "_tile", new Tensor(tileTensorShape));
+            tilenode = new TensorNode(_tensornode->name() + "_tile", new Tensor(tileTensorShape, dtype));
         } else if (strategy == -1) {
-            tilenode = new TensorNode(_tensornode->name() + "_replicate", new Tensor(originshape));
+            tilenode = new TensorNode(_tensornode->name() + "_replicate", new Tensor(originshape, dtype));
         } else
-            tilenode = new TensorNode(_tensornode->name() + "_unknown", new Tensor(originshape));
+            tilenode = new TensorNode(_tensornode->name() + "_unknown", new Tensor(originshape, dtype));
 
         tilenode->getLabel()->setDeviceLabel(_p_dev);
 
@@ -116,17 +120,18 @@ public:
     void apply(int strategy, IRGraph * irgraph) override {
         SWLOG_DEBUG(4) << "JoinPattern on tensor " << _tensornode->name() << ", strategy= " << strategy << "\n";
         TilingLabel * tlabel = _tensornode->getTilingLabel();
-
         TensorShape * originshape = _tensornode->getTensor()->getTensorShape();
+        DataType dtype = _tensornode->getDataType();
+
         TensorNode *tilenode;
         if(strategy >= 0) {
 
             TensorShape* tileTensorShape = originshape->getTiledShape(strategy, _num);
-            tilenode = new TensorNode(_tensornode->name() + "_tile", new Tensor(tileTensorShape));
+            tilenode = new TensorNode(_tensornode->name() + "_tile", new Tensor(tileTensorShape, dtype));
         } else if (strategy == -2) {
-            tilenode = new TensorNode(_tensornode->name() + "_reduce", new Tensor(originshape));
+            tilenode = new TensorNode(_tensornode->name() + "_reduce", new Tensor(originshape, dtype));
         } else
-            tilenode = new TensorNode(_tensornode->name() + "_unknown", new Tensor(originshape));
+            tilenode = new TensorNode(_tensornode->name() + "_unknown", new Tensor(originshape, dtype));
 
         tilenode->getLabel()->setDeviceLabel(_p_dev);
 

@@ -60,6 +60,6 @@ vector<vector<int> > swc::ParallelGen::generateStgy (swc::op::Op* testOp) {
 
         it++;
     }
-    SWLOG_DEBUG(10) << "get " << strategies.size() << "\n";
+    SWLOG_DEBUG(4) << "generateStgy get " << strategies.size() << "\n";
     return strategies;
 }

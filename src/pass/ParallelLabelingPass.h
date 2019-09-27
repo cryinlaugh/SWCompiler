@@ -37,12 +37,12 @@ public:
             for (int j = 0; j < _graph->getNumInTopoLevel(i); j++) {
                 IRNode * irnode = _graph->getNodeInTopo(i, j);
                 if(irnode->nodeType() == TENSOR_NODE) {
-                    SWLOG_DEBUG(4) << "tensornode :" << i
-                        << "," << j << "-" << irnode->name() << std::endl;
+                    SWLOG_DEBUG(4) << "tensornode : (" << i
+                        << "," << j << ") " << irnode->name() << std::endl;
                     topoTensorNodes.push_back(dynamic_cast<TensorNode *>(irnode));
                 } else if(irnode->nodeType() == OP_NODE) {
-                    SWLOG_DEBUG(4) << "opnode: " << i
-                        << "," << j << "-" << irnode->name() << std::endl;
+                    SWLOG_DEBUG(4) << "opnode: (" << i
+                        << "," << j << ") " << irnode->name() << std::endl;
                     topoOpNodes.push_back(dynamic_cast<OpNode*>(irnode));
                 }
 
@@ -56,19 +56,24 @@ public:
         }
 
         std::cout<<topoOpNodes.size()<<std::endl;
+
         //get startegy
-        for(unsigned long i =0;i<topoOpNodes.size();++i){
+        for(unsigned long i =0; i<topoOpNodes.size(); ++i){
             OpNode * originNode = topoOpNodes[i];
-            SWLOG_DEBUG(10) <<"get Candidate strategies for "<<originNode->name()
+            SWLOG_DEBUG(10) << i << " get Candidate strategies for "<<originNode->name()
                 << " : " << originNode->getOp()->getOpName()<<"\n";
 
             if(originNode->getOp()->getEinOp()== 0){
-                SWLOG_DEBUG(10) <<originNode->name()<<" can not be parallelized:\n";
+                std::cout << originNode->name()<<" can not be parallelized (einOp=0)\n";
                 continue;
             }
 
             std::vector<std::vector<int> > strategies = ParallelGen::generateStgy(originNode->getOp());
-            //default select 0
+            int strategy_size = strategies.size();
+            if(strategy_size == 0){
+                std::cout << originNode->name()<<" get 0 strategies\n";
+                continue;
+            }
 
             for(auto sgy : strategies){
                 for(auto dim: sgy)
@@ -76,66 +81,62 @@ public:
                 std::cout<<"\n";
             }
 
-            int strategy_size = strategies.size();
             std::vector<std::vector<int>> legal_strategies; // first available strategy
-            if(strategy_size == 0){
-                return;
-            }
-            else{
 
-                // channel % degree may not be zero
-                // finalstrategy = strategies[0];
-                //int nInputs = originNode->getOp()->getnInput();
-                //int nOutputs = originNode->getOp()->getnOutput();
-                int nInputs = originNode->parentNum();
-                int nOutputs = originNode->childNum();
-                for(auto strategy : strategies) {
-                    bool legal = true;
-                    int idx = 0;
-                    for(auto tensor_dim: strategy) {
-                        
-                        Tensor* tensor;
-                        if(idx < nInputs) {
-                            tensor = ((TensorNode*)originNode->getParentNode(idx))->getTensor();
-                        } else if(idx < (nInputs+nOutputs)) {
-                            tensor = ((TensorNode*)originNode->getParentNode(idx-nInputs))->getTensor();
-                        } else {
+            // channel % degree may not be zero
+            // finalstrategy = strategies[0];
+            //int nInputs = originNode->getOp()->getnInput();
+            //int nOutputs = originNode->getOp()->getnOutput();
+            int nInputs = originNode->parentNum();
+            int nOutputs = originNode->childNum();
+            for(auto strategy : strategies) {
+                bool legal = true;
+                int idx = 0;
+                for(auto tensor_dim: strategy) {
+                    
+                    Tensor* tensor;
+                    if(idx < nInputs) {
+                        tensor = ((TensorNode*)originNode->getParentNode(idx))->getTensor();
+                    } else if(idx < (nInputs+nOutputs)) {
+                        tensor = ((TensorNode*)originNode->getChildNode(idx-nInputs))->getTensor();
+                    } else {
+                        legal = false;
+                        break;
+                    }
+
+                    if(tensor_dim >= 0) {
+                        if(tensor->getDim(tensor_dim) % p) {
                             legal = false;
                             break;
                         }
-
-                        if(tensor_dim >= 0) {
-                            if(tensor->getDim(tensor_dim) % p) {
-                                legal = false;
-                                break;
-                            }
-                        }
-                        idx++;
-                    } // for parallel dim in this strategy
-                    
-                    if(legal)
-                        legal_strategies.push_back(strategy);
-                }
-
-                if(legal_strategies.size() > 0) {
-                    int random_s_idx = rand() % legal_strategies.size();
-                    auto best = legal_strategies[random_s_idx];
-
-                    std::cout << "-----legal strategy------\n";
-                    for(auto sgy : legal_strategies){
-                        for(auto s: sgy)
-                            std::cout << s <<" ";
-                        std::cout<<"\n";
                     }
+                    idx++;
+                } // for parallel dim in this strategy
+                
+                if(legal)
+                    legal_strategies.push_back(strategy);
+            }
 
-                    std::cout << "-----selected strategy------\n";
-                    for(auto s : best)
-                        std::cout << s << " ";
-                    std::cout << "\n";
+            if(legal_strategies.size() > 0) {
+                int random_s_idx = rand() % legal_strategies.size();
+                auto best = legal_strategies[random_s_idx];
 
-                    StrategyLabel* slabel =  new StrategyLabel(best);
-                    originNode->setStrategyLabel(slabel);
+                std::cout << "-----legal strategies------\n";
+                for(auto sgy : legal_strategies){
+                    for(auto s: sgy)
+                        std::cout << s <<" ";
+                    std::cout<<"\n";
                 }
+
+                std::cout << "-----selected strategy------\n";
+                for(auto s : best)
+                    std::cout << s << " ";
+                std::cout << "\n";
+
+                StrategyLabel* slabel =  new StrategyLabel(best);
+                originNode->setStrategyLabel(slabel);
+            } else {
+                std::cout << "-----no legal strategy------\n";
             }
 
         }
