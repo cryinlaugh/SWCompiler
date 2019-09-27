@@ -152,6 +152,11 @@ class IRGraph {
     void setConfig(Config config) { _config = config; }
     Config getConfig() { return _config; }
 
+    // total of communications cost, not accurate
+    size_t getCommCost();
+    // Trace of communications in detail, comma separated 
+    std::string getCommTrace();
+
   private:
     std::vector<TensorNode *> _tensors;
     std::vector<OpNode *> _ops;

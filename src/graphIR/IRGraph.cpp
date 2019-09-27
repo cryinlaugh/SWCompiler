@@ -331,7 +331,7 @@ void IRGraph::findInOut() {
             _outNodes.push_back(*tnIter);
     }
 
-    SWLOG_DEBUG(11) << "findInOut innodes:" << _inNodes.size() << " outnodes:" << _outNodes.size() << "\n";
+    SWLOG_DEBUG(4) << "findInOut innodes:" << _inNodes.size() << " outnodes:" << _outNodes.size() << "\n";
     setOutMark();
 }
 
@@ -517,7 +517,7 @@ void IRGraph::setDeviceLabel(Device dev) {
 void IRGraph::setOutMark() {
     for (unsigned int i = 0; i < _outNodes.size(); i++) {
         _outNodes[i]->getLabel()->setIsOut();
-        SWLOG_DEBUG(10) << "set out mark for " << _outNodes[i]->name() << "\n";
+        SWLOG_DEBUG(4) << "set out mark for " << _outNodes[i]->name() << "\n";
     }
 }
 
@@ -528,5 +528,39 @@ void IRGraph::clearOutMark() {
     }
 }
 
+size_t IRGraph::getCommCost() {
+    size_t cost = 0;
+    // _ops should keep with _nodesByTopology
+    for(auto opnode : _ops) {
+        // split these comm ops, because code may be different 
+        // in the future
+        if(dynamic_cast<ScatterOp*>(opnode->getOp()) ) {
+            cost += opnode->getCost(); 
+        }
+        if(dynamic_cast<GatherOp*>(opnode->getOp()) ) {
+            cost += opnode->getCost(); 
+        }
+        if(dynamic_cast<TransformOp*>(opnode->getOp()) ) {
+            cost += opnode->getCost(); 
+        }
+    }
+
+    return cost;
+}
+
+std::string IRGraph::getCommTrace() {
+    std::string trace;
+    for(auto opnode : _ops) {
+        // split these comm ops, because code may be different 
+        // in the future
+        if(dynamic_cast<ScatterOp*>(opnode->getOp()) 
+            || dynamic_cast<GatherOp*>(opnode->getOp()) 
+            || dynamic_cast<TransformOp*>(opnode->getOp()) ) {
+
+            trace += opnode->getCostTrace();
+        }
+    }
+    return trace;
+}
 
 } // namespace swc

@@ -382,6 +382,8 @@ public:
     ~ScatterOp();
 
     std::string getOpInfo() override;
+    size_t getCost(OpNode *) override;
+    std::string getCostTrace(OpNode*) override;
 
     void setOffset(size_t offset) { offset_ = offset; }
     size_t getOffset() { return offset_; }
@@ -406,6 +408,8 @@ public:
     ~GatherOp();
 
     std::string getOpInfo() override;
+    size_t getCost(OpNode *) override;
+    std::string getCostTrace(OpNode*) override;
 
     void setOffset(size_t offset) { offset_ = offset; }
     size_t getOffset() { return offset_; }
@@ -436,6 +440,8 @@ public:
     ~TransformOp() {}
 
     std::string getOpInfo() override;
+    size_t getCost(OpNode *) override;
+    std::string getCostTrace(OpNode*) override;
 
     void setPreAxis(int axis) { preAxis_ = axis; }
     int getPreAxis() { return preAxis_; }

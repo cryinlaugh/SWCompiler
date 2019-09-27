@@ -30,7 +30,7 @@ class OpNode : public IRNode {
 
     void destroy() {
         // printf("free OpNode:%s\n", name().c_str());
-        SWLOG_DEBUG(10) << "Destroy OpNode: " << name() << "\n"; 
+        SWLOG_DEBUG(4) << "Destroy OpNode: " << name() << "\n"; 
 
         getOp()->destroy();
         getLabel()->destroy();
@@ -78,6 +78,11 @@ class OpNode : public IRNode {
         _strategyLabel = strategyLabel;
     }
     StrategyLabel* getStrategyLabel() { return _strategyLabel; }
+
+    size_t getCost() {
+        return op_->getCost(this);
+    } 
+    std::string getCostTrace() { return op_->getCostTrace(this); }
 
   private:
     Op *op_;

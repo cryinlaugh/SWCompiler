@@ -59,6 +59,14 @@ class Op {
     // some derived classes may override this
     virtual std::string getOpInfo(); 
 
+    // Logically these function is better in OpNode, but need many if else
+    // because different operators do not derive from OpNode, but are different
+    // in Op member
+    // if use virtual foo() = 0; then all Op must derive this
+    virtual size_t getCost(OpNode *) { return 0; }
+    virtual std::string getCostTrace(OpNode*) { return "";}
+
+
     inline const std::string getOpName() { return _opClassName; }
     inline int getnInput() { return _nInput; }
     inline int getnOutput() { return _nOutput; }
