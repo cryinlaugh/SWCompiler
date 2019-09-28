@@ -13,13 +13,132 @@
 #include <random>
 #include <algorithm>
 #include <cmath>
+#include <map>
+#include <vector>
+#include <set>
+#include "graphIR/OpNode.h"
+#include "graphIR/TensorNode.h"
+#include "graphIR/IRGraph.h"
+#include "parallel/parallelGen.h"
 
 using namespace std;
 
+namespace swc{
+class OpTiling{
+public:
+    OpTiling(OpNode * opNode){
+        
+        std::vector<std::vector<int> > originTilings= ParallelGen::generateStgy(opNode->getOp());
+        //check legal 
+        _tiling = originTilings;
+    }
+    ~OpTiling(){}
+    OpNode* getOpNode(){
+        return _opNode;
+    }
+    std::vector<int> getOpTiling(int index){
+    
+        return _tiling[index];
+    }
+
+    size_t getSize() { return _tiling.size(); }
+private:
+    std::vector<std::vector<int>> _tiling;
+    OpNode * _opNode;
+};
+
+
+class StrategySearchSpace{
+public:
+    StrategySearchSpace(IRGraph * graph){
+        _irgraph=graph;
+    
+    }
+    ~StrategySearchSpace();
+    
+    
+    OpNode* getOpNodeByIndex(int opIndex){
+        return _OpTilings[opIndex]->getOpNode();
+    }
+
+    std::vector<int> getOpTilingByIndex(int opIndex, int tilingIndex){
+       
+
+        return _OpTilings[opIndex]->getOpTiling(tilingIndex);
+    }
+
+    std::vector<int> getGeneSpace() {
+        std::vector<int> geneSpace;
+        for(auto op_tiling : _OpTilings) {
+            auto size = op_tiling->getSize(); 
+            geneSpace.push_back(size);
+        } 
+        return geneSpace;
+    }
+
+    float getFitness(std::vector<int> identity) {
+        //assert(genne.size()==_OpTilings->size() && "illegal gene"); 
+        //return  getCommunicationCost(identity);
+        float communicationCost=0.0;
+        int opIndex = 0;
+        for(auto op_strategy_idx : identity) {
+            std::vector<int> opStrategy = getOpTilingByIndex(opIndex, op_strategy_idx);
+            OpNode* opNode = getOpNodeByIndex(opIndex);
+            //Performance opNode
+            communicationCost+=getCommunicationCost(opNode, opStrategy);
+            opIndex++;
+        }
+        return communicationCost;
+    }
+    float getCommunicationCost(OpNode * opNode, std::vector<int> opStrategy){
+        
+        //std::map<TensorNode*, int> candidate;
+        float  communicateCost =0.0;    
+        for(unsigned long i=0;i<opNode->getParentNodes().size();i++){
+            int curTiling = opStrategy[i];
+            
+            TensorNode * curTensorNode = dynamic_cast<TensorNode*>(opNode->getParentNode(i)); 
+            
+
+            //_tensorNodeMap.find(curTensorNode);
+            std::map<TensorNode* ,std::set<int>>::iterator iter =  _tensorNodeMap.find(curTensorNode); 
+            if(iter!=_tensorNodeMap.end()){
+                std::set<int>  preTilings= iter->second;    
+               if(preTilings.find(curTiling)!=preTilings.end()){
+                
+                   communicateCost += 0.0;
+               }else{
+                   //find best
+                    float best;
+                    for(std::set<int>::iterator it=preTilings.begin() ;it!=preTilings.end();it++)
+                    {
+                        best=0.0;
+                        //cout<<*it<<" occurs "<<endl;
+                    }
+                    communicateCost+=best;
+               } 
+                
+                
+            }else{
+                communicateCost+=1.0;//getfork cost
+                std::set<int> preTilings;
+                preTilings.insert(curTiling);
+                _tensorNodeMap[curTensorNode]=preTilings;   
+            }       
+        }       
+        return communicateCost;
+    }
+ 
+private:
+    IRGraph * _irgraph;
+    std::vector<OpTiling*> _OpTilings;
+    std::map<TensorNode*,std::set<int>> _tensorNodeMap;
+};
+           
+ 
 class GeneticSearch{
 private:
     mutable std::mt19937_64 rng{random_device{}()};
-    
     std::vector<int> _geneSpace;    
     using Population = std::vector<std::vector<int>>;
     Population _population;
@@ -28,7 +147,7 @@ private:
     double _mutationRate;
     size_t _numberElites;
     size_t _numGenerations;
-
+    StrategySearchSpace* _sss;
     std::vector<int> randomIdentity() {
         // number of gene per identity
         size_t num = _geneSpace.size();
@@ -61,12 +180,8 @@ private:
     void mutate(std::vector<int>& identity);
     void breed();
 
-    static double getFitness(const std::vector<int>& identity) {
-        //TODO: substitute this function with actual 
-        auto sum = std::accumulate(identity.begin(), identity.end(), 0.0);
-
-        // return 1.0 / (sum + 1); 
-        return sum; 
+     double getFitness(const std::vector<int>& identity) {
+        return _sss->getFitness(identity); 
     }
     
 public:
@@ -76,13 +191,15 @@ public:
         double crossOverRate,
         double mutationRate,
         size_t numberElites,
-        size_t numGenerations):
+        size_t numGenerations,
+        StrategySearchSpace* sss):
         _geneSpace(geneSpace),
         _populationSize(populationSize),
         _crossOverRate(crossOverRate),
         _mutationRate(mutationRate),
         _numberElites(numberElites),
-        _numGenerations(numGenerations)
+        _numGenerations(numGenerations),
+        _sss(sss)
     {
         _population.reserve(_populationSize);
         assert(identities.size() < _populationSize && "init identities num > populationSize"); 
@@ -177,9 +294,10 @@ void GeneticSearch::breed() {
     std::sort(
       _population.begin(),
       _population.end(),
-      [](const std::vector<int>& a,
+      [this](const std::vector<int>& a,
          const std::vector<int>& b) {
-        return GeneticSearch::getFitness(a) > GeneticSearch::getFitness(b);
+        
+        return this->getFitness(a) > this->getFitness(b);
     });
 
     // elites directly enter next generation
@@ -220,5 +338,121 @@ void GeneticSearch::breed() {
     _population = children;
 }
 
-#endif
+class OpTiling{
+public:
+    OpTiling(OpNode * opNode){
+        
+        std::vector<std::vector<int> > originTilings= ParallelGen::generateStgy(opNode->getOp());
+        //check legal 
+        _tiling = originTilings;
+    }
+    ~OpTiling(){}
+    OpNode* getOpNode(){
+        return _opNode;
+    }
+    std::vector<int> getOpTiling(int index){
+    
+        return _tiling[index];
+    }
 
+    size_t getSize() { return _tiling.size(); }
+private:
+    std::vector<std::vector<int>> _tiling;
+    OpNode * _opNode;
+};
+
+
+class StrategySearchSpace{
+public:
+    StrategySearchSpace(IRGraph * graph){
+        _irgraph=graph;
+    
+    }
+    ~StrategySearchSpace();
+    
+    
+    OpNode* getOpNodeByIndex(int opIndex){
+        return _OpTilings[opIndex]->getOpNode();
+    }
+
+    std::vector<int> getOpTilingByIndex(int opIndex, int tilingIndex){
+       
+
+        return _OpTilings[opIndex]->getOpTiling(tilingIndex);
+    }
+
+    std::vector<int> getGeneSpace() {
+        std::vector<int> geneSpace;
+        for(auto op_tiling : _OpTilings) {
+            auto size = op_tiling->getSize(); 
+            geneSpace.push_back(size);
+        } 
+        return geneSpace;
+    }
+
+    float getFitness(std::vector<int> identity) {
+        //assert(genne.size()==_OpTilings->size() && "illegal gene"); 
+        //return  getCommunicationCost(identity);
+        float communicationCost=0.0;
+        int opIndex = 0;
+        for(auto op_strategy_idx : identity) {
+            std::vector<int> opStrategy = getOpTilingByIndex(opIndex, op_strategy_idx);
+            OpNode* opNode = getOpNodeByIndex(opIndex);
+            //Performance opNode
+            communicationCost+=getCommunicationCost(opNode, opStrategy);
+            opIndex++;
+        }
+        return communicationCost;
+    }
+    float getCommunicationCost(OpNode * opNode, std::vector<int> opStrategy){
+        
+        //std::map<TensorNode*, int> candidate;
+        float  communicateCost =0.0;    
+        for(unsigned long i=0;i<opNode->getParentNodes().size();i++){
+            int curTiling = opStrategy[i];
+            
+            TensorNode * curTensorNode = dynamic_cast<TensorNode*>(opNode->getParentNode(i)); 
+            
+
+            //_tensorNodeMap.find(curTensorNode);
+            std::map<TensorNode* ,std::set<int>>::iterator iter =  _tensorNodeMap.find(curTensorNode); 
+            if(iter!=_tensorNodeMap.end()){
+                std::set<int>  preTilings= iter->second;    
+               if(preTilings.find(curTiling)!=preTilings.end()){
+                
+                   communicateCost += 0.0;
+               }else{
+                   //find best
+                    float best;
+                    for(std::set<int>::iterator it=preTilings.begin() ;it!=preTilings.end();it++)
+                    {
+                        best=0.0;
+                        //find smallest                       //cout<<*it<<" occurs "<<endl;
+                    }
+                    communicateCost+=best;
+               } 
+                
+                
+            }else{
+                communicateCost+=1.0;//getfork cost
+                std::set<int> preTilings;
+                preTilings.insert(curTiling);
+                _tensorNodeMap[curTensorNode]=preTilings;   
+            }       
+        }       
+        return communicateCost;
+    }
+ 
+private:
+IRGraph * _irgraph;
+    std::vector<OpTiling*> _OpTilings;
+    std::map<TensorNode*,std::set<int>> _tensorNodeMap;
+    
+};
+           
+    
+
+
+
+}
+#endif
