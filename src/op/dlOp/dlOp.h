@@ -385,6 +385,9 @@ public:
     size_t getCost(OpNode *) override;
     std::string getCostTrace(OpNode*) override;
 
+    // bytes origin tensor
+    static size_t getSimCost(size_t bytes, int degree, int strategy);
+
     void setOffset(size_t offset) { offset_ = offset; }
     size_t getOffset() { return offset_; }
 
@@ -410,6 +413,7 @@ public:
     std::string getOpInfo() override;
     size_t getCost(OpNode *) override;
     std::string getCostTrace(OpNode*) override;
+    static size_t getSimCost(size_t bytes, int degree, int strategy);
 
     void setOffset(size_t offset) { offset_ = offset; }
     size_t getOffset() { return offset_; }
@@ -442,6 +446,8 @@ public:
     std::string getOpInfo() override;
     size_t getCost(OpNode *) override;
     std::string getCostTrace(OpNode*) override;
+
+    static size_t getSimCost(size_t bytes, int degree, int pre_strategy, int post_strategy);
 
     void setPreAxis(int axis) { preAxis_ = axis; }
     int getPreAxis() { return preAxis_; }

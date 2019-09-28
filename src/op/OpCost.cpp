@@ -10,6 +10,7 @@
 #include "../graphIR/OpNode.h"
 #include "../graphIR/TensorNode.h"
 #include <sstream>
+#include <algorithm>
 
 namespace swc {
 namespace op {
@@ -34,6 +35,13 @@ size_t ScatterOp::getCost(OpNode *node){
     //  i: master send size/p to each worker
     // -2: master broadcast size to all workers
     return size; 
+}
+
+// axis(strategy): -1 rep , i scatter 
+size_t ScatterOp::getSimCost(size_t bytes, int degree, int axis) {
+    (void)degree;
+    (void)axis;
+    return bytes; 
 }
 
 std::string ScatterOp::getCostTrace(OpNode *node){
@@ -91,6 +99,12 @@ std::string GatherOp::getCostTrace(OpNode *node) {
         << axis << " " << "_" << "\n";
 
     return stream.str();
+}
+
+size_t GatherOp::getSimCost(size_t bytes, int degree, int axis) {
+    (void) axis;
+    (void) degree;
+    return bytes;
 }
 
 size_t TransformOp::getCost(OpNode *node) {
@@ -190,6 +204,42 @@ std::string TransformOp::getCostTrace(OpNode *node) {
     }
     
     return stream.str();
+}
+
+// mind that size is original tensor
+// actual size of para_tensor should be size/p
+size_t TransformOp::getSimCost(size_t bytes, int degree, int pre, int post) {
+    // para_tensor size
+    size_t size = bytes / degree;
+
+    size_t comm = 0;
+    // i->j: each work send and recv size in total (pieces of data) 
+    if(pre>=0 && post>=0)
+        comm = size;
+
+    // i->j: master recv size, then broadcast size
+    if(pre>=0 && post==-1)
+        comm = size*2;
+
+    // -2->i: a.master reduce then send size/p to each worker
+    //  or b.each worker reduce its own part(not continuous)
+    //  we took a, but comm has two parts
+    if(pre==-2 && post>=0)
+        comm = size*2;   
+
+    // -2->-1 a. allreduce size
+    // or b. master reduce size, then broadcast size
+    if(pre==-2 && post==-1)
+        comm = size;// TODO, 
+
+    // -1->i a. each worker already has replicate,  
+    // if continuous, just let post pointer reference to its own part
+    // if strided, just memcpy or self sendrecv is ok 
+    if(pre==-1 && post>=0)
+        comm = size/degree; 
+    
+    return comm;
+    
 }
 
 
