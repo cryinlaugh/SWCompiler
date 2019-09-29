@@ -137,15 +137,22 @@ void ParallelCodegen::emitExecute() {
                 << ";\n";
         writer_ << "size_t iter = 0; "
                 << "\n\n";
+
+        writer_ << "gettimeofday(&ts, NULL);\n"; 
+        
         writer_ << "while(iter < max_iter) {\n";
         writer_.indentInc();
 
         writer_ << "if(rank == 0) {\n";
         writer_.indentInc();
 
+        
+        if(config_.benchmark)
+            writer_ << "// ";
 
         writer_ << "loader.next(" << label_var << ", " << data_var
                 << ");\n";
+
         writer_.indentDec();
         writer_ << "} // if rank\n";
 
@@ -157,29 +164,42 @@ void ParallelCodegen::emitExecute() {
 
         writer_ << "\n";
         writer_ << "iter++;\n";
-        if (config_.train_config.snapshot) {
-            writer_ << "if(rank == 0) {\n";
-            writer_.indentInc();
 
-            emitSaveSnapshot();
+        // if do benchmark, comment save snapshot and print
+        if(!config_.benchmark) {
 
-            writer_.indentDec();
-            writer_ << "} // if rank\n";
-        }
+            if (config_.train_config.snapshot) {
+                writer_ << "if(rank == 0) {\n";
+                writer_.indentInc();
 
-        if(config_.train_config.display) {
-            writer_ << "if(rank == 0) {\n";
-            writer_.indentInc();
+                emitSaveSnapshot();
 
-            emitPrintGraphOutputs();
+                writer_.indentDec();
+                writer_ << "} // if rank\n";
+            }
 
-            writer_.indentDec();
-            writer_ << "} // if rank\n";
+            if(config_.train_config.display) {
+                writer_ << "if(rank == 0) {\n";
+                writer_.indentInc();
+
+                emitPrintGraphOutputs();
+
+                writer_.indentDec();
+                writer_ << "} // if rank\n";
+            }
         }
 
         writer_.indentDec();
 
         writer_ << "} //while\n";
+
+        writer_ << "gettimeofday(&te, NULL);\n"; 
+        writer_ << "double time = TIME_MS(ts, te);\n"; 
+        writer_ << "if(rank == 0) {\n";
+        writer_.indentInc();
+        writer_ << R"(cout << "Rank " << rank << " : time cost " << time << endl;)" << "\n";
+        writer_.indentDec();
+        writer_ << "} // if rank\n";
     }
     SWLOG_DEBUG(4) << "begin emitExecute ...\n";
 

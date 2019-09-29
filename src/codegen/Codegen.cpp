@@ -191,17 +191,20 @@ std::string Codegen::UniqueName(std::string name) {
 void Codegen::initMakefileBuilder() {
    makefile_builder_.setCXXCompiler("/usr/bin/c++");
 
-    makefile_builder_.addIncDir("/usr/local/include");
-    makefile_builder_.addLibDir("/usr/local/lib");
+    if(!config_.benchmark) {
+        makefile_builder_.addIncDir("/usr/local/include");
+        makefile_builder_.addLibDir("/usr/local/lib");
+    }
 
     makefile_builder_.addCXXSrc("Graph.cpp");
     if(config_.train_mode) {
         makefile_builder_.addCXXSrc("utils/DataLoader.cpp");
-        makefile_builder_.addCXXSrc("caffe2.pb.cc");
-
-        makefile_builder_.addLib("protobuf");
-        makefile_builder_.addLib("gflags");
-        makefile_builder_.addLib("pthread");
+        if(!config_.benchmark) {
+            makefile_builder_.addCXXSrc("caffe2.pb.cc");
+            makefile_builder_.addLib("protobuf");
+            makefile_builder_.addLib("gflags");
+            makefile_builder_.addLib("pthread");
+        }
     }
 
     if(config_.use_dataloader) {
@@ -232,7 +235,8 @@ void Codegen::emitHeader() {
             << "#include <random>\n"
             << "#include <stdlib.h>\n"
             << "#include <math.h>\n"
-            << "#include <chrono>\n"
+            // << "#include <chrono>\n"
+            << "#include <sys/time.h>\n"
             << "#include \"utils/image.h\"\n";
 
     if(config_.mkldnn) {
@@ -256,27 +260,24 @@ void Codegen::emitHeader() {
     headerWriter_ << "#include \"utils/kernels.h\"\n";
 
     if (config_.train_mode) {
-        headerWriter_ << "#include \"utils/DataLoader.h\"\n"
-            << "#include \"utils/utils.h\"\n";
+        headerWriter_ << "#include \"utils/DataLoader.h\"\n";
     }
 
     if(config_.use_dataloader) {
         headerWriter_ << "#include \"utils/DataLoader.h\"\n";
     }
 
-    // namespace
-    headerWriter_ << "using namespace std;\n";
-    if(config_.mkldnn) {
-        headerWriter_ << "using namespace mkldnn;\n";
-    }
-
 
     if (config_.train_mode) {
-        headerWriter_ << "#include \"gflags/gflags.h\"\n"
-                << "#include <google/protobuf/io/coded_stream.h>\n"
-                << "#include <google/protobuf/io/zero_copy_stream_impl.h>\n\n";
+        // add for sw compile 
+        if (!config_.benchmark) {
+            headerWriter_ << "#include \"utils/utils.h\"\n";
+            headerWriter_ << "#include \"gflags/gflags.h\"\n"
+                    << "#include <google/protobuf/io/coded_stream.h>\n"
+                    << "#include <google/protobuf/io/zero_copy_stream_impl.h>\n\n";
 
-        emitGflagsDef();
+            emitGflagsDef();
+        }
     }
 
 
@@ -287,14 +288,25 @@ std::string Codegen::generate() {
 
     emitHeader();
 
+    // namespace
+    headerWriter_ << "using namespace std;\n";
+    if(config_.mkldnn) {
+        headerWriter_ << "using namespace mkldnn;\n";
+    }
+    writer_ << "#define TIME_MS(a,b)     (1000.0*((b).tv_sec-(a).tv_sec)+0.001*((b).tv_usec-(a).tv_usec))\n";
+
+
     writer_ << "\n"
             << "int main(int argc, char** argv) {\n";
     writer_.indentInc();
 
-    writer_ << "auto t_begin = chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now().time_since_epoch()).count();\n";
+    // writer_ << "auto t_begin = chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now().time_since_epoch()).count();\n";
+    writer_ << "struct timeval ts,te;\n";
 
     if (config_.train_mode) {
-        writer_ << "gflags::ParseCommandLineFlags(&argc, &argv, true);\n";
+        if(!config_.benchmark) {
+            writer_ << "gflags::ParseCommandLineFlags(&argc, &argv, true);\n";
+        }
     }
 
     emitEnvInit();
@@ -308,12 +320,14 @@ std::string Codegen::generate() {
     writer_ << "\n// free memory\n";
     emitMemFree();
 
+    /*
     writer_ << "auto t_end = chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now().time_since_epoch()).count();\n";
 
     if(config_.mkldnn)
         writer_ << "std::cout << \"Net with MKLDNN run time \" << (t_end - t_begin) << \" ms\\n\";\n";
     else
         writer_ << "std::cout << \"Net run time \" << (t_end - t_begin) << \" ms\\n\";\n";
+    */
 
     emitEnvFinalize();
 
@@ -354,7 +368,9 @@ void Codegen::emitMemAllocs() {
     }
 
 
-    emitTensorInitializations();
+    if(!config_.benchmark) {
+        emitTensorInitializations();
+    }
 }
 void Codegen::allocateMemAddr() {
     SWLOG_DEBUG(4) << "begin allocateMemAddr...\n";
@@ -551,7 +567,9 @@ void Codegen::emitTensorInitializations() {
 
 
     if (config_.train_mode) {
-        emitTensorInitFromSnapshot(graph_, &visited_tensors);
+        if(!config_.benchmark) {
+            emitTensorInitFromSnapshot(graph_, &visited_tensors);
+        }
     } else {
         emitTensorInitializations(graph_, &visited_tensors);
     }
@@ -969,11 +987,13 @@ void Codegen::emitExecute() {
         writer_ << "\n";
         writer_ << "iter++;\n";
         if (config_.train_config.snapshot) {
-            emitSaveSnapshot();
+            if(!config_.benchmark)
+                emitSaveSnapshot();
         }
 
         if(config_.train_config.display) {
-            emitPrintGraphOutputs();
+            if(!config_.benchmark)
+                emitPrintGraphOutputs();
         }
 
         writer_.indentDec();
