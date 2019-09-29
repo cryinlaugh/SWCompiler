@@ -16,11 +16,12 @@
 #include <map>
 #include <vector>
 #include <set>
+#include <algorithm>
 #include "graphIR/OpNode.h"
 #include "graphIR/TensorNode.h"
 #include "graphIR/IRGraph.h"
 #include "parallel/parallelGen.h"
-
+#include "op/OpCost.cpp"
 using namespace std;
 
 namespace swc{
@@ -30,6 +31,8 @@ public:
         
         std::vector<std::vector<int> > originTilings= ParallelGen::generateStgy(opNode->getOp());
         //check legal 
+        
+        
         _tiling = originTilings;
     }
     ~OpTiling(){}
@@ -91,48 +94,51 @@ public:
         return communicationCost;
     }
     float getCommunicationCost(OpNode * opNode, std::vector<int> opStrategy){
-        
-        //std::map<TensorNode*, int> candidate;
-        float  communicateCost =0.0;    
+        float  communicateCost =0.0;
+        int degree = _irgraph->getConfig().mpi_size;
         for(unsigned long i=0;i<opNode->getParentNodes().size();i++){
-            int curTiling = opStrategy[i];
-            
+            int curTiling = opStrategy[i];          
             TensorNode * curTensorNode = dynamic_cast<TensorNode*>(opNode->getParentNode(i)); 
-            
-
-            //_tensorNodeMap.find(curTensorNode);
-            std::map<TensorNode* ,std::set<int>>::iterator iter =  _tensorNodeMap.find(curTensorNode); 
-            if(iter!=_tensorNodeMap.end()){
+            std::map<TensorNode* ,std::set<int>>::iterator iter =  _inTensorStrategiesMap.find(curTensorNode); 
+            if(iter!=_inTensorStrategiesMap.end()){
                 std::set<int>  preTilings= iter->second;    
-               if(preTilings.find(curTiling)!=preTilings.end()){
-                
+               if(preTilings.find(curTiling)!=preTilings.end()){//find the same tiling as curtiling in preTilings    
                    communicateCost += 0.0;
+                   _inTensorStrategiesMap[curTensorNode].insert(curTiling);
+
                }else{
-                   //find best
-                    float best;
-                    for(std::set<int>::iterator it=preTilings.begin() ;it!=preTilings.end();it++)
-                    {
-                        best=0.0;
-                        //cout<<*it<<" occurs "<<endl;
-                    }
-                    communicateCost+=best;
+                   int smallestTiling = *std::min_element(preTilings.begin(),preTilings.end());
+                   //we think the smallest communicatecost comes from the smallest tiling number 
+                    communicateCost+=TransformOp::getSimCost(curTensorNode->getTensor()->getSizeInBytes(),degree,smallestTiling,curTiling);
                } 
-                
-                
             }else{
-                communicateCost+=1.0;//getfork cost
+                communicateCost+=ScatterOp::getSimCost(curTensorNode->getTensor()->getSizeInBytes(),degree,curTiling);
                 std::set<int> preTilings;
                 preTilings.insert(curTiling);
-                _tensorNodeMap[curTensorNode]=preTilings;   
+                _inTensorStrategiesMap[curTensorNode]=preTilings;
+
             }       
-        }       
+        } 
+
+        
+        for(unsigned long i=0;i<opNode->getChildNodes().size();i++){
+            int curTiling = opStrategy[i];     
+            TensorNode * curTensorNode = dynamic_cast<TensorNode*>(opNode->getParentNode(i)); 
+            std::map<TensorNode* ,std::set<int>>::iterator iter =  _outTensorStrategiesMap.find(curTensorNode);
+                
+            //TBC
+
+        }    
+
         return communicateCost;
-    }
+}
  
 private:
     IRGraph * _irgraph;
     std::vector<OpTiling*> _OpTilings;
-    std::map<TensorNode*,std::set<int>> _tensorNodeMap;
+    std::map<TensorNode*,std::set<int>> _inTensorStrategiesMap;
+    std::map<TensorNode*,std::set<int>> _outTensorStrategiesMap;
+      
 };
            
  
@@ -338,117 +344,6 @@ void GeneticSearch::breed() {
     _population = children;
 }
 
-class OpTiling{
-public:
-    OpTiling(OpNode * opNode){
-        
-        std::vector<std::vector<int> > originTilings= ParallelGen::generateStgy(opNode->getOp());
-        //check legal 
-        _tiling = originTilings;
-    }
-    ~OpTiling(){}
-    OpNode* getOpNode(){
-        return _opNode;
-    }
-    std::vector<int> getOpTiling(int index){
-    
-        return _tiling[index];
-    }
-
-    size_t getSize() { return _tiling.size(); }
-private:
-    std::vector<std::vector<int>> _tiling;
-    OpNode * _opNode;
-};
-
-
-class StrategySearchSpace{
-public:
-    StrategySearchSpace(IRGraph * graph){
-        _irgraph=graph;
-    
-    }
-    ~StrategySearchSpace();
-    
-    
-    OpNode* getOpNodeByIndex(int opIndex){
-        return _OpTilings[opIndex]->getOpNode();
-    }
-
-    std::vector<int> getOpTilingByIndex(int opIndex, int tilingIndex){
-       
-
-        return _OpTilings[opIndex]->getOpTiling(tilingIndex);
-    }
-
-    std::vector<int> getGeneSpace() {
-        std::vector<int> geneSpace;
-        for(auto op_tiling : _OpTilings) {
-            auto size = op_tiling->getSize(); 
-            geneSpace.push_back(size);
-        } 
-        return geneSpace;
-    }
-
-    float getFitness(std::vector<int> identity) {
-        //assert(genne.size()==_OpTilings->size() && "illegal gene"); 
-        //return  getCommunicationCost(identity);
-        float communicationCost=0.0;
-        int opIndex = 0;
-        for(auto op_strategy_idx : identity) {
-            std::vector<int> opStrategy = getOpTilingByIndex(opIndex, op_strategy_idx);
-            OpNode* opNode = getOpNodeByIndex(opIndex);
-            //Performance opNode
-            communicationCost+=getCommunicationCost(opNode, opStrategy);
-            opIndex++;
-        }
-        return communicationCost;
-    }
-    float getCommunicationCost(OpNode * opNode, std::vector<int> opStrategy){
-        
-        //std::map<TensorNode*, int> candidate;
-        float  communicateCost =0.0;    
-        for(unsigned long i=0;i<opNode->getParentNodes().size();i++){
-            int curTiling = opStrategy[i];
-            
-            TensorNode * curTensorNode = dynamic_cast<TensorNode*>(opNode->getParentNode(i)); 
-            
-
-            //_tensorNodeMap.find(curTensorNode);
-            std::map<TensorNode* ,std::set<int>>::iterator iter =  _tensorNodeMap.find(curTensorNode); 
-            if(iter!=_tensorNodeMap.end()){
-                std::set<int>  preTilings= iter->second;    
-               if(preTilings.find(curTiling)!=preTilings.end()){
-                
-                   communicateCost += 0.0;
-               }else{
-                   //find best
-                    float best;
-                    for(std::set<int>::iterator it=preTilings.begin() ;it!=preTilings.end();it++)
-                    {
-                        best=0.0;
-                        //find smallest                       //cout<<*it<<" occurs "<<endl;
-                    }
-                    communicateCost+=best;
-               } 
-                
-                
-            }else{
-                communicateCost+=1.0;//getfork cost
-                std::set<int> preTilings;
-                preTilings.insert(curTiling);
-                _tensorNodeMap[curTensorNode]=preTilings;   
-            }       
-        }       
-        return communicateCost;
-    }
- 
-private:
-IRGraph * _irgraph;
-    std::vector<OpTiling*> _OpTilings;
-    std::map<TensorNode*,std::set<int>> _tensorNodeMap;
-    
-};
            
     
 
