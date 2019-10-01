@@ -191,6 +191,10 @@ protected:
 
     /// for mkldnn memory
     std::map<std::pair<Tensor *, std::string>, std::string> tensors_mkldnn_mem_map_;
+    // in mpi environment, run to specify handle just according to tensor* and name
+    // rank 0 and rank1 may share
+    // std::map<std::pair<Tensor *, std::string>, std::string> master_tensors_mkldnn_mem_map_;
+    // std::map<std::pair<Tensor *, std::string>, std::string> para_tensors_mkldnn_mem_map_;
 
     /// to use Device as key, we implement std::hash() of Device in common.h
     /// if implemented with std::map, we must define comparison of Device

@@ -14,6 +14,7 @@
 #include "parallel/TilingLabel.h"
 #include "parallel/parallelGen.h"
 #include <random>
+#include <algorithm>
 #include <ctime>
 
 namespace swc {
@@ -23,6 +24,7 @@ class ParallelLabelingPass;
 
 class swc::pass::ParallelLabelingPass: public swc::pass::OptimizePass {
     using OptimizePass::_graph;
+    mutable std::mt19937_64 rng{std::random_device{}()};
 public:
     ParallelLabelingPass(IRGraph *graph): OptimizePass(graph) {
         srand(time(NULL));
@@ -118,7 +120,9 @@ public:
             }
 
             if(legal_strategies.size() > 0) {
-                int random_s_idx = rand() % legal_strategies.size();
+                // int random_s_idx = rand() % legal_strategies.size();
+                std::uniform_int_distribution<size_t> dist(0, legal_strategies.size()-1);
+                int random_s_idx  = dist(rng);
 
                 auto best = legal_strategies[random_s_idx];
 

@@ -255,7 +255,9 @@ void Engine::transformForMKLDNN() {
             */ 
         }
 
-        if(dynamic_cast<MatrixMatrixFCBiasOp*>(node->getOp())) {
+        if(dynamic_cast<MatrixMatrixFCBiasOp*>(node->getOp())
+            || dynamic_cast<MatrixMatrixMulOp*>(node->getOp())
+        ) {
             /*
              * our framework: when import caffe2, trans w from oCiC to iCoC(chw, OC), trans [in] from our nhwc to nchw
              * consequently, for mkldnn

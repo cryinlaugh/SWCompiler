@@ -150,8 +150,10 @@ void ParallelCodegen::emitExecute() {
         writer_.indentInc();
 
         
-        if(config_.benchmark)
+        if(config_.benchmark) {
+            writer_ << "// batch load disabled in benchmark mode\n";
             writer_ << "// ";
+        }
 
         writer_ << "loader.next(" << label_var << ", " << data_var
                 << ");\n";
@@ -190,6 +192,8 @@ void ParallelCodegen::emitExecute() {
                 writer_.indentDec();
                 writer_ << "} // if rank\n";
             }
+        }else {
+            writer_ << "// rank 0 emitSaveSnapshot() and emitPrintGraphOutputs() disable in benchmark mode\n";
         }
 
         writer_.indentDec();
@@ -200,7 +204,7 @@ void ParallelCodegen::emitExecute() {
         writer_ << "double time = TIME_MS(ts, te);\n"; 
         writer_ << "if(rank == 0) {\n";
         writer_.indentInc();
-        writer_ << R"(cout << "Rank " << rank << " : time cost " << time << endl;)" << "\n";
+        writer_ << R"(cout << "Rank " << rank << " : time cost " << time << " ms" << endl;)" << "\n";
         writer_.indentDec();
         writer_ << "} // if rank\n";
     }
