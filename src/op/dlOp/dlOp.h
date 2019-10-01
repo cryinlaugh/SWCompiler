@@ -210,13 +210,11 @@ class MatrixSoftmaxWithLossOp : public Op {
 
 class MatrixSoftmaxWithLossGradOp : public Op {
   public:
-    MatrixSoftmaxWithLossGradOp() : Op(DL_OP, 4, 1, std::string("MatrixSoftmaxWithLossGrad")){
+    MatrixSoftmaxWithLossGradOp() : Op(DL_OP, 2, 1, std::string("MatrixSoftmaxWithLossGrad")){
         this->_einOp = 1;
-        this->_einRep.push_back("00"); //
-        this->_einRep.push_back("00");
-        this->_einRep.push_back("00");
-        this->_einRep.push_back("00");
-        this->_einRep.push_back("00");
+        this->_einRep.push_back("n"); // label  
+        this->_einRep.push_back("n0"); // origin out
+        this->_einRep.push_back("n0"); // grad of input
     };
     ~MatrixSoftmaxWithLossGradOp();
     void destroy() {}

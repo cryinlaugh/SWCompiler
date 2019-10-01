@@ -2292,13 +2292,21 @@ void Codegen::emitFuncCall(OpNode *op) {
     }
 
     if ((oplabel->getTypeNameLabel()).compare("MatrixSoftmaxWithLossGrad") == 0) {
-        // TODO assert
+        /*
         auto *input = ((TensorNode *)op->getParentNode(0))->getTensor();
         auto *label = ((TensorNode *)op->getParentNode(1))->getTensor();
         auto *prob= ((TensorNode *)op->getParentNode(2))->getTensor();
-        auto *inputG = ((TensorNode *)op->getChildNode(0))->getTensor();
         int m = input->getDim(0);
         int n = input->getDim(1);
+        */
+        // we decide operator major dtype according to parent 0
+        // if label as parent0, will decide dtype as int...
+        auto *label = ((TensorNode *)op->getParentNode(0))->getTensor();
+        auto *prob= ((TensorNode *)op->getParentNode(1))->getTensor();
+
+        auto *inputG = ((TensorNode *)op->getChildNode(0))->getTensor();
+        int m = prob->getDim(0);
+        int n = prob->getDim(1);
 
         writer_ << "matrixSoftmaxWithLossGrad_" << dtype_flag << "(" << m << ", " << n
                 << ", " << tensors_name_map_[inputG] << ", " << n << ", "

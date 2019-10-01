@@ -247,22 +247,27 @@ void MatrixSoftmaxWithLossOp::autoDiff(IRGraph* graph,
         std::unordered_map<IRNode*, IRNode*>&gradNodeMap)
 {
     SWLOG_DEBUG(4) << "autoDiff: " << _opClassName   << std::endl;
-    auto *input = opNode->getParentNode(0);
+    // auto *input = opNode->getParentNode(0);
     auto *label = opNode->getParentNode(1);
     auto *prob = opNode->getChildNode(0);
-    auto *loss = opNode->getChildNode(1);
+    // auto *loss = opNode->getChildNode(1);
     assert(gradNodeMap.count(prob) &&
             "grad of Softmax output unfound\n");
-    auto *outputGrad = gradNodeMap[prob];
+    // auto *outputGrad = gradNodeMap[prob];
 
     auto *N = new OpNode(opNode->name() + "_grad",
             new MatrixSoftmaxWithLossGradOp());
-    N->exlinkUpperNode(input, label, prob, loss, outputGrad);
+    // N->exlinkUpperNode(input, label, prob, loss, outputGrad);
+    // we do not need input and loss for grad computation
+    // actually outputGrad == loss because loss is the start of autoDiff
+    N->exlinkUpperNode(label, prob);
 
     gradNodeMap[opNode] = N;
     graph->pushOpNode(N);
 
-    for (int i = 0; i < opNode->parentNum(); i++) {
+    // update: do not compute grad of label
+    // this should be same with einOp
+    for (int i = 0; i < opNode->parentNum()-1; i++) {
         auto *tnode = (TensorNode *)(opNode->getParentNode(i));
         auto *tensor = tnode->getTensor();
         auto *N = new TensorNode(tnode->name() + "_grad",
