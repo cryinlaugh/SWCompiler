@@ -130,6 +130,10 @@ void MatrixMatrixFCGradOp::einsumLowering(IRGraph *graph, IRNode *node)
             input->getTensor()->getShuffledTensorShape({1, 0}),
             op_x_t);
 
+    // 19.10.1 naive, incomplete implementation for find the batch dim
+    if(input->getTensor()->getMemLayoutTag() == "nc")
+        x_trans->setMemLayout(layout_cn);
+
     COP(dw, node->name() + "_dw_mm", MatrixMatrixMulOp, 
             x_trans, outputG);
    
@@ -296,6 +300,10 @@ void MatrixMatrixFCBiasGradOp::einsumLowering(IRGraph *graph, IRNode *node)
     op_x_t->exlinkUpperNode(X);
     Tensor *xt = new Tensor(X->getTensor()->getShuffledTensorShape({1, 0}));
     auto x_trans = new TensorNode(X->name() + "_T", xt, op_x_t);
+
+    // 19.10.1 naive, incomplete implementation for find the batch dim
+    if(X->getTensor()->getMemLayoutTag() == "nc")
+        x_trans->setMemLayout(layout_cn);
 
     auto dw = new OpNode(node->name() + "_dw_mm", new MatrixMatrixMulOp());
     dw->exlinkUpperNode(x_trans, outputG);
