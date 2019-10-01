@@ -22,6 +22,7 @@
 #include "pass/AutodiffPass.h"
 #include "SWLOG.h"
 #include "SWDSL.h"
+#include "tool/dotGen.h"
 #include "codegen/Codegen.h"
 #include "common.h"
 #include <map>
@@ -135,9 +136,13 @@ void Engine::runParallelPasses() {
     passManager.add(para_labeling);
     passManager.add(para_lowering);
     passManager.add(renaming);
-    passManager.add(eliming);
+    // passManager.add(eliming);
 
     passManager.run();
+
+    dotGen(graph_, "mlp_para_before_elim.dot");
+
+    eliming->run();
 
     // update nodesByTopology 
     // because new nodes added
