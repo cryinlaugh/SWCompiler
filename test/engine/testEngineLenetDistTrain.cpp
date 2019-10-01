@@ -121,7 +121,7 @@ int main()
     config.train_config.train_data_samples = 60000;
     config.train_config.max_iters= 1000;
     // config.train_config.snapshot = 1000;
-    config.train_config.display = 500;
+    config.train_config.display = 50;
     // config.compute_op_annotation = true;
     // config.comm_op_annotation = true;
 

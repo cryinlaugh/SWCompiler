@@ -131,6 +131,8 @@ int main() {
     mlp_train->setTrainDataNodes(label_input, data_input);
     mlp_train->findInOut();
     mlp_train->updateTopology();
+    // add Display before passes to prevent eliminated by elimination pass
+    mlp_train->addDisplayTensorNodes(train_loss);
 
     dotGen(mlp_train, "mlp_train.dot");
 
@@ -166,7 +168,6 @@ int main() {
     //passManager.add((OptimizePass *)&elim);
     //
     mlp_train->updateTopology();
-    mlp_train->addDisplayTensorNodes(train_loss);
 
     // CHECKG(mlp_train);
 

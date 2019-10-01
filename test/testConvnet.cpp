@@ -122,6 +122,7 @@ int main()
     TensorNode *train_loss = (TensorNode *)lenet_train->getNodeByName("loss");
 
     lenet_train->setTrainDataNodes(label_input, data_input);
+    lenet_train->addDisplayTensorNodes(train_loss);
 
     // keep in/OutNodes as Infer net, do not findInOut()
     lenet_train->updateTopology();
@@ -150,7 +151,6 @@ int main()
 
 
     dotGen(lenet_train);
-    lenet_train->addDisplayTensorNodes(train_loss);
 
 
     Config config;

@@ -129,6 +129,7 @@ int main() {
     }
 
     mlp_train->setTrainDataNodes(label_input, data_input);
+    mlp_train->addDisplayTensorNodes(train_loss);
     mlp_train->findInOut();
     mlp_train->updateTopology();
 
@@ -167,7 +168,6 @@ int main() {
     config.train_config.display = 500;
 
     mlp_train->updateTopology();
-    mlp_train->addDisplayTensorNodes(train_loss);
     codegen::ParallelCodegen *cg = new codegen::ParallelCodegen(mlp_train, config);
 
     string code = cg->generate();

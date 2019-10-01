@@ -120,6 +120,7 @@ int main()
 
     lenet_train->findInOut();
     lenet_train->updateTopology();
+    lenet_train->addDisplayTensorNodes(train_loss);
 
     dotGen(lenet_train, "mlp_train.dot");
 
@@ -157,7 +158,6 @@ int main()
     
     // parallelLoweringpass  and elim will add/delete nodes
     lenet_train->updateTopology();
-    lenet_train->addDisplayTensorNodes(train_loss);
 
     dotGen(lenet_train);
 

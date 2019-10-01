@@ -105,11 +105,12 @@ int main() {
     // config.train_config.snapshot = 1000;
     config.train_config.max_iters = 100;
     config.train_config.display = 50;
-    // config.compute_op_annotation = true;
-    // config.comm_op_annotation = true;
+    //config.compute_op_annotation = true;
+    //config.comm_op_annotation = true;
     config.parallel_preference = COMM_SAVING;
     // config.parallel_preference = MEM_SAVING;
-    config.force_data_parallel = true;
+    // config.force_data_parallel = true;
+    config.benchmark = true;
 
     mlp->setConfig(config);
 

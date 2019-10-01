@@ -117,6 +117,7 @@ int main() {
     TensorNode *train_loss = (TensorNode *)mlp_train->getNodeByName("loss");
 
     mlp_train->setTrainDataNodes(label_input, data_input);
+    mlp_train->addDisplayTensorNodes(train_loss);
     mlp_train->updateTopology();
 
     renamingpass.setGraph(mlp_train);
@@ -142,7 +143,6 @@ int main() {
     config.train_config.snapshot = 1000;
     config.train_config.display = 500;
 
-    mlp_train->addDisplayTensorNodes(train_loss);
     codegen::Codegen *cg = new codegen::Codegen(mlp_train, config);
 
     string code = cg->generate();
