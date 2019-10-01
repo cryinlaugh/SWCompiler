@@ -83,6 +83,9 @@ struct Config {
     // comment compute function calls to get pure communication time 
     bool compute_op_annotation{false};
     bool comm_op_annotation{false};
+
+    // if true, annotate dataloader and (TBD ?emitTensorInitializations)
+    bool benchmark{false};
 };
 
 enum OpType { TENSOR_OP, BASIC_OP, DL_OP };
