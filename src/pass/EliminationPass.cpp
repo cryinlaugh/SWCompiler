@@ -53,6 +53,66 @@ void EliminationPass::run()
     }
 
     //node elimination
+    for (auto it = topo_nodes.rbegin(); it != topo_nodes.rend(); it++) {
+        IRNode* irnode = *it;
+
+        SWLOG_DEBUG(2) << "[Node] " << irnode->name() << " " << irnode->getLabel()->getIsOut() 
+            << " " << irnode->childNum() << "\n";
+
+        if(irnode->getLabel()->getIsOut()
+            || irnode->childNum()>0) {
+            continue;
+        }
+
+
+        if (irnode->nodeType() == TENSOR_NODE) {
+            // parentNum of TensorNode should <= 1
+            auto parent_op = irnode->parentNum()>0 ? irnode->getParentNode(0) : nullptr;
+            if(parent_op && parent_op->childNum() > 1)
+                continue;
+
+            SWLOG_DEBUG(6) << "TensorNode " << irnode->name()
+                << " not marked out | out degree=0 | is only child of parent, "
+                << " Eliminate it!" << std::endl;
+
+            while(irnode->parentNum()) {
+                irnode->destroyUpperNode(irnode->getParentNode(0));
+            }
+
+            TensorNode* tnode = (TensorNode*)irnode;
+            _graph->delTensorNode(tnode);
+            tnode->destroy();
+
+            if (!delVecMember(topo_nodes, irnode)) {
+                std::cout << "Del irnode Failed" << irnode->name() << std::endl;
+                exit(0);
+            }
+
+            // break;
+
+        } else if(irnode->nodeType() == OP_NODE) {
+            // outdegree of Tensornode can be many, and order does not matter 
+            SWLOG_DEBUG(6) << "OpNode " << irnode->name()
+                << " not marked out | out degree=0,"
+                << " Eliminate it!" << std::endl;
+
+            while(irnode->parentNum()) {
+                irnode->destroyUpperNode(irnode->getParentNode(0));
+            }
+
+            OpNode* onode = (OpNode*)irnode;
+            _graph->delOpNode(onode);
+            onode->destroy();
+
+            if (!delVecMember(topo_nodes, irnode)) {
+                std::cout << "Del irnode Failed" << irnode->name() << std::endl;
+                exit(0);
+            }
+
+            // break;
+        }
+    }
+    /*
     int flag = 1;
     while(flag) {
         flag = 0;
@@ -89,7 +149,7 @@ void EliminationPass::run()
             }
         }
     }
-
+    */
     _graph->updateTopology();
 }
 
