@@ -105,6 +105,8 @@ class IRGraph {
 
     // To mark out node to avoid to be eliminated
     // by EliminationPass
+    void setLogicalOutMark();
+    
     void setOutMark();
     // if remove node from _outNodes, we need to clear its mark
     void clearOutMark();
@@ -146,9 +148,19 @@ class IRGraph {
     template <typename T, typename... Types>
     void addDisplayTensorNodes(const T &firstArg, const Types &... args) {
         _display_nodes.push_back(firstArg);
+        _logicalOutNodes.push_back(firstArg);
         addDisplayTensorNodes(args...);
     }
     std::vector<TensorNode*> getDisplayTensorNodes(){ return _display_nodes; }
+
+    void addLogicalOutNodes(){}
+    template <typename T, typename... Types>
+    void addLogicalOutNodes(const T &firstArg, const Types &... args) {
+        _logicalOutNodes.push_back(firstArg);
+        addLogicalOutNodes(args...);
+    }
+    std::vector<TensorNode*> getLogicalOutNodes(){ return _logicalOutNodes; }
+
     void setConfig(Config config) { _config = config; }
     Config getConfig() { return _config; }
 
@@ -161,8 +173,15 @@ class IRGraph {
     std::vector<TensorNode *> _tensors;
     std::vector<OpNode *> _ops;
 
+    // _inNodes and _outNodes are decided by topology order
+    // and updated only by  findInOut()
     std::vector<TensorNode *> _inNodes;
     std::vector<TensorNode *> _outNodes;
+
+    // _logicalOutNodes should be specified by user
+    // e.g. inference, user want to out loss 
+    // e.g. training, _logicalOutNodes should be mirror node of trainable weights
+    std::vector<TensorNode *> _logicalOutNodes;
 
     std::vector<std::vector<IRNode *>> _nodesByTopology;
 

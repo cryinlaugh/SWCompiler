@@ -78,6 +78,10 @@ void Engine::runInferPasses() {
     // because new nodes added
     graph_->findInOut();
     graph_->updateTopology();
+
+    // if mode is inference, we need to set topoOutnodes's isOut mark
+    // or all nodes will be elimianted
+    graph_->setOutMark();
 }
 
 void Engine::runTrainPasses() {

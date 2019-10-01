@@ -11,6 +11,7 @@
 #include "graphIR/OpNode.h"
 #include "graphIR/TensorNode.h"
 #include "op/dlOp/dlOp.h"
+#include "op/basicOp/basicOps.h"
 
 #include "common.h"
 #include <cassert>
@@ -233,7 +234,10 @@ void IRGraph::initTensorNodes() {
             if (irNode->nodeType() == OP_NODE) {
                 auto *node = (OpNode *)irNode;
                 auto *op = node->getOp();
-                if (dynamic_cast<MatrixMatrixFCOp *>(op) || dynamic_cast<MatrixMatrixFCBiasOp *>(op)) {
+                if (dynamic_cast<MatrixMatrixFCOp *>(op) 
+                        || dynamic_cast<MatrixMatrixFCBiasOp *>(op)
+                        || dynamic_cast<MatrixMatrixMulOp *>(op)
+                        ) {
                     auto *input = (TensorNode *)node->getParentNode(0);
                     auto idims =
                         ((TensorNode *)node->getParentNode(0))->getDims();
@@ -332,7 +336,8 @@ void IRGraph::findInOut() {
     }
 
     SWLOG_DEBUG(4) << "findInOut innodes:" << _inNodes.size() << " outnodes:" << _outNodes.size() << "\n";
-    setOutMark();
+    // OutMark should be decied by other rules but not simple topology out
+    // setOutMark();
 }
 
 template <typename T> void IRGraph::updateTopology(T node) {
@@ -525,6 +530,13 @@ void IRGraph::setOutMark() {
 void IRGraph::clearOutMark() {
     for(auto out : _outNodes) {
         out->getLabel()->setIsOut(0);
+    }
+}
+
+void IRGraph::setLogicalOutMark() {
+    for (unsigned int i = 0; i < _logicalOutNodes.size(); i++) {
+        _logicalOutNodes[i]->getLabel()->setIsOut();
+        SWLOG_DEBUG(4) << "set out mark for " << _logicalOutNodes[i]->name() << "\n";
     }
 }
 

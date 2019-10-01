@@ -73,6 +73,8 @@ void TensorNode::autoDiff(IRGraph* graph,
             SWLOG_DEBUG(4) << "SGD generate..." << std::endl;
             auto *node_mirror = clone();
 
+            graph->addLogicalOutNodes(node_mirror);
+
             auto *mom_t = new Tensor(this->getTensor()->getTensorShape());
             mom_t->setTensorInit(TensorInitType::CONSTANT, 0);
             auto *momentum = new TensorNode("momentum", mom_t);

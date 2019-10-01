@@ -34,7 +34,10 @@ void EliminationPass::destroy()
 void EliminationPass::run()
 {
     SWLOG_DEBUG(4) << "EliminationPass Run" << endl;
-    //graph_train = _graph;
+
+    // set isOut mark for logical out nodes (you want to keep)
+    // !!! (not topology order out nodes, e.g. we want to remove nodes for input_grad)
+    _graph->setLogicalOutMark();
 
     std::vector<IRNode*> topo_nodes;
 
