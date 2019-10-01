@@ -598,7 +598,7 @@ void vecAdd_f(int size, float *a, float *b, float *c) {
 /**
 * reference: Caffe
 */
-void argMax_f(const float *input, int *idx, int m, int n, int top_k) {
+void argMax_i(const float *input, int *idx, int m, int n, int top_k) {
     for(int i=0; i<m; i++) {
         std::vector<std::pair<float, int>> value_idx(n);
         for(int j=0; j<n; j++) {

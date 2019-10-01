@@ -134,7 +134,7 @@ void Codegen::emitMKLDNNInit() {
     //TODO multistream for multi cpu
     UniqueName("mkldnn_eng");
     UniqueName("mkldnn_s");
-    writer_ << "engine mkldnn_eng(engine::kind::cpu, 0);\n"; 
+    writer_ << "\nengine mkldnn_eng(engine::kind::cpu, 0);\n"; 
     // TODO: name stream may conflict to cuda stream[]
     writer_ << "stream mkldnn_s(mkldnn_eng);\n";
 }
@@ -1135,9 +1135,15 @@ void Codegen::emitFuncCall(OpNode *op) {
         writer_ << "/*\n";
     }
     
+    /*
     DataType dtype =
         op->parentNum() > 0
             ? ((TensorNode *)op->getParentNode(0))->getTensor()->getDataType()
+            : DataType::Float_t;
+    */
+    DataType dtype =
+        op->childNum() > 0
+            ? ((TensorNode *)op->getChildNode(0))->getDataType()
             : DataType::Float_t;
 
     std::string dtype_flag;
@@ -1156,9 +1162,10 @@ void Codegen::emitFuncCall(OpNode *op) {
         break;
     default:
         dtype_flag = "f";
-        SWLOG_ERROR << "UNKNOWN DataType " << op->name() << "'s parent "
-            << op->getParentNode(0)->name() << " "<< static_cast<int>(dtype) << "\n";
+        SWLOG_ERROR << "UNKNOWN DataType " << op->name() << "'s output "
+            << op->getChildNode(0)->name() << " "<< static_cast<int>(dtype) << "\n";
     }
+
     auto name = op->name();
     Label *oplabel = op->getLabel();
 
