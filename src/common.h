@@ -78,6 +78,7 @@ struct Config {
 
     // for parallel strategy selection
     ParallelStrategy parallel_preference{MEM_SAVING}; 
+    bool force_data_parallel{false};
 
     // comment compute function calls to get pure communication time 
     bool compute_op_annotation{false};

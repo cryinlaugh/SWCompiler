@@ -11,7 +11,6 @@
 #include <string>
 #include <map>
 #include <vector>
-#include <assert.h>
 #include "op/Op.h"
 namespace swc{
 
@@ -20,6 +19,7 @@ namespace swc{
         public:
 
         static std::vector<std::vector<int> > generateStgy(op::Op* testOp);
+        static std::vector<int> generateDataParStgy(OpNode* opnode);
     };
 
 }

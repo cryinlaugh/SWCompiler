@@ -119,7 +119,13 @@ public:
 
             if(legal_strategies.size() > 0) {
                 int random_s_idx = rand() % legal_strategies.size();
+
                 auto best = legal_strategies[random_s_idx];
+
+                if(_graph->getConfig().force_data_parallel) {
+                    best = ParallelGen::generateDataParStgy(originNode); 
+                }
+
 
                 std::cout << "-----legal strategies------\n";
                 for(auto sgy : legal_strategies){
@@ -128,7 +134,7 @@ public:
                     std::cout<<"\n";
                 }
 
-                std::cout << "-----selected strategy------\n";
+                std::cout << "-----selected strategy no." << random_s_idx << "------\n";
                 for(auto s : best)
                     std::cout << s << " ";
                 std::cout << "\n";
