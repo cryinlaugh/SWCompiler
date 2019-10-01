@@ -75,6 +75,12 @@ class swc::pass::LabelingPass : public swc::pass::OptimizePass {
                     << label->getNodeNameLabel()
                     << " operator is marked to be lowered." << std::endl;
                 label->setLowerMark();
+            } else if ((label->getTypeNameLabel()).compare("MatrixMatrixFC") == 0) {
+                SWLOG_DEBUG(2)
+                    << label->getTypeNameLabel() << " "
+                    << label->getNodeNameLabel()
+                    << " operator is marked to be lowered." << std::endl;
+                label->setLowerMark();
             } else if ((label->getTypeNameLabel())
                            .compare("MatrixMatrixFCGrad") == 0) {
                 SWLOG_DEBUG(2)

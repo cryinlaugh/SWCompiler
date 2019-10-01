@@ -156,6 +156,7 @@ class IRNode {
         
         auto *orig_child = _childNodes.at(n);
         _childNodes[n] = node;
+        node->pushParentNode(this);
         orig_child->delParentNode(this);
     }
 
