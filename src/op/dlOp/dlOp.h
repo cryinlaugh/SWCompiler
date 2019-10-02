@@ -33,7 +33,10 @@ class MatrixMatrixFCOp : public Op {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
 
-        this->_einOp = 0;
+        this->_einOp = 1;
+        this->_einRep.push_back("ik");
+        this->_einRep.push_back("kj");
+        this->_einRep.push_back("ij");
     }
     ~MatrixMatrixFCOp() {}
     void destroy() {};
@@ -52,14 +55,23 @@ class MatrixMatrixFCOp : public Op {
     void paralleling(IRGraph *graph, IRNode * node);
 };
 
+// update FCGrad do not need output
+// with output will bring none-use communication cost
+// op should keep with 0. audodiff 1. lowering 2. codegen
 class MatrixMatrixFCGradOp : public Op {
     // input, wieght, bias, orig_output, orig_output_grad
     // input_grad, weight_grad, bias_grad
   public:
     MatrixMatrixFCGradOp()
-        : Op(DL_OP, 4, 2, std::string("MatrixMatrixFCGrad")) {
+        : Op(DL_OP, 3, 2, std::string("MatrixMatrixFCGrad")) {
 
-        this->_einOp = 0;
+        this->_einOp = 1;
+        this->_einRep.push_back("ik"); // input
+        this->_einRep.push_back("kj"); // weight 
+        // this->_einRep.push_back("ij"); // orig_output
+        this->_einRep.push_back("ij"); // outputGrad 
+        this->_einRep.push_back("ik"); // inputGrad
+        this->_einRep.push_back("kj"); // weightGrad 
     }
     ~MatrixMatrixFCGradOp() {}
     void destroy() {}
