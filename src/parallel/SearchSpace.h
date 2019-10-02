@@ -20,32 +20,70 @@
 #include "graphIR/TensorNode.h"
 #include "graphIR/IRGraph.h"
 #include "parallel/parallelGen.h"
-#include "op/OpCost.cpp"
+#include "parallel/TilingLabel.h"
+#include "pass/ParallelLoweringPass.h"
+#include "pass/EliminationPass.h"
+#include "op/dlOp/dlOp.h"
+
 using namespace std;
 
 namespace swc{
-class OpTiling{
+class OpStrategy{
 public:
-    OpTiling(OpNode * opNode){
+    OpStrategy(OpNode * opNode, int p){
         
-        std::vector<std::vector<int> > originTilings= ParallelGen::generateStgy(opNode->getOp());
+        _opNode = opNode;
+        std::vector<std::vector<int> > strategies = ParallelGen::generateStgy(opNode->getOp());
+
         //check legal 
+        // channel % degree may not be zero
+        // finalstrategy = strategies[0];
+        int nInputs = opNode->parentNum();
+        int nOutputs = opNode->childNum();
+        for(auto strategy : strategies) {
+            bool legal = true;
+            int idx = 0;
+            for(auto tensor_dim: strategy) {
+                
+                Tensor* tensor;
+                if(idx < nInputs) {
+                    tensor = ((TensorNode*)opNode->getParentNode(idx))->getTensor();
+                } else if(idx < (nInputs+nOutputs)) {
+                    tensor = ((TensorNode*)opNode->getChildNode(idx-nInputs))->getTensor();
+                } else {
+                    legal = false;
+                    break;
+                }
+
+                if(tensor_dim >= 0) {
+                    if(tensor->getDim(tensor_dim) % p) {
+                        legal = false;
+                        break;
+                    }
+                }
+                idx++;
+            } // for parallel dim in this strategy
+            
+            if(legal)
+                _op_strategies.push_back(strategy);
+        }
         
-        
-        _tiling = originTilings;
     }
-    ~OpTiling(){}
+
+    ~OpStrategy(){}
     OpNode* getOpNode(){
         return _opNode;
     }
-    std::vector<int> getOpTiling(int index){
+
+    std::vector<int> getOpStrategy(int index){
     
-        return _tiling[index];
+        return _op_strategies[index];
     }
 
-    size_t getSize() { return _tiling.size(); }
+    size_t getSize() { return _op_strategies.size(); }
+
 private:
-    std::vector<std::vector<int>> _tiling;
+    std::vector<std::vector<int>> _op_strategies;
     OpNode * _opNode;
 };
 
@@ -54,37 +92,57 @@ class StrategySearchSpace{
 public:
     StrategySearchSpace(IRGraph * graph){
         _irgraph=graph;
+        _p = _irgraph->getConfig().mpi_size;
     
     }
     ~StrategySearchSpace();
     
-    
-    OpNode* getOpNodeByIndex(int opIndex){
-        return _OpTilings[opIndex]->getOpNode();
+
+    size_t getOpNum() { return _graph_strategies.size(); }
+    void addOpStrategyIfExist(OpNode *opnode) {
+        OpStrategy *op_strategy = new OpStrategy(opnode, _p);           
+        if(op_strategy->getSize() > 0) {
+            SWLOG_DEBUG(8) << opnode->name() << " get legal strategies "
+                << op_strategy->getSize() << "\n";
+           _graph_strategies.push_back(op_strategy); 
+        }
     }
 
-    std::vector<int> getOpTilingByIndex(int opIndex, int tilingIndex){
+    void printStrategySpace() {
+        SWLOG_DEBUG(8) << "print StrategySearchSpace\n";
+        for(auto &op_strategy : _graph_strategies) {
+            auto opnode = op_strategy->getOpNode();
+            auto size = op_strategy->getSize();
+            std::cout << opnode->name() << " : " << size << "\n";
+        }
+    }
+    
+    OpNode* getOpNodeByIndex(int opIndex){
+        return _graph_strategies[opIndex]->getOpNode();
+    }
+
+    std::vector<int> getOpStrategyByIndex(int opIndex, int tilingIndex){
        
 
-        return _OpTilings[opIndex]->getOpTiling(tilingIndex);
+        return _graph_strategies[opIndex]->getOpStrategy(tilingIndex);
     }
 
     std::vector<int> getGeneSpace() {
         std::vector<int> geneSpace;
-        for(auto op_tiling : _OpTilings) {
-            auto size = op_tiling->getSize(); 
+        for(auto _op_strategies: _graph_strategies) {
+            auto size = _op_strategies->getSize(); 
             geneSpace.push_back(size);
         } 
         return geneSpace;
     }
 
     float getFitness(std::vector<int> identity) {
-        //assert(genne.size()==_OpTilings->size() && "illegal gene"); 
+        //assert(genne.size()==_OpStrategys->size() && "illegal gene"); 
         //return  getCommunicationCost(identity);
         float communicationCost=0.0;
         int opIndex = 0;
         for(auto op_strategy_idx : identity) {
-            std::vector<int> opStrategy = getOpTilingByIndex(opIndex, op_strategy_idx);
+            std::vector<int> opStrategy = getOpStrategyByIndex(opIndex, op_strategy_idx);
             OpNode* opNode = getOpNodeByIndex(opIndex);
             //Performance opNode
             communicationCost+=getCommunicationCost(opNode, opStrategy);
@@ -92,6 +150,55 @@ public:
         }
         return communicationCost;
     }
+
+    float getFitnessByGraphTransform(std::vector<int> identity) {
+        float communicationCost=0.0;
+
+        IRGraph *graph = _irgraph->clone(); 
+        //因为还没添加graph->destroy()方法，实际上指针还会指向同样的起始地址
+        //而相应的tiling label还没有释放
+        // std::cout << "copied graph address " << graph << std::endl;
+
+        int opIndex = 0;
+        for(auto op_strategy_idx : identity) {
+            std::vector<int> opStrategy = getOpStrategyByIndex(opIndex, op_strategy_idx);
+            OpNode* opNode = getOpNodeByIndex(opIndex);
+
+            auto *copied_opnode = (OpNode*)graph->getNodeByName(opNode->name());
+            assert(copied_opnode && "cannot find opnode with same name in cloned graph");
+            copied_opnode->setStrategyLabel(new StrategyLabel(opStrategy));
+
+            opIndex++;
+        }
+
+        pass::ParallelLoweringPass *par_lowering_pass = new pass::ParallelLoweringPass(graph);
+        par_lowering_pass->run();
+        pass::EliminationPass *elimpass = new pass::EliminationPass(graph);
+        elimpass->run();
+
+        communicationCost = graph->getCommCost();
+
+        // std::cout << "\n" << graph->getCommTrace() << "\n";
+        // std::cout << graph->getCommCost() << "\n";
+
+        delete graph; 
+
+        return communicationCost;
+    }
+
+    void addStrategyToGraph(std::vector<int> identity) {
+        int opIndex = 0;
+        for(auto op_strategy_idx : identity) {
+            std::vector<int> opStrategy = getOpStrategyByIndex(opIndex, op_strategy_idx);
+            OpNode* opNode = getOpNodeByIndex(opIndex);
+
+            opNode->setStrategyLabel(new StrategyLabel(opStrategy));
+
+            opIndex++;
+        }
+
+    }
+
     float getCommunicationCost(OpNode * opNode, std::vector<int> opStrategy){
         float  communicateCost =0.0;
         int degree = _irgraph->getConfig().mpi_size;
@@ -126,6 +233,8 @@ public:
             std::map<TensorNode* ,std::set<int>>::iterator iter =  _outTensorStrategiesMap.find(curTensorNode);
                 
             //TBC
+            (void)curTiling;
+            (void)iter;
 
         }    
 
@@ -134,7 +243,9 @@ public:
  
 private:
     IRGraph * _irgraph;
-    std::vector<OpTiling*> _OpTilings;
+    int _p; // parallel size = _irgraph->getConfig().mpi_size();
+    std::vector<OpStrategy*> _graph_strategies;
+
     std::map<TensorNode*,std::set<int>> _inTensorStrategiesMap;
     std::map<TensorNode*,std::set<int>> _outTensorStrategiesMap;
       
@@ -152,7 +263,9 @@ private:
     double _mutationRate;
     size_t _numberElites;
     size_t _numGenerations;
+
     StrategySearchSpace* _sss;
+
     std::vector<int> randomIdentity() {
         // number of gene per identity
         size_t num = _geneSpace.size();
@@ -186,7 +299,8 @@ private:
     void breed();
 
      double getFitness(const std::vector<int>& identity) {
-        return _sss->getFitness(identity); 
+        // return _sss->getFitness(identity); 
+        return _sss->getFitnessByGraphTransform(identity); 
     }
     
 public:
@@ -227,12 +341,16 @@ public:
     void run() {
 
         for(size_t i=0; i<_numGenerations; i++) {
-            breed();
-            if(_numGenerations<100 || i%10==0) {
+            if(_numGenerations<500 || i%10==0) {
                 std::cout << "generation" << i << " top5\n";
                 printTopKIdentity(5);
             }
+            breed();
         }
+    }
+
+    std::vector<int> getBestIdentity() {
+        return _population.at(0);
     }
 
     void printTopKIdentity(size_t k) {
@@ -241,112 +359,10 @@ public:
             auto &identity = _population.at(i);
             for(auto gene : identity)
                 std::cout << gene << " ";
-            std::cout << "\n";
+            std::cout << (size_t)getFitness(identity) << "\n";
         }
     }
 };
-
-std::vector<double> GeneticSearch::getNormAccumFitness() {
-    // _population must be desc-ordered by fitness before call this function
-    std::vector<double> fit(_populationSize);
-    for(size_t i=0; i<_populationSize; i++) {
-        auto identity = _population[i];
-        fit[i] = getFitness(identity);
-    }
-
-    // normalize fitness 
-    auto sum = std::accumulate(fit.begin(), fit.end(), 0.0);
-    for(size_t i=0; i<_populationSize; i++) {
-        fit[i] /= sum;
-    }
-
-    std::vector<double> accum_fit;
-    // fit[0]
-    // fit[0] + fit[1]
-    // ...
-    // 1.0
-    std::partial_sum(fit.begin(), fit.end(), std::back_inserter(accum_fit));
-    return accum_fit;
-}
-
-
-std::vector<int> GeneticSearch::crossover(std::vector<int>& p0, std::vector<int>& p1) {
-    vector<int> child(p0.size());
-    // ! closed interval [a, b]
-    std::uniform_int_distribution<size_t> dist(0,1);
-    for(size_t i=0; i<p1.size(); i++) {
-        size_t idx = dist(rng); 
-        child[i] = idx==0 ? p0.at(i) :p1.at(i);
-    }
-
-    return child;
-}
-
-void GeneticSearch::mutate(std::vector<int> & identity) {
-    auto dist = std::discrete_distribution<int>{(1 - _mutationRate), _mutationRate};
-
-    for(size_t idx=0; idx<identity.size(); idx++) {
-        // decide if should mutate for each gene piece (!!! not identity)
-        // so mutattionRate should be small
-        bool shouldMutate = dist(rng);
-        if(shouldMutate) {
-            randomGene(identity, idx);
-        }
-    }
-}
-
-void GeneticSearch::breed() {
-    std::sort(
-      _population.begin(),
-      _population.end(),
-      [this](const std::vector<int>& a,
-         const std::vector<int>& b) {
-        
-        return this->getFitness(a) > this->getFitness(b);
-    });
-
-    // elites directly enter next generation
-    Population children(_population.begin(), _population.begin()+_numberElites);
-
-    auto accum_fitness = getNormAccumFitness();
-
-    // default uniform distribution between [0, 1)
-    auto uniform_dist = std::uniform_real_distribution<double>{};
-    // generate 0 or 1 with their weight as possibility
-    // 0 means not crossover, 1 means shoudlCrossover
-    auto disc_dist = std::discrete_distribution<int>{(1 - _crossOverRate), _crossOverRate};
-    
-    // select parents to crossover -> child -> mutate 
-    // roulette method (descend-ordered Population, accumulated fitness, nomal distribution [0,1)
-    while(children.size() < _populationSize) {
-        auto limit = uniform_dist(rng);
-        auto lb1 = std::lower_bound(accum_fitness.begin(), accum_fitness.end(), limit);
-        limit = uniform_dist(rng);
-        auto lb2 = std::lower_bound(accum_fitness.begin(), accum_fitness.end(), limit);
-
-        if(lb1 == lb2)
-            continue;
-
-        auto p1 = _population.at(std::distance(accum_fitness.begin(), lb1));
-        auto p2 = _population.at(std::distance(accum_fitness.begin(), lb2));
-
-        bool shouldCross = disc_dist(rng);
-        if(shouldCross) {
-
-            auto child = crossover(p1, p2);
-
-            mutate(child);
-            
-            children.push_back(child);
-        }
-    }
-    _population = children;
-}
-
-           
-    
-
-
 
 }
 #endif
