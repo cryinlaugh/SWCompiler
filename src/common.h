@@ -80,6 +80,8 @@ struct Config {
     ParallelStrategy parallel_preference{MEM_SAVING}; 
     bool force_data_parallel{false};
 
+    bool enable_lowering{true};
+
     // comment compute function calls to get pure communication time 
     bool compute_op_annotation{false};
     bool comm_op_annotation{false};

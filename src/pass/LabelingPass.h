@@ -52,6 +52,9 @@ class swc::pass::LabelingPass : public swc::pass::OptimizePass {
     }
     void setLoweringMark() {
         Config config = _graph->getConfig();
+        if(config.enable_lowering == false) {
+            return;
+        }
 
         int nTensorNodes = _graph->tensorNodeNum();
         int nOpNodes = _graph->opNodeNum();
