@@ -26,7 +26,7 @@ class IRNode;
 class IRGraph {
   public:
     IRGraph(){}
-    ~IRGraph(){}
+    ~IRGraph();
 
     TensorNode *getTensorNode(int i) const { return _tensors[i]; }
     OpNode *getOpNode(int i) const { return _ops[i]; }
@@ -64,7 +64,7 @@ class IRGraph {
     template <typename T, typename... Types>
     void delTensorNode(const T &firstArg, const Types &... args) {
         if (!delVecMember(_tensors, firstArg)) {
-            std::cout << "Del Tensor Failed" << firstArg->name() << std::endl;
+            std::cout << "Del Tensor Failed " << firstArg->name() << std::endl;
         }
         delTensorNode(args...);
     }
@@ -79,7 +79,7 @@ class IRGraph {
     template <typename T, typename... Types>
     void delOpNode(const T &firstArg, const Types &... args) {
         if (!delVecMember(_ops, firstArg)) {
-            std::cout << "Del Op Failed" << firstArg->name() << std::endl;
+            std::cout << "Del Op Failed " << firstArg->name() << std::endl;
         }
         delOpNode(args...);
     }

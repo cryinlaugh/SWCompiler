@@ -22,6 +22,16 @@
 
 namespace swc {
 
+IRGraph::~IRGraph(){
+    // std::cout << "dtor of IRGraph\n";
+    // not do clear of vector 
+    for(auto &tnode : _tensors)
+        tnode->destroy();
+    for(auto &onode : _ops)
+        onode->destroy();
+
+}
+
 IRNode *IRGraph::getNodeByName(std::string name) const {
     for (auto &node : _tensors)
         if (node->name() == name)
@@ -352,13 +362,15 @@ void IRGraph::findInOut() {
             _outNodes.push_back(opnode);
     }
 
-    SWLOG_DEBUG(8) << "findInOut innodes:" << _inNodes.size() << " outnodes:" << _outNodes.size() << "\n";
+    SWLOG_DEBUG(4) << "findInOut innodes:" << _inNodes.size() << " outnodes:" << _outNodes.size() << "\n";
+    /*
     std::cout << "_inNodes\n";
     for(auto node : _inNodes)
         std::cout << node->name() << "\n"; 
     std::cout << "_outNodes\n";
     for(auto node : _outNodes)
         std::cout << node->name() << "\n"; 
+    */
     // OutMark should be decied by other rules but not simple topology out
     // setOutMark();
 }

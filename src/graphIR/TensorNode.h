@@ -40,12 +40,7 @@ class TensorNode : public IRNode {
 
     ~TensorNode(){ destroy(); }
 
-    void destroy() {
-        //printf("free TensorNode:%s\n", name().c_str());
-        getLabel()->destroy();
-        getTensor()->destroy();
-        SWLOG_DEBUG(4) << "Destroy TensorNode: " << name() << "\n";
-    };
+    void destroy();
 
     void setTensor(Tensor *tensor) { tensor_ = tensor; }
     Tensor *getTensor() { return tensor_; }
@@ -75,10 +70,11 @@ class TensorNode : public IRNode {
 
     void setMemLayout(mem_layout_t layout) { tensor_->setMemLayout(layout); }
     mem_layout_t getMemLayout() const { return tensor_->getMemLayout(); }
+    
   private:
     Tensor *tensor_{nullptr};
 
-    TilingLabel* _tilingLabel;
+    TilingLabel* _tilingLabel{nullptr};
 };
 
 } // namespace swc

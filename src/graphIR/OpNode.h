@@ -28,14 +28,7 @@ class OpNode : public IRNode {
         : IRNode(OP_NODE, name), op_(op){};
     ~OpNode(){};
 
-    void destroy() {
-        // printf("free OpNode:%s\n", name().c_str());
-        SWLOG_DEBUG(4) << "Destroy OpNode: " << name() << "\n"; 
-
-        getOp()->destroy();
-        getLabel()->destroy();
-        // this->~OpNode();
-    };
+    void destroy();
 
     void setOp(Op *op) { op_ = op; }
 

@@ -15,10 +15,21 @@
 #include "op/dlOp/dlOp.h"
 #include "pass/AutodiffPass.h"
 
+#include "parallel/TilingLabel.h"
+
 using namespace swc::op;
 using namespace swc::pass;
 
 namespace swc {
+
+void TensorNode::destroy() {
+    //printf("free TensorNode:%s\n", name().c_str());
+    getLabel()->destroy();
+    getTensor()->destroy();
+    _tilingLabel = nullptr;
+    SWLOG_DEBUG(4) << "Destroy TensorNode: " << name() << "\n";
+};
+
 /// share tensor, that tensor_ point to
 TensorNode *TensorNode::clone() const {
     TensorNode *tn = new TensorNode(name()+"_cp");
