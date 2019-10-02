@@ -169,6 +169,9 @@ class IRGraph {
     // Trace of communications in detail, comma separated 
     std::string getCommTrace();
 
+
+    void resetParallelStrategy();
+
   private:
     std::vector<TensorNode *> _tensors;
     std::vector<OpNode *> _ops;

@@ -484,25 +484,14 @@ void IRGraph::copyTo(IRGraph* graph) const {
     graph->updateTopology();
 }
 
+// 2019.10.1 modify clone as deepclone
 IRGraph *IRGraph::clone() const {
-    // TODO: add topo check before clone
     IRGraph *graph = new IRGraph();
-    /*
-    for(int i=0; i<this->topologyNum(); i++){
-        for(int j=0; j<this->getNumInTopoLevel(i); i++){
-            auto node = this->getNodeInTopo(i, j);
-            if(node->nodeType() == NodeType::OP_NODE){
-                graph->pushOpNode(static_cast<OpNode*>(node)->clone());
-            }else if(node->nodeType() == NodeType::TENSOR_NODE){
-                graph->pushTensorNode(static_cast<TensorNode*>(node)->clone());
-            }
-        }
-    }
-    */
+
     std::unordered_map<TensorNode *, TensorNode *> tensors_map;
     std::unordered_map<OpNode *, OpNode *> ops_map;
     for (auto &N : _tensors) {
-        TensorNode *tn = (N->isExternal()) ? N->clone() : N->deepClone();
+        TensorNode *tn = N->deepClone();
         tensors_map[N] = tn;
         graph->pushTensorNode(tn);
     }
@@ -512,17 +501,6 @@ IRGraph *IRGraph::clone() const {
         graph->pushOpNode(opn);
     }
 
-    // create links
-    /*
-    for(auto &N : _tensors){
-        auto tn = tensors_map[N];
-        for(int i=0; i<N->parentNum(); i++){
-            auto it = ops_map.find((OpNode*)N->getParentNode(i));
-            if(it != ops_map.end())
-                tn->exlinkUpperNode(it->second);
-        }
-    }
-    */
 
     // it worked, but remind that
     // static_cast may cause offset
@@ -540,6 +518,38 @@ IRGraph *IRGraph::clone() const {
             opn->exlinkUpperNode(parent);
         }
     }
+
+    // clone _logicalOutNodes
+    for(auto &node : _logicalOutNodes) {
+        if(node->nodeType() == TENSOR_NODE) {
+            graph->addLogicalOutNodes(tensors_map.at((TensorNode*)node)); 
+        }
+        else
+            graph->addLogicalOutNodes(ops_map.at((OpNode*)node)); 
+
+    }
+    // clone _input_data_node and _input_label_node
+    graph->setTrainDataNodes(tensors_map.at(_input_label_node),
+        tensors_map.at(_input_data_node));
+    
+    // clone _dispaly_nodes
+    for(auto &node : _display_nodes) {
+        graph->addDisplayTensorNodes(node);
+    }
+
+    // clone _config
+    graph->setConfig(_config);
+
+    // clone _dev
+    graph->setDeviceLabel(_dev);
+
+
+    SWLOG_DEBUG(4) << "updateTopology of deepcloned graph\n";
+    // updateTopoly
+    graph->findInOut();
+    graph->updateTopology();
+    
+    graph->resetParallelStrategy();
 
     return graph;
 }
@@ -621,6 +631,15 @@ std::string IRGraph::getCommTrace() {
         }
     }
     return trace;
+}
+
+void IRGraph::resetParallelStrategy() {
+    for(auto &tnode : _tensors) {
+        tnode->setTilingLabel(new TilingLabel());
+    }
+    for(auto &onode : _ops) {
+        onode->setStrategyLabel(nullptr);
+    }
 }
 
 } // namespace swc
