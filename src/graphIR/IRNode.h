@@ -172,12 +172,12 @@ class IRNode {
 
     virtual void destroy(){};
     virtual void autoDiff(IRGraph* graph,
-                        std::unordered_map<IRNode*, IRNode*> &gradNodeMap){};
+                        std::unordered_map<IRNode*, IRNode*> &gradNodeMap){}
 
     virtual void autoDiff(IRGraph* graph,
                         std::unordered_map<IRNode*, IRNode*> &gradNodeMap,
                         void* methodParams,
-                        pass::METHOD_TYPE methodType){};
+                        pass::METHOD_TYPE methodType){}
 
     virtual void checkValid(){};
 

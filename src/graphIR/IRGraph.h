@@ -31,8 +31,8 @@ class IRGraph {
     TensorNode *getTensorNode(int i) const { return _tensors[i]; }
     OpNode *getOpNode(int i) const { return _ops[i]; }
 
-    TensorNode *getInNode(int i) const { return _inNodes[i]; }
-    TensorNode *getOutNode(int i) const { return _outNodes[i]; }
+    IRNode *getInNode(int i) const { return _inNodes[i]; }
+    IRNode *getOutNode(int i) const { return _outNodes[i]; }
 
     int getNumInTopoLevel(int i) const { return _nodesByTopology[i].size(); }
     std::vector<IRNode *> getNodeInTopoLevel(int i) const {
@@ -159,7 +159,7 @@ class IRGraph {
         _logicalOutNodes.push_back(firstArg);
         addLogicalOutNodes(args...);
     }
-    std::vector<TensorNode*> getLogicalOutNodes(){ return _logicalOutNodes; }
+    std::vector<IRNode *> getLogicalOutNodes(){ return _logicalOutNodes; }
 
     void setConfig(Config config) { _config = config; }
     Config getConfig() { return _config; }
@@ -175,13 +175,13 @@ class IRGraph {
 
     // _inNodes and _outNodes are decided by topology order
     // and updated only by  findInOut()
-    std::vector<TensorNode *> _inNodes;
-    std::vector<TensorNode *> _outNodes;
+    std::vector<IRNode *> _inNodes;
+    std::vector<IRNode *> _outNodes;
 
     // _logicalOutNodes should be specified by user
     // e.g. inference, user want to out loss 
     // e.g. training, _logicalOutNodes should be mirror node of trainable weights
-    std::vector<TensorNode *> _logicalOutNodes;
+    std::vector<IRNode *> _logicalOutNodes;
 
     std::vector<std::vector<IRNode *>> _nodesByTopology;
 

@@ -248,15 +248,14 @@ class SGDOp : public Op {
     size_t batch_{1};
 
 public:
-    SGDOp() : Op(DL_OP, 3, 1, std::string("SGD")) {}
+    SGDOp() : Op(DL_OP, 3, 0, std::string("SGD")) {}
     SGDOp(float lr, float decay, float momentum, size_t batch)
         : Op(DL_OP, 2, 1, std::string("SGD")), lr_(lr), decay_(decay),
           momentum_(momentum), batch_(batch) {
         this->_einOp = 1;
-        this->_einRep.push_back("00");
-        this->_einRep.push_back("00");
-        this->_einRep.push_back("00");
-        this->_einRep.push_back("00");
+        this->_einRep.push_back("ij"); // w
+        this->_einRep.push_back("ij"); // dw  
+        this->_einRep.push_back("ij"); // momentum
     }
     ~SGDOp();
     float getLR() {

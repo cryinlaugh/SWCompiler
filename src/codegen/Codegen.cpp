@@ -828,7 +828,10 @@ void Codegen::emitPrintGraphOutputs() {
             << m << ", " << n << ");\n";
     }
     */
-    for(auto &tnode : graph_->getDisplayTensorNodes()) {
+    for(auto &node : graph_->getDisplayTensorNodes()) {
+        if(node->nodeType() == OP_NODE)
+            continue;
+        auto tnode = (TensorNode*)node;
         auto* out = tnode->getTensor();
         int m = out->getDim(0);
         int n = out->getNDim()==2 ? out->getDim(1) : 1;
@@ -2455,7 +2458,7 @@ void Codegen::emitFuncCall(OpNode *op) {
         auto *input = ((TensorNode *)op->getParentNode(0))->getTensor();
         auto *inputG = ((TensorNode *)op->getParentNode(1))->getTensor();
         auto *momen = ((TensorNode *)op->getParentNode(2))->getTensor();
-        auto *input_mirror = ((TensorNode *)op->getChildNode(0))->getTensor();
+        // auto *input_mirror = ((TensorNode *)op->getChildNode(0))->getTensor();
 
         auto *sgdOp = (SGDOp *)op->getOp();
         float lr = sgdOp->getLR();
@@ -2463,11 +2466,11 @@ void Codegen::emitFuncCall(OpNode *op) {
         float momentum = sgdOp->getMomentum();
         size_t batch = sgdOp->getBatch();
 
-        assert(input == input_mirror &&
-               "SGD input and output ptr should refer to the same Tensor\n");
+        // assert(input == input_mirror && "SGD input and output ptr should refer to the same Tensor\n");
         size_t size = input->size();
         writer_ << "sgd_" << dtype_flag << "(" << size << ", "
-                << tensors_name_map_[input_mirror] << ", "
+                // << tensors_name_map_[input_mirror] << ", "
+                << tensors_name_map_[input] << ", "
                 << tensors_name_map_[input] << ", " << tensors_name_map_[inputG]
                 << ", " << tensors_name_map_[momen] << ", " << lr << ", "
                 << decay << ", " << momentum << ", " << batch << ");\n";

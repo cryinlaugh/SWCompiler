@@ -324,6 +324,8 @@ void IRGraph::initTensorNodes() {
 void IRGraph::findInOut() {
     _inNodes.clear();
     _outNodes.clear();
+
+    /*
     typename std::vector<TensorNode *>::iterator tnIter;
 
     for (tnIter = _tensors.begin(); tnIter != _tensors.end(); tnIter++) {
@@ -334,8 +336,29 @@ void IRGraph::findInOut() {
         if ((*tnIter)->childNum() == 0)
             _outNodes.push_back(*tnIter);
     }
+    */
+    // _inNodes could not be op
+    for(auto &tnode : _tensors) {
+        if(tnode->parentNum() == 0)
+            _inNodes.push_back(tnode);
+    }
 
-    SWLOG_DEBUG(4) << "findInOut innodes:" << _inNodes.size() << " outnodes:" << _outNodes.size() << "\n";
+    for(auto &tnode : _tensors) {
+        if(tnode->childNum() == 0)
+            _outNodes.push_back(tnode);
+    }
+    for(auto &opnode : _ops) {
+        if(opnode->childNum() == 0)
+            _outNodes.push_back(opnode);
+    }
+
+    SWLOG_DEBUG(8) << "findInOut innodes:" << _inNodes.size() << " outnodes:" << _outNodes.size() << "\n";
+    std::cout << "_inNodes\n";
+    for(auto node : _inNodes)
+        std::cout << node->name() << "\n"; 
+    std::cout << "_outNodes\n";
+    for(auto node : _outNodes)
+        std::cout << node->name() << "\n"; 
     // OutMark should be decied by other rules but not simple topology out
     // setOutMark();
 }
@@ -358,8 +381,7 @@ template <typename T> void IRGraph::updateTopology(T node) {
 }
 
 void IRGraph::updateTopology() {
-    // findInOut();
-
+    /*
     typename std::vector<TensorNode *>::iterator tnIter;
     typename std::vector<OpNode *>::iterator opIter;
 
@@ -370,6 +392,16 @@ void IRGraph::updateTopology() {
 
     for (tnIter = _inNodes.begin(); tnIter != _inNodes.end(); tnIter++)
         updateTopology(*tnIter);
+    */
+
+    for(auto &tnode :_tensors)
+        tnode->setTopologyId(0);
+    for(auto &opnode :_ops)
+        opnode->setTopologyId(0);
+
+    for(auto &node : _inNodes)
+        updateTopology(node);
+
 
     updateTopoNodeList();
 }
