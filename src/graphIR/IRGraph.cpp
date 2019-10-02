@@ -12,6 +12,7 @@
 #include "graphIR/TensorNode.h"
 #include "op/dlOp/dlOp.h"
 #include "op/basicOp/basicOps.h"
+#include "parallel/TilingLabel.h"
 
 #include "common.h"
 #include <cassert>
@@ -640,6 +641,30 @@ void IRGraph::resetParallelStrategy() {
     for(auto &onode : _ops) {
         onode->setStrategyLabel(nullptr);
     }
+}
+
+void IRGraph::elimRedundantScatter() {
+    for(auto &opnode : _ops) {
+        if(!dynamic_cast<ScatterOp*>(opnode->getOp()) ) {
+            continue;
+        }
+
+        // parent tensornode
+        auto *ptnode  = (TensorNode*)opnode->getParentNode(0); 
+        // childnode
+        auto *ctnode  = (TensorNode*)opnode->getChildNode(0); 
+
+        // this means ptnode is an topoInTensornode, and this scatter is its only child
+        if(ptnode->parentNum()==0 && ptnode->childNum()==1) {
+            SWLOG_DEBUG(6) << opnode->name() << " and its parent "
+                << ptnode->name() << " is redundant during batch iterations\n";
+            ctnode->destroyUpperNode(opnode);      
+            // !!! do not delNode because we are iterate on _ops
+            // this->delOpNode(opnode);
+            // this->delTensorNode(ptnode);
+        }
+         
+    } // for loop
 }
 
 } // namespace swc

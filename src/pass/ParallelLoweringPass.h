@@ -240,7 +240,7 @@ public:
                     // 1. simply choose the newest one
                     // 2. DONE: choose best history strategy for transform (e.g. less count of pieces
                     // current: 2
-                    SWLOG_DEBUG(6) << tnode->name() << " select best transform source\n"; 
+                    SWLOG_DEBUG(4) << tnode->name() << " select best transform source\n"; 
                     int pre_strategy = tlabel->selectTransPreStrategy(strategy); 
                      
                     if(pre_strategy == -2) {
@@ -320,6 +320,9 @@ public:
             runCommSavingLowering(parallel_degree);
         }
 
+        if(config.benchmark) {
+            _graph->elimRedundantScatter();
+        }
 
         SWLOG_DEBUG(4) << "Finish Paralleling pass.\n";
     }

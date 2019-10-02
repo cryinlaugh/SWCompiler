@@ -172,6 +172,10 @@ class IRGraph {
 
     void resetParallelStrategy();
 
+    // lightweight, so no plan to move this to a pass
+    // only do this when benchmark
+    void elimRedundantScatter();
+
   private:
     std::vector<TensorNode *> _tensors;
     std::vector<OpNode *> _ops;
