@@ -19,6 +19,8 @@ public:
     Engine() = delete;
     Engine(IRGraph *graph) : graph_(graph) {}
 
+    IRGraph* getGraph() { return graph_; }
+
     /// backend-specific transformations on graphs
     virtual void compile();
     

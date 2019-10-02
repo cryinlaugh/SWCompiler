@@ -109,12 +109,14 @@ void Engine::runTrainPasses() {
     auto labelingpass = new LabelingPass(graph_); 
     auto loweringpass = new LoweringPass(graph_);
     auto renamingpass = new RenamingNodePass(graph_); 
+    auto elimpass = new EliminationPass(graph_); 
 
     passManager.add(labelingpass);
     passManager.add(loweringpass);
     // run labeling again for new nodes from lowering
     passManager.add(labelingpass);
     passManager.add(renamingpass); 
+    passManager.add(elimpass); 
 
     passManager.run();
 
