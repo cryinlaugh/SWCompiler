@@ -242,6 +242,39 @@ size_t TransformOp::getSimCost(size_t bytes, int degree, int pre, int post) {
     
 }
 
+size_t ReduceOp::getCost(OpNode *node) {
+    auto *to = (TensorNode*)node->getChildNode(0);
+    size_t size = to->getTensor()->getSizeInBytes(); 
+
+    // -2: master reduce size to all workers
+    return size; 
+}
+
+std::string ReduceOp::getCostTrace(OpNode *node) {
+    std::ostringstream stream;
+
+    std::string name = node->name();
+    auto *from = (TensorNode*)node->getParentNode(0);
+    auto *to = (TensorNode*)node->getChildNode(0);
+
+    size_t  comm = getCost(node);
+
+    stream << name << " " << "Reduce"<< " " << comm << " ";
+
+
+    stream << dumpDims(from->getDims()) << " "
+        << dumpDims(to->getDims()) << " "
+        << -2 << " " << "_" << "\n";
+
+    return stream.str();
+}
+
+size_t ReduceOp::getSimCost(size_t bytes, int degree, int axis) {
+    (void) axis;
+    (void) degree;
+    return bytes;
+}
+
 
 } // namespace op
 } // namespace swc

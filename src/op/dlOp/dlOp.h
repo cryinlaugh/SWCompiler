@@ -440,6 +440,9 @@ public:
     ReduceOp() : Op(DL_OP, 0, 0, "Reduce") {}
     ~ReduceOp();
     // std::string getOpInfo() override;
+    size_t getCost(OpNode *) override;
+    std::string getCostTrace(OpNode*) override;
+    static size_t getSimCost(size_t bytes, int degree, int strategy);
 };
 
 class TransformOp: public Op {
