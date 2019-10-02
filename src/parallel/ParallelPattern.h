@@ -7,6 +7,8 @@
 #        Create: 2019-07-05 11:04:16
 # Last Modified: 2019-07-05 11:04:16
 ***********************************************/
+#ifndef _PARALLELPATTERN_H
+#define _PARALLELPATTERN_H 
 #include "common.h"
 #include "op/Op.h"
 #include "op/dlOp/dlOp.h"
@@ -14,7 +16,7 @@
 #include "graphIR/TensorNode.h"
 #include "graphIR/OpNode.h"
 #include "TilingLabel.h"
-#include <limits.h>
+#include <climits>
 
 using namespace swc::op;
 namespace swc {
@@ -169,14 +171,6 @@ public:
     }
 };
 
-
-
-
-
-
-
-
-
-
-
 }
+
+#endif

@@ -7,6 +7,8 @@
 #        Create: 2019-09-18 16:07:46
 # Last Modified: 2019-09-18 16:07:46
 ***********************************************/
+#ifndef _PARALLELLOWERINGPASS_H
+#define _PARALLELLOWERINGPASS_H
 #include "common.h"
 #include "OptimizePass.h"
 #include "graphIR/OpNode.h"
@@ -325,3 +327,4 @@ public:
 };
 
 }
+#endif

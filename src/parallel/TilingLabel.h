@@ -68,7 +68,7 @@ public:
         }
 
         os << ") select " << best;
-        SWLOG_DEBUG(6) << os.str() << "\n"; 
+        SWLOG_DEBUG(4) << os.str() << "\n"; 
 
         return best;
     }

@@ -7,12 +7,16 @@
 #        Create: 2019-09-18 15:40:59
 # Last Modified: 2019-09-18 15:40:59
 ***********************************************/
+#ifndef _PARALLEL_LABELING_PASS_H
+#define _PARALLEL_LABELING_PASS_H
+
 #include "common.h"
 #include "OptimizePass.h"
 #include "graphIR/OpNode.h"
 #include "graphIR/TensorNode.h"
 #include "parallel/TilingLabel.h"
 #include "parallel/parallelGen.h"
+#include "parallel/SearchSpace.h"
 #include <random>
 #include <algorithm>
 #include <ctime>
@@ -168,3 +172,4 @@ public:
 };
 
 }
+#endif
