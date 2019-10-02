@@ -74,7 +74,8 @@ void MatrixMatrixFCOp::autoDiff(IRGraph* graph,
 
     auto *N = new OpNode(opNode->name() + "_grad",
             new MatrixMatrixFCGradOp());
-    N->exlinkUpperNode(input, weight, output, outputGrad);
+    // N->exlinkUpperNode(input, weight, output, outputGrad);
+    N->exlinkUpperNode(input, weight, outputGrad);
 
     gradNodeMap[opNode] = N;
     graph->pushOpNode(N);

@@ -85,8 +85,8 @@ void MatrixMatrixFCGradOp::einsumLowering(IRGraph *graph, IRNode *node)
     SWLOG_DEBUG(4) << "einsumLowering MatrixMatrixFCGradOp ..." << std::endl;
 
     // Op check;
-    assert(node->parentNum() == 4 &&
-           "FCGrad input should be 4: data, weight, output, outputGrad");
+    assert(node->parentNum() == 3 &&
+           "FCGrad input should be 4: data, weight, outputGrad");
     assert(node->childNum() == 2 && "FCGrad output should be 2: dataGrad, weightGrad");
 
     for (int i = 0; i < node->parentNum(); i++) {
@@ -100,8 +100,7 @@ void MatrixMatrixFCGradOp::einsumLowering(IRGraph *graph, IRNode *node)
     // Op info fetch
     auto *input = (TensorNode *)node->getParentNode(0);
     auto *weight = (TensorNode *)node->getParentNode(1);
-    auto *output = (TensorNode *)node->getParentNode(2);
-    auto *outputG = (TensorNode *)node->getParentNode(3);
+    auto *outputG = (TensorNode *)node->getParentNode(2);
 
     auto *inputG = (TensorNode *)node->getChildNode(0);
     auto *weightG = (TensorNode *)node->getChildNode(1);
@@ -139,7 +138,7 @@ void MatrixMatrixFCGradOp::einsumLowering(IRGraph *graph, IRNode *node)
    
     LINKUPPER(weightG, dw);
 
-    DESTROYUPPER(node, input, weight, output, outputG);
+    DESTROYUPPER(node, input, weight, outputG);
     DESTROYUPPER(inputG, node);
     DESTROYUPPER(weightG, node);
 
