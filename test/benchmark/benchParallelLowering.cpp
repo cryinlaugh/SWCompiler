@@ -1,5 +1,5 @@
 #include <iostream>
-#include <ctime>
+#include <sys/time.h>
 
 #include "SWC.h"
 
@@ -9,6 +9,7 @@ using namespace swc::pass;
 using namespace std;
 
 #define MINIBATCH 128 
+#define TIME_MS(a,b)     (1000.0*((b).tv_sec-(a).tv_sec)+0.001*((b).tv_usec-(a).tv_usec))
 
 int main() {
     //============================
@@ -109,23 +110,52 @@ int main() {
     //config.comm_op_annotation = true;
     config.parallel_preference = COMM_SAVING;
     // config.parallel_preference = MEM_SAVING;
-    config.force_data_parallel = true;
+    // config.force_data_parallel = true;
     config.benchmark = true;
-    config.enable_lowering = false;
 
     mlp->setConfig(config);
+
 
     dotGen(mlp, "mlp_def.dot");
 
     Engine engine(mlp);
-    engine.compile();
 
-    dotGen(mlp, "mlp_train.dot");
+    engine.runTrainPasses();
+
+    
+    struct timeval ts,te;
+    gettimeofday(&ts, NULL);
+    for(int i=0; i<1000; i++) {
+        auto *graph = mlp->clone();
+
+        PassManager passManager;
+
+        auto para_labeling = new ParallelLabelingPass(graph); 
+        auto para_lowering = new ParallelLoweringPass(graph); 
+        auto renaming  = new RenamingNodePass(graph);
+        auto eliming = new EliminationPass(graph); 
+
+        passManager.add(para_labeling);
+        passManager.add(para_lowering);
+        passManager.add(renaming);
+        passManager.add(eliming);
+
+        passManager.run();
+
+        // dotGen(graph, "mlp_para_before_elim.dot");
+
+        graph->findInOut();
+        graph->updateTopology();
+    }
+    gettimeofday(&te, NULL);
+    double time = TIME_MS(ts, te);
+    cout << "time cost " << time << " ms" << endl;
 
     cout << mlp->getCommTrace() << "\n";
     cout << mlp->getCommCost() << "\n";
 
     string code = engine.genCode();
+    // cout << code;
 
     return 0;
 }
