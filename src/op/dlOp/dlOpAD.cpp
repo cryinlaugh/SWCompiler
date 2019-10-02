@@ -16,6 +16,7 @@
 #include "graphIR/TensorNode.h"
 
 using namespace swc::op;
+using namespace swc;
 
 /*--------------------------------Auto Diff ------------------------
  *
@@ -277,6 +278,54 @@ void MatrixSoftmaxWithLossOp::autoDiff(IRGraph* graph,
     }
 }
 
+void getParentTensorGrad(IRGraph* graph,
+        IRNode* opNode,
+        std::unordered_map<IRNode*, IRNode*>&gradNodeMap)
+{
+
+    for (int i = 0; i < opNode->parentNum(); i++) {
+
+        auto *tnode = (TensorNode *)(opNode->getParentNode(i));
+        auto *tensor = tnode->getTensor();
+
+        // the first grad
+        if (!gradNodeMap.count(tnode)) {
+            auto *N = new TensorNode(tnode->name() + "_grad",
+                    new Tensor(tensor->getTensorShape()),
+                    gradNodeMap[opNode]);
+
+            SWLOG_DEBUG(4) << "get Gradient node for " << opNode->name()
+                << " input " << tnode->name() << "\n";
+
+            gradNodeMap[tnode] = N;
+            graph->pushTensorNode(N);
+
+        } else {
+
+            auto *N = new TensorNode(tnode->name() + "_grad",
+                    new Tensor(tensor->getTensorShape()),
+                    gradNodeMap[opNode]);
+            SWLOG_DEBUG(4) << "get Multiple Gradient node for " << 
+                opNode->name() << " input " << tnode->name() << "\n";
+            
+            auto *eADD = new OpNode("ElementAdd", new ElementAddOp());
+            eADD->exlinkUpperNode(N, gradNodeMap[tnode]);
+            graph->pushOpNode(eADD);
+
+            auto *sum = new TensorNode(tnode->name() + "_gradsum",
+                    new Tensor(tensor->getTensorShape()), eADD);
+         
+
+            gradNodeMap[tnode] = sum;
+            graph->pushTensorNode(N, sum);
+
+
+        } 
+    }
+
+}
+
+
 void Conv2dOp::autoDiff(IRGraph* graph,
         IRNode* opNode,
         std::unordered_map<IRNode*, IRNode*>&gradNodeMap)
@@ -303,7 +352,33 @@ void Conv2dOp::autoDiff(IRGraph* graph,
     gradNodeMap[opNode] = N;
     graph->pushOpNode(N);
 
-    for (int i = 0; i < opNode->parentNum(); i++) {
+    
+    getParentTensorGrad(graph, opNode, gradNodeMap);
+
+}
+
+
+void BatchNormalizationOp::autoDiff(IRGraph* graph,
+        IRNode* opNode,
+        std::unordered_map<IRNode*, IRNode*>&gradNodeMap)
+{
+    SWLOG_DEBUG(4) << "autoDiff: " << _opClassName   << std::endl;
+    auto *input = opNode->getParentNode(0);
+    auto *bnScale = opNode->getParentNode(1);
+    auto *bnShift = opNode->getParentNode(2);
+    auto *output = opNode->getChildNode(0);
+    
+    assert(gradNodeMap.count(output) &&
+            "grad of BatchNormalization output unfound\n");
+    auto *outputGrad = gradNodeMap[output];
+
+    auto *N = new OpNode(opNode->name() + "_grad", new BatchNormalizationGradOp(getEpsilon()));
+    N->exlinkUpperNode(input, bnScale, bnShift, output, outputGrad);
+
+    gradNodeMap[opNode] = N;
+    graph->pushOpNode(N);
+
+    for (int i = 0; i < 3; i++) {
 
         auto *tnode = (TensorNode *)(opNode->getParentNode(i));
         auto *tensor = tnode->getTensor();
@@ -318,3 +393,27 @@ void Conv2dOp::autoDiff(IRGraph* graph,
         graph->pushTensorNode(N);
     }
 }
+
+
+void ElementAddOp::autoDiff(IRGraph* graph,
+        IRNode* opNode,
+        std::unordered_map<IRNode*, IRNode*>&gradNodeMap)
+{
+    SWLOG_DEBUG(4) << "autoDiff: " << _opClassName  << std::endl;
+    auto *input1 = opNode->getParentNode(0);
+    auto *input2 = opNode->getParentNode(1);
+    
+    auto *output = opNode->getChildNode(0);
+
+    assert(gradNodeMap.count(output) &&
+            "grad of ElementAdd output unfound\n");
+    auto *outputGrad = gradNodeMap[output];
+
+    SWLOG_DEBUG(4) << "reuse Gradient node of " << output->name()
+            << " for input1: " << input1->name() 
+            << " and input2: " << input2->name() << "\n";
+    gradNodeMap[input1] = outputGrad;
+    gradNodeMap[input2] = outputGrad;
+
+}
+

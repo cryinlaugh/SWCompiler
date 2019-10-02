@@ -295,6 +295,9 @@ public:
         this->_outputNDims.push_back(2);
     };
     ~ElementAddOp();
+    void autoDiff(IRGraph* graph,
+        IRNode* opNode,
+        std::unordered_map<IRNode*, IRNode*>&gradNodeMap);
     void destroy() {};
 };
 
@@ -536,6 +539,7 @@ class Conv2dGradOp : public Op {
 
 class BatchNormalizationOp : public Op {
     float epsilon_;
+    float _momentum; 
 
 public:
     BatchNormalizationOp(float eps)
@@ -543,10 +547,43 @@ public:
         epsilon_ = eps;
         // TODO : dims of input
     }
+
+    BatchNormalizationOp(float eps, float mom)
+        : Op(DL_OP, 5, 1, std::string("BatchNormalization")) {
+        epsilon_ = eps;
+        _momentum = mom;
+        // TODO : dims of input
+    }
+
     float getEpsilon() {
         return epsilon_;
     }
+
+    float getMomentum() {
+        return _momentum;
+    }
+
+    void autoDiff(IRGraph* graph,
+        IRNode* opNode,
+        std::unordered_map<IRNode*, IRNode*>&gradNodeMap);
+
     ~BatchNormalizationOp();
+    void destroy() {}
+};
+
+class BatchNormalizationGradOp : public Op {
+    float epsilon_;
+    float _momentum; 
+public:
+    BatchNormalizationGradOp(float eps)
+        : Op(DL_OP, 5, 3, std::string("BatchNormalization")) {
+        // TODO : dims of input
+    }
+    BatchNormalizationGradOp(float eps, float mom)
+        : Op(DL_OP, 5, 3, std::string("BatchNormalization")) {
+        // TODO : dims of input
+    }
+    ~BatchNormalizationGradOp();
     void destroy() {}
 };
 

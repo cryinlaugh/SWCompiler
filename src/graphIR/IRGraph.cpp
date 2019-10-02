@@ -300,6 +300,39 @@ void IRGraph::initTensorNodes() {
                     out->setTensor(new Tensor({idims[0], idims[1]}));
                     out->setTensor(new Tensor({idims[0], ohw[0], ohw[1], wdims[0]}));
                 }
+                if(auto *conv = dynamic_cast<ElementAddOp *>(op)) {
+                    auto idims1 = ((TensorNode *)node->getParentNode(0))->getDims(); // B, D
+                    auto idims2 = ((TensorNode *)node->getParentNode(1))->getDims(); // B, D
+
+                    for (size_t dim_index = 0; dim_index < idims1.size(); dim_index++) {
+                        if (idims1[dim_index] != idims2[dim_index]) {
+                            printf("Not the same dim, ElementAdd wrong!\n");
+                            break;
+                        }
+                    }
+                    auto *out = (TensorNode *)node->getChildNode(0);
+                    out->getTensor()->getTensorShape()->setShape(idims1);
+                }
+                if(auto *conv = dynamic_cast<BatchNormalizationOp *>(op)) {
+                    auto idims = ((TensorNode *)node->getParentNode(0))->getDims(); // B, D
+                    std::vector<size_t> dimD; 
+
+                    for (size_t dim_index = 1; dim_index < idims.size(); dim_index++) {
+                        dimD.push_back(idims[dim_index]);
+                    }
+
+                    auto *bnScale = (TensorNode *)node->getParentNode(1);
+                    auto *bnShift = (TensorNode *)node->getParentNode(2);
+                    auto *bnRunningVar = (TensorNode *)node->getParentNode(3);
+                    auto *bnRunningMean = (TensorNode *)node->getParentNode(4);
+                    bnScale->getTensor()->getTensorShape()->setShape({dimD[2]});
+                    bnShift->getTensor()->getTensorShape()->setShape({dimD[2]});
+                    bnRunningVar->getTensor()->getTensorShape()->setShape({dimD[2]});
+                    bnRunningMean->getTensor()->getTensorShape()->setShape({dimD[2]});
+                    
+                    auto *out = (TensorNode *)node->getChildNode(0);
+                    out->getTensor()->getTensorShape()->setShape(idims);
+                }
                 if(auto *pool = dynamic_cast<MaxPoolOp *>(op)) {
                     auto idims = ((TensorNode *)node->getParentNode(0))->getDims();
                     auto kernels = pool->getKernels();

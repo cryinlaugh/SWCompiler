@@ -87,6 +87,7 @@ void AutodiffPass::run(IRGraph* graph_train)
 
     //node autodiff
     for (auto it = topo_nodes.rbegin(); it != topo_nodes.rend(); it++) {
+       
         IRNode* irnode = *it;
        
         // if tensorNode build new grad tensorNode then add 
@@ -108,6 +109,8 @@ void AutodiffPass::run(IRGraph* graph_train)
         //        << "\t" << it.first->name() << "\t" << it.second->name() << "\n";
         //}
     }
+
+    graph_train->updateTopology();
 
 }
 
