@@ -107,32 +107,42 @@ void ParallelCodegen::emitExecute() {
     if (config_.train_mode) {
         TensorNode *label = graph_->getTrainLabelNode();
         TensorNode *data = graph_->getTrainDataNode();
-        if(!tensors_name_map_.count(label->getTensor())) {
-            SWLOG_DEBUG(4) << "label tensor " << label->name() << " " << label->getTensor() << " not in map ...\n";
-            exit(0);
-        }
-        if(!tensors_name_map_.count(data->getTensor())) {
-            SWLOG_DEBUG(4) << "data tensor " << data->name() << " " << data->getTensor() << " not in map ...\n";
-            exit(0);
-        }
+        std::string label_var;
+        std::string data_var;
 
-        std::string label_var = tensors_name_map_.at(label->getTensor());
-        std::string data_var = tensors_name_map_.at(data->getTensor());
+        // in benchmark mode, we suppose parallel io is supported, then,
+        // original label and data node may be eliminated in IRGraph::elimRedundantScatter()
+        if(!config_.benchmark) {
+             if(!tensors_name_map_.count(label->getTensor())) {
+                SWLOG_DEBUG(10) << "label tensor " << label->name() << " " << label->getTensor() << " not in map ...\n";
+                exit(0);
+            }
+            if(!tensors_name_map_.count(data->getTensor())) {
+                SWLOG_DEBUG(10) << "data tensor " << data->name() << " " << data->getTensor() << " not in map ...\n";
+                exit(0);
+            }
+
+            label_var = tensors_name_map_.at(label->getTensor());
+            data_var = tensors_name_map_.at(data->getTensor());
+        }
+       
 
         TrainingConfig tconfig = config_.train_config;
         tconfig.batch = data->getDims()[0];
 
-        writer_ << "std::string train_data_file = \""
-                << tconfig.train_data_file << "\";\n";
-        writer_ << "DataLoader loader("
-            << "train_data_file, "
-            << getBytesProtoString(tconfig.label_bytes) << ", "
-            << getBytesProtoString(tconfig.data_bytes) << ", "
-            << tconfig.max_epoch << ", "
-            << tconfig.train_data_samples << ", "
-            << getInitialLizerString(label->getDims()) << ", "
-            << getInitialLizerString(data->getDims())
-            << ");\n";
+        if(!config_.benchmark) {
+            writer_ << "std::string train_data_file = \""
+                    << tconfig.train_data_file << "\";\n";
+            writer_ << "DataLoader loader("
+                << "train_data_file, "
+                << getBytesProtoString(tconfig.label_bytes) << ", "
+                << getBytesProtoString(tconfig.data_bytes) << ", "
+                << tconfig.max_epoch << ", "
+                << tconfig.train_data_samples << ", "
+                << getInitialLizerString(label->getDims()) << ", "
+                << getInitialLizerString(data->getDims())
+                << ");\n";
+        }
 
         size_t max_iter = tconfig.max_iters==0 ?
                 (tconfig.train_data_samples * tconfig.max_epoch / tconfig.batch) : tconfig.max_iters;
@@ -150,13 +160,14 @@ void ParallelCodegen::emitExecute() {
         writer_.indentInc();
 
         
-        if(config_.benchmark) {
+        if(!config_.benchmark) {
+            writer_ << "loader.next(" << label_var << ", " << data_var
+                << ");\n";
+        } else {
             writer_ << "// batch load disabled in benchmark mode\n";
-            writer_ << "// ";
         }
 
-        writer_ << "loader.next(" << label_var << ", " << data_var
-                << ");\n";
+        
 
         writer_.indentDec();
         writer_ << "} // if rank\n";

@@ -49,6 +49,7 @@ TensorNode *TensorNode::deepClone() const {
     tn->setTensor(tensor);
     tn->setLabel(getLabel()); // mainly for training flag
     tn->setExternal(isExternal());
+    tn->setTilingLabel(_tilingLabel);
     return tn;
 }
 
