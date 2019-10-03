@@ -285,6 +285,41 @@ size_t ReduceOp::getSimCost(size_t bytes, Config& config, int axis) {
     return bytes;
 }
 
+size_t BroadcastOp::getCost(OpNode *node, Config& config) {
+    (void)config;
+    auto *to = (TensorNode*)node->getChildNode(0);
+    size_t size = to->getTensor()->getSizeInBytes(); 
+
+    // -2: master reduce size to all workers
+    return size; 
+}
+
+std::string BroadcastOp::getCostTrace(OpNode *node, Config& config) {
+    (void)config;
+
+    std::ostringstream stream;
+
+    std::string name = node->name();
+    auto *from = (TensorNode*)node->getParentNode(0);
+    auto *to = (TensorNode*)node->getChildNode(0);
+
+    size_t  comm = getCost(node, config);
+
+    stream << name << " " << "Broadcast"<< " " << comm << " ";
+
+
+    stream << dumpDims(from->getDims()) << " "
+        << dumpDims(to->getDims()) << " "
+        << -2 << " " << "_" << "\n";
+
+    return stream.str();
+}
+
+size_t BroadcastOp::getSimCost(size_t bytes, Config& config, int axis) {
+    (void) axis;
+    (void) config;
+    return bytes;
+}
 
 } // namespace op
 } // namespace swc

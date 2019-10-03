@@ -463,6 +463,16 @@ public:
     static size_t getSimCost(size_t bytes, Config& config, int strategy);
 };
 
+class BroadcastOp : public Op {
+
+public:
+    BroadcastOp() : Op(DL_OP, 0, 0, "Broadcast") {}
+    ~BroadcastOp();
+    size_t getCost(OpNode *, Config& config) override;
+    std::string getCostTrace(OpNode*, Config& config) override;
+    static size_t getSimCost(size_t bytes, Config& config, int strategy);
+};
+
 class TransformOp: public Op {
     int preAxis_{-1};
     int postAxis_{-1};
