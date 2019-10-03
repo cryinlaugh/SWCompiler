@@ -63,8 +63,8 @@ class Op {
     // because different operators do not derive from OpNode, but are different
     // in Op member
     // if use virtual foo() = 0; then all Op must derive this
-    virtual size_t getCost(OpNode *) { return 0; }
-    virtual std::string getCostTrace(OpNode*) { return "";}
+    virtual size_t getCost(OpNode *, Config& config) { return 0; }
+    virtual std::string getCostTrace(OpNode*, Config& config) { return "";}
 
 
     inline const std::string getOpName() { return _opClassName; }

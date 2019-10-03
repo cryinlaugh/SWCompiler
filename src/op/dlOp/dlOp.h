@@ -409,11 +409,11 @@ public:
     ~ScatterOp();
 
     std::string getOpInfo() override;
-    size_t getCost(OpNode *) override;
-    std::string getCostTrace(OpNode*) override;
+    size_t getCost(OpNode *, Config& config) override;
+    std::string getCostTrace(OpNode*, Config& config) override;
 
     // bytes origin tensor
-    static size_t getSimCost(size_t bytes, int degree, int strategy);
+    static size_t getSimCost(size_t bytes, Config& config, int strategy);
 
     void setOffset(size_t offset) { offset_ = offset; }
     size_t getOffset() { return offset_; }
@@ -438,9 +438,9 @@ public:
     ~GatherOp();
 
     std::string getOpInfo() override;
-    size_t getCost(OpNode *) override;
-    std::string getCostTrace(OpNode*) override;
-    static size_t getSimCost(size_t bytes, int degree, int strategy);
+    size_t getCost(OpNode *, Config& config) override;
+    std::string getCostTrace(OpNode*, Config& config) override;
+    static size_t getSimCost(size_t bytes, Config& config, int strategy);
 
     void setOffset(size_t offset) { offset_ = offset; }
     size_t getOffset() { return offset_; }
@@ -458,9 +458,9 @@ public:
     ReduceOp() : Op(DL_OP, 0, 0, "Reduce") {}
     ~ReduceOp();
     // std::string getOpInfo() override;
-    size_t getCost(OpNode *) override;
-    std::string getCostTrace(OpNode*) override;
-    static size_t getSimCost(size_t bytes, int degree, int strategy);
+    size_t getCost(OpNode *, Config& config) override;
+    std::string getCostTrace(OpNode*, Config& config) override;
+    static size_t getSimCost(size_t bytes, Config& config, int strategy);
 };
 
 class TransformOp: public Op {
@@ -474,10 +474,10 @@ public:
     ~TransformOp() {}
 
     std::string getOpInfo() override;
-    size_t getCost(OpNode *) override;
-    std::string getCostTrace(OpNode*) override;
+    size_t getCost(OpNode *, Config& config) override;
+    std::string getCostTrace(OpNode*, Config& config) override;
 
-    static size_t getSimCost(size_t bytes, int degree, int pre_strategy, int post_strategy);
+    static size_t getSimCost(size_t bytes, Config& config, int pre_strategy, int post_strategy);
 
     void setPreAxis(int axis) { preAxis_ = axis; }
     int getPreAxis() { return preAxis_; }

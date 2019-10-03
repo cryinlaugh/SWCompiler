@@ -201,7 +201,8 @@ public:
 
     float getCommunicationCost(OpNode * opNode, std::vector<int> opStrategy){
         float  communicateCost =0.0;
-        int degree = _irgraph->getConfig().mpi_size;
+        auto config = _irgraph->getConfig();
+
         for(unsigned long i=0;i<opNode->getParentNodes().size();i++){
             int curTiling = opStrategy[i];          
             TensorNode * curTensorNode = dynamic_cast<TensorNode*>(opNode->getParentNode(i)); 
@@ -215,10 +216,10 @@ public:
                }else{
                    int smallestTiling = *std::min_element(preTilings.begin(),preTilings.end());
                    //we think the smallest communicatecost comes from the smallest tiling number 
-                    communicateCost+=TransformOp::getSimCost(curTensorNode->getTensor()->getSizeInBytes(),degree,smallestTiling,curTiling);
+                    communicateCost+=TransformOp::getSimCost(curTensorNode->getTensor()->getSizeInBytes(), config, smallestTiling,curTiling);
                } 
             }else{
-                communicateCost+=ScatterOp::getSimCost(curTensorNode->getTensor()->getSizeInBytes(),degree,curTiling);
+                communicateCost+=ScatterOp::getSimCost(curTensorNode->getTensor()->getSizeInBytes(), config, curTiling);
                 std::set<int> preTilings;
                 preTilings.insert(curTiling);
                 _inTensorStrategiesMap[curTensorNode]=preTilings;

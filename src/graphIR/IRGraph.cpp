@@ -602,16 +602,16 @@ size_t IRGraph::getCommCost() {
         // split these comm ops, because code may be different 
         // in the future
         if(dynamic_cast<ScatterOp*>(opnode->getOp()) ) {
-            cost += opnode->getCost(); 
+            cost += opnode->getCost(_config); 
         }
         if(dynamic_cast<GatherOp*>(opnode->getOp()) ) {
-            cost += opnode->getCost(); 
+            cost += opnode->getCost(_config); 
         }
         if(dynamic_cast<ReduceOp*>(opnode->getOp()) ) {
-            cost += opnode->getCost(); 
+            cost += opnode->getCost(_config); 
         }
         if(dynamic_cast<TransformOp*>(opnode->getOp()) ) {
-            cost += opnode->getCost(); 
+            cost += opnode->getCost(_config); 
         }
     }
 
@@ -628,7 +628,7 @@ std::string IRGraph::getCommTrace() {
             || dynamic_cast<ReduceOp*>(opnode->getOp()) 
             || dynamic_cast<TransformOp*>(opnode->getOp()) ) {
 
-            trace += opnode->getCostTrace();
+            trace += opnode->getCostTrace(_config);
         }
     }
     return trace;

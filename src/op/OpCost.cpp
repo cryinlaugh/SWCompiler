@@ -28,7 +28,9 @@ std::string dumpDims(std::vector<T> vec) {
     return str.substr(0, str.length() - 1) + ")";
 }
 
-size_t ScatterOp::getCost(OpNode *node){
+// config tell us about network topology etc.
+size_t ScatterOp::getCost(OpNode *node, Config& config){
+    (void) config;
     auto *from = (TensorNode*)node->getParentNode(0);
     size_t size = from->getTensor()->getSizeInBytes(); 
 
@@ -38,20 +40,20 @@ size_t ScatterOp::getCost(OpNode *node){
 }
 
 // axis(strategy): -1 rep , i scatter 
-size_t ScatterOp::getSimCost(size_t bytes, int degree, int axis) {
-    (void)degree;
+size_t ScatterOp::getSimCost(size_t bytes, Config& config, int axis) {
+    (void)config;
     (void)axis;
     return bytes; 
 }
 
-std::string ScatterOp::getCostTrace(OpNode *node){
+std::string ScatterOp::getCostTrace(OpNode *node, Config& config){
     std::ostringstream stream;
 
     std::string name = node->name();
     auto *from = (TensorNode*)node->getParentNode(0);
     auto *to = (TensorNode*)node->getChildNode(0);
     
-    size_t  comm = getCost(node);
+    size_t  comm = getCost(node, config);
 
     int axis = this->axis_;
 
@@ -68,7 +70,8 @@ std::string ScatterOp::getCostTrace(OpNode *node){
     return stream.str();
 }
 
-size_t GatherOp::getCost(OpNode *node) {
+size_t GatherOp::getCost(OpNode *node, Config& config) {
+    (void) config;
     auto *to = (TensorNode*)node->getChildNode(0);
     size_t size = to->getTensor()->getSizeInBytes(); 
 
@@ -77,14 +80,14 @@ size_t GatherOp::getCost(OpNode *node) {
     return size; 
 }
 
-std::string GatherOp::getCostTrace(OpNode *node) {
+std::string GatherOp::getCostTrace(OpNode *node, Config& config) {
     std::ostringstream stream;
 
     std::string name = node->name();
     auto *from = (TensorNode*)node->getParentNode(0);
     auto *to = (TensorNode*)node->getChildNode(0);
 
-    size_t  comm = getCost(node);
+    size_t  comm = getCost(node, config);
 
     int axis = this->axis_;
 
@@ -101,13 +104,14 @@ std::string GatherOp::getCostTrace(OpNode *node) {
     return stream.str();
 }
 
-size_t GatherOp::getSimCost(size_t bytes, int degree, int axis) {
+size_t GatherOp::getSimCost(size_t bytes, Config& config, int axis) {
+    (void) config;
     (void) axis;
-    (void) degree;
     return bytes;
 }
 
-size_t TransformOp::getCost(OpNode *node) {
+size_t TransformOp::getCost(OpNode *node, Config& config) {
+    (void) config;
     auto *from = (TensorNode*)node->getParentNode(0);
     size_t size = from->getTensor()->getSizeInBytes(); 
 
@@ -147,7 +151,8 @@ size_t TransformOp::getCost(OpNode *node) {
 
 
 
-std::string TransformOp::getCostTrace(OpNode *node) {
+std::string TransformOp::getCostTrace(OpNode *node, Config& config) {
+    (void)config;
     std::ostringstream stream;
 
     std::string name = node->name();
@@ -208,7 +213,9 @@ std::string TransformOp::getCostTrace(OpNode *node) {
 
 // mind that size is original tensor
 // actual size of para_tensor should be size/p
-size_t TransformOp::getSimCost(size_t bytes, int degree, int pre, int post) {
+size_t TransformOp::getSimCost(size_t bytes, Config& config, int pre, int post) {
+    int degree = config.mpi_size; 
+
     // para_tensor size
     size_t size = bytes / degree;
 
@@ -242,7 +249,8 @@ size_t TransformOp::getSimCost(size_t bytes, int degree, int pre, int post) {
     
 }
 
-size_t ReduceOp::getCost(OpNode *node) {
+size_t ReduceOp::getCost(OpNode *node, Config& config) {
+    (void)config;
     auto *to = (TensorNode*)node->getChildNode(0);
     size_t size = to->getTensor()->getSizeInBytes(); 
 
@@ -250,14 +258,16 @@ size_t ReduceOp::getCost(OpNode *node) {
     return size; 
 }
 
-std::string ReduceOp::getCostTrace(OpNode *node) {
+std::string ReduceOp::getCostTrace(OpNode *node, Config& config) {
+    (void)config;
+
     std::ostringstream stream;
 
     std::string name = node->name();
     auto *from = (TensorNode*)node->getParentNode(0);
     auto *to = (TensorNode*)node->getChildNode(0);
 
-    size_t  comm = getCost(node);
+    size_t  comm = getCost(node, config);
 
     stream << name << " " << "Reduce"<< " " << comm << " ";
 
@@ -269,9 +279,9 @@ std::string ReduceOp::getCostTrace(OpNode *node) {
     return stream.str();
 }
 
-size_t ReduceOp::getSimCost(size_t bytes, int degree, int axis) {
+size_t ReduceOp::getSimCost(size_t bytes, Config& config, int axis) {
     (void) axis;
-    (void) degree;
+    (void) config;
     return bytes;
 }
 
