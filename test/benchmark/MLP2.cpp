@@ -93,10 +93,12 @@ int main() {
 
 
     Config config;
+
     config.train_mode = true;
     // config.mkldnn = true;
     config.mpi = true;
     config.mpi_size = 4;
+
     config.train_config.optimizer = "sgd";
     config.train_config.train_data_file = "mnist_labels_images.bin";
     config.train_config.label_bytes = BytesProto::ONE_BYTE_AS_INT;
@@ -105,13 +107,20 @@ int main() {
     // config.train_config.snapshot = 1000;
     config.train_config.max_iters = 100;
     config.train_config.display = 50;
+
     //config.compute_op_annotation = true;
     //config.comm_op_annotation = true;
+    
     config.parallel_preference = COMM_SAVING;
     // config.parallel_preference = MEM_SAVING;
-    config.force_data_parallel = true;
+     
+    /*when benchmark enabled, disable emit some code*/
     config.benchmark = true;
+    /* not do lowering for node liek FC, FCGrad etc.*/
     config.enable_lowering = false;
+
+    /* about parallel strategy*/
+    config.force_data_parallel = true;
 
     mlp->setConfig(config);
 

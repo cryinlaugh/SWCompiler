@@ -79,6 +79,8 @@ struct Config {
     // for parallel strategy selection
     ParallelStrategy parallel_preference{MEM_SAVING}; 
     bool force_data_parallel{false};
+    bool handcraft_parallel{false};
+    bool geneticalgo_opt_parallel{false};
 
     bool enable_lowering{true};
 

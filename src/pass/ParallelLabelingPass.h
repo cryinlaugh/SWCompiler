@@ -244,10 +244,17 @@ public:
         
         std::vector<std::vector<int>> udef;
 
+        // all 0 for mlp
         std::vector<int> init0(sss->getOpNum());
         for(auto &op_stgy_idx : init0)
             op_stgy_idx = 0;
         udef.push_back(init0);
+
+        // for lenet, some different 
+        // mind that this will not get DP, because we cann not describe 
+        // do not parallelize SGD when search strategy now (possible fix is add this to strategy)
+        std::vector<int> lenet_init{0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0};
+        udef.push_back(lenet_init);
         
 
         GeneticSearch ga(sss->getGeneSpace(),
@@ -256,7 +263,7 @@ public:
             0.5, /*crossOverRate*/
             0.1, /*mutationRate*/
             20, /*numberElites*/
-            5, /*numGenerations*/
+            200, /*numGenerations*/
             sss /*StrategySearchSpace*/
             );
         
@@ -269,11 +276,16 @@ public:
     void run() {
         SWLOG_DEBUG(4) << "Start Paralleling Pass." << std::endl;
 
-        auto parallel_degree = _graph->getConfig().mpi_size;
+        auto config = _graph->getConfig();
+
+        auto parallel_degree = config.mpi_size;
         assert(parallel_degree>1 && "error, degree of parallellism unset, please set config.mpi_size");
 
-        // runLabeling(parallel_degree);
-        runOptimizedLabeling(parallel_degree);
+        if(config.geneticalgo_opt_parallel) {
+            runOptimizedLabeling(parallel_degree);
+        }else {
+            runLabeling(parallel_degree);
+        }
 
         //get strategy
         SWLOG_DEBUG(4) << "Finish Paralleling pass. " << std::endl;
