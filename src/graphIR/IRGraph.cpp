@@ -645,9 +645,12 @@ void IRGraph::resetParallelStrategy() {
 
 void IRGraph::elimRedundantScatter() {
     for(auto &opnode : _ops) {
-        if(!dynamic_cast<ScatterOp*>(opnode->getOp()) ) {
+        auto *scatter = dynamic_cast<ScatterOp *>(opnode->getOp());
+        if(!scatter) {
             continue;
         }
+        if(scatter->getAxis() == -1)
+            continue;
 
         // parent tensornode
         auto *ptnode  = (TensorNode*)opnode->getParentNode(0); 
