@@ -1778,9 +1778,13 @@ void Codegen::emitFuncCall(OpNode *op) {
     if ((oplabel->getTypeNameLabel()) == "Conv2dGrad") {
         auto *input = ((TensorNode *)op->getParentNode(0))->getTensor();
         auto *filter = ((TensorNode *)op->getParentNode(1))->getTensor();
+        /*
         auto *bias = ((TensorNode *)op->getParentNode(2))->getTensor();
         auto *out = ((TensorNode *)op->getParentNode(3))->getTensor();
         auto *outputG = ((TensorNode *)op->getParentNode(4))->getTensor();
+        */
+        auto *out = ((TensorNode *)op->getParentNode(2))->getTensor();
+        auto *outputG = ((TensorNode *)op->getParentNode(3))->getTensor();
 
         auto *inputG = ((TensorNode *)op->getChildNode(0))->getTensor();
         auto *filterG = ((TensorNode *)op->getChildNode(1))->getTensor();
@@ -1803,7 +1807,7 @@ void Codegen::emitFuncCall(OpNode *op) {
         writer_ << emitArrayDefAndInit(iDims, input->getDims());
         writer_ << emitArrayDefAndInit(oDims, out->getDims());
         writer_ << emitArrayDefAndInit(fDims, filter->getDims());
-        writer_ << emitArrayDefAndInit(bDims, bias->getDims());
+        // writer_ << emitArrayDefAndInit(bDims, bias->getDims());
         writer_ << emitArrayDefAndInit(kernelsVar, kernels);
         writer_ << emitArrayDefAndInit(stridesVar, strides);
         writer_ << emitArrayDefAndInit(padsVar, pads);
@@ -2126,8 +2130,9 @@ void Codegen::emitFuncCall(OpNode *op) {
     }
 
     if ((oplabel->getTypeNameLabel()) == "ReluGrad") {
+        // ReluGrad src dstGrad -> srGrad (no link to orig_output)
         auto *input = ((TensorNode *)op->getParentNode(0))->getTensor();
-        auto *outputG = ((TensorNode *)op->getParentNode(2))->getTensor();
+        auto *outputG = ((TensorNode *)op->getParentNode(1))->getTensor();
         auto *inputG = ((TensorNode *)op->getChildNode(0))->getTensor();
 
         size_t size = input->size();

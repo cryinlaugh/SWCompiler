@@ -26,7 +26,7 @@ vector<vector<int> > ParallelGen::generateStgy (op::Op* testOp) {
     for(int iterT = 0; iterT < (testOp->_nInputTensor+testOp->_nOutputTensor); iterT ++){
         for(size_t dimIdx = 0; dimIdx < testOp->_einRep[iterT].size(); dimIdx ++){
             char dim_rep = testOp->_einRep[iterT][dimIdx];
-            if(dim_rep == '0')
+            if(dim_rep=='0' || dim_rep=='_')
                 continue;
             if (comDim.find(testOp->_einRep[iterT][dimIdx]) == comDim.end()){
                 comDim[testOp->_einRep[iterT][dimIdx]] = 1;

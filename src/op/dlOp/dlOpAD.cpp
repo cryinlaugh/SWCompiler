@@ -40,7 +40,10 @@ void MatrixMatrixFCBiasOp::autoDiff(IRGraph* graph,
 
     auto *N = new OpNode(opNode->name() + "_grad",
             new MatrixMatrixFCBiasGradOp());
-    N->exlinkUpperNode(input, weight, bias, output, outputGrad);
+
+    // in current implementation, redundant link to output 
+    // N->exlinkUpperNode(input, weight, bias, output, outputGrad);
+    N->exlinkUpperNode(input, weight, bias, outputGrad);
 
     gradNodeMap[opNode] = N;
     graph->pushOpNode(N);
@@ -110,7 +113,7 @@ void ReluOp::autoDiff(IRGraph* graph,
 
     auto *N =
         new OpNode(opNode->name() + "_grad", new ReluGradOp());
-    N->exlinkUpperNode(input, output, outputGrad);
+    N->exlinkUpperNode(input, outputGrad);
 
     gradNodeMap[opNode] = N;
     graph->pushOpNode(N);
@@ -290,7 +293,7 @@ void Conv2dOp::autoDiff(IRGraph* graph,
     SWLOG_DEBUG(4) << "autoDiff: " << _opClassName   << std::endl;
     auto *input = opNode->getParentNode(0);
     auto *weight = opNode->getParentNode(1);
-    auto *bias = opNode->getParentNode(2);
+    // auto *bias = opNode->getParentNode(2);
     auto *output = opNode->getChildNode(0);
 
     auto *conv_op = (Conv2dOp*)((OpNode*)opNode)->getOp();
@@ -304,7 +307,8 @@ void Conv2dOp::autoDiff(IRGraph* graph,
 
     auto *N = new OpNode(opNode->name() + "_grad",
             new Conv2dGradOp(kernels, strides, pads));
-    N->exlinkUpperNode(input, weight, bias, output, outputGrad);
+    // N->exlinkUpperNode(input, weight, bias, output, outputGrad);
+    N->exlinkUpperNode(input, weight, output, outputGrad);
 
     gradNodeMap[opNode] = N;
     graph->pushOpNode(N);
