@@ -257,7 +257,9 @@ class GeneticSearch{
 private:
     mutable std::mt19937_64 rng{random_device{}()};
     std::vector<int> _geneSpace;    
-    using Population = std::vector<std::vector<int>>;
+    using IdentityWithFit = std::pair<std::vector<int>, float>;
+    //using Population = std::vector<std::vector<int>>;
+    using Population = std::vector<IdentityWithFit>;
     Population _population;
     size_t _populationSize;
     double _crossOverRate;
@@ -299,7 +301,7 @@ private:
     void mutate(std::vector<int>& identity);
     void breed();
 
-     double getFitness(const std::vector<int>& identity) {
+    double getFitness(const std::vector<int>& identity) {
         // return _sss->getFitness(identity); 
         return _sss->getFitnessByGraphTransform(identity); 
     }
@@ -325,7 +327,7 @@ public:
         assert(identities.size() < _populationSize && "init identities num > populationSize"); 
         size_t idx = 0;
         for(auto identity : identities) {
-            _population.push_back(identity); 
+            _population.push_back(std::make_pair(identity, 0)); 
             idx++;
         }
 
@@ -334,7 +336,7 @@ public:
             while(!isValid(identity)) {
                 identity = randomIdentity();
             }
-            _population.push_back(identity);
+            _population.push_back(std::make_pair(identity, 0));
         }
 
     }
@@ -351,13 +353,13 @@ public:
     }
 
     std::vector<int> getBestIdentity() {
-        return _population.at(0);
+        return _population.at(0).first;
     }
 
     void printTopKIdentity(size_t k) {
         // _population should be ordered
         for(size_t i=0; i<k; i++) {
-            auto &identity = _population.at(i);
+            auto &identity = _population.at(i).first;
             for(auto gene : identity)
                 std::cout << gene << " ";
             std::cout << (size_t)getFitness(identity) << "\n";

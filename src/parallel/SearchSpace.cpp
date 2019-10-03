@@ -13,7 +13,8 @@ std::vector<double> GeneticSearch::getNormAccumFitness() {
     std::vector<double> fit(_populationSize);
     for(size_t i=0; i<_populationSize; i++) {
         auto identity = _population[i];
-        fit[i] = getFitness(identity);
+        // fit[i] = getFitness(identity);
+        fit[i] = identity.second > 0 ? identity.second :getFitness(identity.first); 
     }
 
     // normalize fitness 
@@ -58,15 +59,20 @@ void GeneticSearch::mutate(std::vector<int> & identity) {
 }
 
 void GeneticSearch::breed() {
+    for(auto &identity : _population) {
+        if(identity.second == 0)
+            identity.second = getFitness(identity.first);
+    }
+
     std::sort(
       _population.begin(),
       _population.end(),
-      [this](const std::vector<int>& a,
-         const std::vector<int>& b) {
+      [](const IdentityWithFit& a,
+         const IdentityWithFit& b) {
         
         // when fitnees return comm, <
         // when fitnees return time, >
-        return this->getFitness(a) < this->getFitness(b);
+        return a.second < b.second;
     });
 
     // elites directly enter next generation
@@ -97,11 +103,11 @@ void GeneticSearch::breed() {
         bool shouldCross = disc_dist(rng);
         if(shouldCross) {
 
-            auto child = crossover(p1, p2);
+            auto child = crossover(p1.first, p2.first);
 
             mutate(child);
             
-            children.push_back(child);
+            children.push_back(std::make_pair(child, 0));
         }
     }
     _population = children;
