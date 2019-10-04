@@ -9,7 +9,8 @@
 
 
 #include "comSizeModel.h"
-#include <math.h>
+#include <cmath>
+#include <cassert>
 
 //The first type of cost model:
 size_t  comSizeModel1(size_t size, COMM_TYPE type, Config& config)
