@@ -329,6 +329,7 @@ public:
         for(auto identity : identities) {
             if(identity.size() != geneSpace.size())
                 continue;
+
             _population.push_back(std::make_pair(identity, 0)); 
             idx++;
         }
