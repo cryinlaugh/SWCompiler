@@ -121,6 +121,8 @@ int main() {
 
     /* about parallel strategy*/
     config.force_data_parallel = true;
+    // config.geneticalgo_opt_parallel = true;
+    // config.handcraft_parallel = true;
 
     mlp->setConfig(config);
 

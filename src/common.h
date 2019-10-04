@@ -29,6 +29,14 @@ enum BytesProto {
     FOUR_BYTES_AS_FLOAT
 };
 
+// enum type may not be enough for description
+enum NetTopology {
+    FC_MESH_NET, 
+    STAR_NET,
+    RING_NET,
+    TREE_NET
+};
+
 
 struct TrainingConfig {
     std::string optimizer;
@@ -90,6 +98,8 @@ struct Config {
 
     // if true, annotate dataloader and (TBD ?emitTensorInitializations)
     bool benchmark{false};
+
+    NetTopology net_topo{FC_MESH_NET};
 };
 
 enum OpType { TENSOR_OP, BASIC_OP, DL_OP };

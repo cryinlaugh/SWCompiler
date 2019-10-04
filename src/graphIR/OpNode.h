@@ -72,10 +72,10 @@ class OpNode : public IRNode {
     }
     StrategyLabel* getStrategyLabel() { return _strategyLabel; }
 
-    size_t getCost() {
-        return op_->getCost(this);
+    size_t getCost(Config& config) {
+        return op_->getCost(this, config);
     } 
-    std::string getCostTrace() { return op_->getCostTrace(this); }
+    std::string getCostTrace(Config &config) { return op_->getCostTrace(this, config); }
 
   private:
     Op *op_;
