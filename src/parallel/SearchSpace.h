@@ -33,7 +33,7 @@ public:
     OpStrategy(OpNode * opNode, int p){
         
         _opNode = opNode;
-        std::vector<std::vector<int> > strategies = ParallelGen::generateStgy(opNode->getOp());
+        std::vector<std::vector<int> > strategies = ParallelGen::generateStgy(opNode);
 
         //check legal 
         // channel % degree may not be zero
@@ -327,6 +327,8 @@ public:
         assert(identities.size() < _populationSize && "init identities num > populationSize"); 
         size_t idx = 0;
         for(auto identity : identities) {
+            if(identity.size() != geneSpace.size())
+                continue;
             _population.push_back(std::make_pair(identity, 0)); 
             idx++;
         }

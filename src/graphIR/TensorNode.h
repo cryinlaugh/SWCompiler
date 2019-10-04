@@ -51,6 +51,7 @@ class TensorNode : public IRNode {
 
     DataType getDataType() { return tensor_->getDataType(); }
     std::vector<unsigned long> getDims() { return tensor_->getDims(); }
+    size_t getNDim() { return tensor_->getNDim(); }
     TensorNode *clone() const;
     TensorNode *deepClone() const;
     std::string toString() const;
