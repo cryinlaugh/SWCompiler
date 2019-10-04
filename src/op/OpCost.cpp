@@ -6,14 +6,20 @@
  ************************************************************************/
 #include "dlOp/dlOp.h"
 #include "basicOp/basicOps.h"
-#include "../graphIR/IRNode.h"
-#include "../graphIR/OpNode.h"
-#include "../graphIR/TensorNode.h"
+#include "graphIR/IRNode.h"
+#include "graphIR/OpNode.h"
+#include "graphIR/TensorNode.h"
+
+#include "op/comSizeModel.h"
+
 #include <sstream>
 #include <algorithm>
 
+#define comSizeModel comSizeModel2
+
 namespace swc {
 namespace op {
+
 
 template <typename T>
 std::string dumpDims(std::vector<T> vec) {
@@ -36,14 +42,14 @@ size_t ScatterOp::getCost(OpNode *node, Config& config){
 
     //  i: master send size/p to each worker
     // -2: master broadcast size to all workers
-    return size; 
+    return comSizeModel(size, SCATTER, config);
 }
 
 // axis(strategy): -1 rep , i scatter 
 size_t ScatterOp::getSimCost(size_t bytes, Config& config, int axis) {
     (void)config;
     (void)axis;
-    return bytes; 
+    return comSizeModel(bytes, SCATTER, config);
 }
 
 std::string ScatterOp::getCostTrace(OpNode *node, Config& config){
@@ -77,7 +83,7 @@ size_t GatherOp::getCost(OpNode *node, Config& config) {
 
     //  i: master recv size/p to each worker
     // -2: master reduce size to all workers
-    return size; 
+    return comSizeModel(size, GATHER, config);
 }
 
 std::string GatherOp::getCostTrace(OpNode *node, Config& config) {
@@ -107,7 +113,7 @@ std::string GatherOp::getCostTrace(OpNode *node, Config& config) {
 size_t GatherOp::getSimCost(size_t bytes, Config& config, int axis) {
     (void) config;
     (void) axis;
-    return bytes;
+    return comSizeModel(bytes, GATHER, config);
 }
 
 size_t TransformOp::getCost(OpNode *node, Config& config) {
@@ -123,28 +129,28 @@ size_t TransformOp::getCost(OpNode *node, Config& config) {
 
     // i->j: each work send and recv size in total (pieces of data) 
     if(pre>=0 && post>=0)
-        comm = size;
+        comm = comSizeModel(size, RECV_SEND, config);
 
     // i->j: master recv size, then broadcast size
     if(pre>=0 && post==-1)
-        comm = size*2;
+        comm = comSizeModel(size, RECV_BCAST, config);
 
     // -2->i: a.master reduce then send size/p to each worker
     //  or b.each worker reduce its own part(not continuous)
     //  we took a but comm has two parts
     if(pre==-2 && post>=0)
-        comm = size*2;   
+        comm = comSizeModel(size, REDUCE_SEND, config);
 
     // -2->-1 a. allreduce size
     // or b. master reduce size, then broadcast size
     if(pre==-2 && post==-1)
-        comm = size;// TODO, 
+        comm = comSizeModel(size, REDUCE_BCAST, config);
 
     // -1->i a. each worker already has replicate,  
     // if continuous, just let post pointer reference to its own part
     // if strided, just memcpy or self sendrecv is ok 
     if(pre==-1 && post>=0)
-        comm = size/p; 
+        comm = comSizeModel(size, SELF_CP, config);
     
     return comm;
 }
@@ -222,28 +228,28 @@ size_t TransformOp::getSimCost(size_t bytes, Config& config, int pre, int post) 
     size_t comm = 0;
     // i->j: each work send and recv size in total (pieces of data) 
     if(pre>=0 && post>=0)
-        comm = size;
+        comm = comSizeModel(size, RECV_SEND, config);
 
     // i->j: master recv size, then broadcast size
     if(pre>=0 && post==-1)
-        comm = size*2;
+        comm = comSizeModel(size, RECV_BCAST, config);
 
     // -2->i: a.master reduce then send size/p to each worker
     //  or b.each worker reduce its own part(not continuous)
     //  we took a, but comm has two parts
     if(pre==-2 && post>=0)
-        comm = size*2;   
+        comm = comSizeModel(size, REDUCE_SEND, config);
 
     // -2->-1 a. allreduce size
     // or b. master reduce size, then broadcast size
     if(pre==-2 && post==-1)
-        comm = size;// TODO, 
+        comm = comSizeModel(size, REDUCE_BCAST, config);
 
     // -1->i a. each worker already has replicate,  
     // if continuous, just let post pointer reference to its own part
     // if strided, just memcpy or self sendrecv is ok 
     if(pre==-1 && post>=0)
-        comm = size/degree; 
+        comm = comSizeModel(size, SELF_CP, config);
     
     return comm;
     
@@ -255,7 +261,7 @@ size_t ReduceOp::getCost(OpNode *node, Config& config) {
     size_t size = to->getTensor()->getSizeInBytes(); 
 
     // -2: master reduce size to all workers
-    return size; 
+    return comSizeModel(size, REDUCE, config);
 }
 
 std::string ReduceOp::getCostTrace(OpNode *node, Config& config) {
@@ -282,7 +288,7 @@ std::string ReduceOp::getCostTrace(OpNode *node, Config& config) {
 size_t ReduceOp::getSimCost(size_t bytes, Config& config, int axis) {
     (void) axis;
     (void) config;
-    return bytes;
+    return comSizeModel(bytes, REDUCE, config);
 }
 
 size_t BroadcastOp::getCost(OpNode *node, Config& config) {
@@ -291,7 +297,7 @@ size_t BroadcastOp::getCost(OpNode *node, Config& config) {
     size_t size = to->getTensor()->getSizeInBytes(); 
 
     // -2: master reduce size to all workers
-    return size; 
+    return comSizeModel(size, BCAST, config);
 }
 
 std::string BroadcastOp::getCostTrace(OpNode *node, Config& config) {
@@ -318,7 +324,7 @@ std::string BroadcastOp::getCostTrace(OpNode *node, Config& config) {
 size_t BroadcastOp::getSimCost(size_t bytes, Config& config, int axis) {
     (void) axis;
     (void) config;
-    return bytes;
+    return comSizeModel(bytes, BCAST, config);
 }
 
 } // namespace op
