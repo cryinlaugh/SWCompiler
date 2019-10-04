@@ -18,7 +18,7 @@ namespace swc{
 
         public:
 
-        static std::vector<std::vector<int> > generateStgy(op::Op* testOp);
+        static std::vector<std::vector<int> > generateStgy(OpNode* node);
         static std::vector<int> generateDataParStgy(OpNode* opnode);
     };
 

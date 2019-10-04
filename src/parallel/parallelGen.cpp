@@ -11,6 +11,7 @@
 #include <vector>
 #include <cassert>
 #include "op/Op.h"
+#include "op/dlOp/dlOp.h"
 #include "graphIR/OpNode.h"
 #include "graphIR/TensorNode.h"
 #include "op/basicOp/basicOps.h"
@@ -19,12 +20,22 @@ using namespace std;
 
 namespace swc{
 
-vector<vector<int> > ParallelGen::generateStgy (op::Op* testOp) {
+vector<vector<int> > ParallelGen::generateStgy (OpNode* node) {
+    auto *testOp = node->getOp();
+
     assert( (testOp->_einOp == 1) && "Not a parallelizable Op!");
 
     std::map<char, int> comDim;
-    for(int iterT = 0; iterT < (testOp->_nInputTensor+testOp->_nOutputTensor); iterT ++){
-        for(size_t dimIdx = 0; dimIdx < testOp->_einRep[iterT].size(); dimIdx ++){
+    int nInput = testOp->_nInputTensor;
+    int nOutput = testOp->_nOutputTensor;
+    for(int iterT = 0; iterT < (nInput+nOutput); iterT ++){
+        size_t dim_size =  testOp->_einRep[iterT].size();
+        if(dynamic_cast<SGDOp*>(testOp)) {
+            auto *tnode = iterT < nInput ? (TensorNode*)node->getParentNode(iterT):
+                (TensorNode*)node->getChildNode(iterT-nInput);
+            dim_size = tnode->getNDim();
+        }
+        for(size_t dimIdx = 0; dimIdx < dim_size; dimIdx ++){
             char dim_rep = testOp->_einRep[iterT][dimIdx];
             if(dim_rep=='0' || dim_rep=='_')
                 continue;

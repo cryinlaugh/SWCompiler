@@ -250,7 +250,7 @@ void MatrixMatrixFCBiasGradOp::einsumLowering(IRGraph *graph, IRNode *node)
     auto *weight = (TensorNode *)node->getParentNode(1);
     auto *bias = (TensorNode *)node->getParentNode(2);
     // auto *output = (TensorNode *)node->getParentNode(3);
-    auto *outputG = (TensorNode *)node->getParentNode(4);
+    auto *outputG = (TensorNode *)node->getParentNode(3);
 
     auto *inputG = (TensorNode *)node->getChildNode(0);
     auto *weightG = (TensorNode *)node->getChildNode(1);

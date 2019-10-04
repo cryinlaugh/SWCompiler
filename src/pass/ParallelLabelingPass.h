@@ -86,7 +86,7 @@ public:
                 continue;
             }
 
-            std::vector<std::vector<int> > strategies = ParallelGen::generateStgy(originNode->getOp());
+            std::vector<std::vector<int> > strategies = ParallelGen::generateStgy(originNode);
             int strategy_size = strategies.size();
             if(strategy_size == 0){
                 *os << originNode->name()<<" get 0 strategies\n";
