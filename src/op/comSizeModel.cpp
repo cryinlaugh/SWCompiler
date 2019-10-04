@@ -54,7 +54,7 @@ size_t  comSizeModel2(size_t size, COMM_TYPE type, Config& config)
 
 //The third type of cost model:
 //  relative communication time with mpi-utilization model and optimization
-size_t  comSizeModel2(size_t size, COMM_TYPE type, Config& config)
+size_t  comSizeModel3(size_t size, COMM_TYPE type, Config& config)
 {
     int degree = config.mpi_size;
 
