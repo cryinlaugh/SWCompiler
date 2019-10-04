@@ -210,20 +210,34 @@ public:
                 std::set<int>  preTilings= iter->second;    
                if(preTilings.find(curTiling)!=preTilings.end()){//find the same tiling as curtiling in preTilings    
                    communicateCost += 0.0;
-                   _inTensorStrategiesMap[curTensorNode].insert(curTiling);
+                   //_inTensorStrategiesMap[curTensorNode].insert(curTiling);
 
                }else{
                    int smallestTiling = *std::min_element(preTilings.begin(),preTilings.end());
                    //we think the smallest communicatecost comes from the smallest tiling number 
                     communicateCost+=TransformOp::getSimCost(curTensorNode->getTensor()->getSizeInBytes(),degree,smallestTiling,curTiling);
+                    _inTensorStrategiesMap[curTensorNode].insert(curTiling);
+
                } 
             }else{
-                communicateCost+=ScatterOp::getSimCost(curTensorNode->getTensor()->getSizeInBytes(),degree,curTiling);
+
+                if(curTensorNode->getParentNodes().size()!=0)
+                    communicateCost+=ScatterOp::getSimCost(curTensorNode->getTensor()->getSizeInBytes(),degree,curTiling);
                 std::set<int> preTilings;
                 preTilings.insert(curTiling);
                 _inTensorStrategiesMap[curTensorNode]=preTilings;
 
-            }       
+            }
+            
+            
+            
+            std::map<TensorNode* ,std::set<int>>::iterator outiter =  _outTensorStrategiesMap.find(curTensorNode);
+
+            if(outiter!=_outTensorStrategiesMap.end()){
+                std::set<int> preTilings = outiter->second;
+                if(preTilings.find(curTiling)!=preTilings.end())
+                    _outTensorStrategiesMap[curTensorNode].erase(curTiling);
+            }
         } 
 
         
@@ -231,12 +245,35 @@ public:
             int curTiling = opStrategy[i];     
             TensorNode * curTensorNode = dynamic_cast<TensorNode*>(opNode->getParentNode(i)); 
             std::map<TensorNode* ,std::set<int>>::iterator iter =  _outTensorStrategiesMap.find(curTensorNode);
-                
+            if(iter!=_outTensorStrategiesMap.end()){
+                std::set<int> preTilings = iter->second;
+                if(preTilings.find(curTiling)==preTilings.end())
+                    _outTensorStrategiesMap[curTensorNode].insert(curTiling);
+            }else{
+                std::set<int> preTilings;
+                preTilings.insert(curTiling);
+                _outTensorStrategiesMap[curTensorNode]=preTilings;
+            }
             //TBC
-            (void)curTiling;
-            (void)iter;
+            //(void)curTiling;
+            //(void)iter;
 
         }    
+
+        std::map<TensorNode* ,std::set<int>>::iterator iter = _outTensorStrategiesMap.begin();
+        while(iter!=_outTensorStrategiesMap.end()){
+            
+            std::set<int> leftTilings = iter->second;
+            if(leftTilings.find(-2)!=leftTilings.end()){
+                ReduceOp::getSimCost(iter->first->getTensor()->getSizeInBytes(),degree, -2);
+            }
+        
+        }
+
+
+
+        
+
 
         return communicateCost;
 }
