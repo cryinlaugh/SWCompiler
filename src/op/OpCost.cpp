@@ -240,7 +240,7 @@ size_t TransformOp::getSimCost(size_t bytes, Config& config, int pre, int post) 
     int degree = config.mpi_size; 
 
     // para_tensor size
-    size_t size = bytes / degree;
+    size_t size = pre==-2 ? bytes : bytes / degree;
 
     size_t comm = 0;
     // i->j: each work send and recv size in total (pieces of data) 
