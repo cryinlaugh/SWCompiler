@@ -30,4 +30,16 @@
 
 #include "../src/codegen/Codegen.h"
 
+#include "../src/engine/Engine.h"
+
+#include "../src/pass/OptimizePass.h"
+#include "../src/pass/LabelingPass.h"
+#include "../src/pass/LoweringPass.h"
+#include "../src/pass/EliminationPass.h"
+#include "../src/pass/RenamingNodePass.h"
+// #include "../src/pass/ParallelingPass.h"
+#include "../src/pass/ParallelLabelingPass.h"
+#include "../src/pass/ParallelLoweringPass.h"
+#include "../src/pass/AutodiffPass.h"
+
 #endif

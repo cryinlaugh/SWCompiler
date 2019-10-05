@@ -41,7 +41,10 @@ void MatrixMatrixFCBiasOp::autoDiff(IRGraph* graph,
 
     auto *N = new OpNode(opNode->name() + "_grad",
             new MatrixMatrixFCBiasGradOp());
-    N->exlinkUpperNode(input, weight, bias, output, outputGrad);
+
+    // in current implementation, redundant link to output 
+    // N->exlinkUpperNode(input, weight, bias, output, outputGrad);
+    N->exlinkUpperNode(input, weight, bias, outputGrad);
 
     gradNodeMap[opNode] = N;
     graph->pushOpNode(N);
@@ -75,7 +78,8 @@ void MatrixMatrixFCOp::autoDiff(IRGraph* graph,
 
     auto *N = new OpNode(opNode->name() + "_grad",
             new MatrixMatrixFCGradOp());
-    N->exlinkUpperNode(input, weight, output, outputGrad);
+    // N->exlinkUpperNode(input, weight, output, outputGrad);
+    N->exlinkUpperNode(input, weight, outputGrad);
 
     gradNodeMap[opNode] = N;
     graph->pushOpNode(N);
@@ -110,7 +114,7 @@ void ReluOp::autoDiff(IRGraph* graph,
 
     auto *N =
         new OpNode(opNode->name() + "_grad", new ReluGradOp());
-    N->exlinkUpperNode(input, output, outputGrad);
+    N->exlinkUpperNode(input, outputGrad);
 
     gradNodeMap[opNode] = N;
     graph->pushOpNode(N);
@@ -248,22 +252,27 @@ void MatrixSoftmaxWithLossOp::autoDiff(IRGraph* graph,
         std::unordered_map<IRNode*, IRNode*>&gradNodeMap)
 {
     SWLOG_DEBUG(4) << "autoDiff: " << _opClassName   << std::endl;
-    auto *input = opNode->getParentNode(0);
+    // auto *input = opNode->getParentNode(0);
     auto *label = opNode->getParentNode(1);
     auto *prob = opNode->getChildNode(0);
-    auto *loss = opNode->getChildNode(1);
+    // auto *loss = opNode->getChildNode(1);
     assert(gradNodeMap.count(prob) &&
             "grad of Softmax output unfound\n");
-    auto *outputGrad = gradNodeMap[prob];
+    // auto *outputGrad = gradNodeMap[prob];
 
     auto *N = new OpNode(opNode->name() + "_grad",
             new MatrixSoftmaxWithLossGradOp());
-    N->exlinkUpperNode(input, label, prob, loss, outputGrad);
+    // N->exlinkUpperNode(input, label, prob, loss, outputGrad);
+    // we do not need input and loss for grad computation
+    // actually outputGrad == loss because loss is the start of autoDiff
+    N->exlinkUpperNode(label, prob);
 
     gradNodeMap[opNode] = N;
     graph->pushOpNode(N);
 
-    for (int i = 0; i < opNode->parentNum(); i++) {
+    // update: do not compute grad of label
+    // this should be same with einOp
+    for (int i = 0; i < opNode->parentNum()-1; i++) {
         auto *tnode = (TensorNode *)(opNode->getParentNode(i));
         auto *tensor = tnode->getTensor();
         auto *N = new TensorNode(tnode->name() + "_grad",
@@ -333,7 +342,7 @@ void Conv2dOp::autoDiff(IRGraph* graph,
     SWLOG_DEBUG(4) << "autoDiff: " << _opClassName   << std::endl;
     auto *input = opNode->getParentNode(0);
     auto *weight = opNode->getParentNode(1);
-    auto *bias = opNode->getParentNode(2);
+    // auto *bias = opNode->getParentNode(2);
     auto *output = opNode->getChildNode(0);
 
     auto *conv_op = (Conv2dOp*)((OpNode*)opNode)->getOp();
@@ -347,7 +356,42 @@ void Conv2dOp::autoDiff(IRGraph* graph,
 
     auto *N = new OpNode(opNode->name() + "_grad",
             new Conv2dGradOp(kernels, strides, pads));
-    N->exlinkUpperNode(input, weight, bias, output, outputGrad);
+    // N->exlinkUpperNode(input, weight, bias, output, outputGrad);
+    N->exlinkUpperNode(input, weight, output, outputGrad);
+
+    gradNodeMap[opNode] = N;
+    graph->pushOpNode(N);
+
+    for (int i = 0; i < opNode->parentNum(); i++) {
+
+        auto *tnode = (TensorNode *)(opNode->getParentNode(i));
+        auto *tensor = tnode->getTensor();
+        auto *N = new TensorNode(tnode->name() + "_grad",
+                new Tensor(tensor->getTensorShape()),
+                gradNodeMap[opNode]);
+
+        SWLOG_DEBUG(4) << "get Gradient node for " << opNode->name()
+            << " input " << tnode->name() << "\n";
+
+        gradNodeMap[tnode] = N;
+        graph->pushTensorNode(N);
+    }
+}
+
+void DropoutOp::autoDiff(IRGraph* graph, IRNode* opNode, std::unordered_map<IRNode*, IRNode*>&gradNodeMap)
+{
+    SWLOG_DEBUG(4) << "autoDiff: " << _opClassName   << std::endl;
+    auto *x = opNode->getParentNode(0);
+    auto *mask = opNode->getParentNode(1);
+    auto *output = opNode->getChildNode(0);
+
+    assert(gradNodeMap.count(output) &&
+            "grad of Conv2d output unfound\n");
+    auto *outputGrad = gradNodeMap[output];
+
+    auto *N = new OpNode(opNode->name() + "_grad",
+            new ElementMulOp());
+    N->exlinkUpperNode(x, mask, output, outputGrad);
 
     gradNodeMap[opNode] = N;
     graph->pushOpNode(N);

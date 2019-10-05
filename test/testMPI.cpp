@@ -243,7 +243,7 @@ int main() {
     dotGen(subGraph1, "subGraph1.dot");
 
     //====================================================
-    CodegenConfig config;
+    Config config;
     config.mpi = true;
     codegen::Codegen *cg = new codegen::Codegen(mlp, config);
     string code = cg->generate();

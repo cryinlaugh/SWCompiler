@@ -99,7 +99,7 @@ IRGraph *getTrainNet(IRGraph *graph, TrainingConfig &config) {
         } else if (irnode->nodeType() == OP_NODE) {
             auto *node = (OpNode *)irnode;
             std::cout << "reverse order op   " << node->name() << std::endl;
-            if (auto op = dynamic_cast<MatrixMatrixFCOp *>(node->getOp())) {
+            if (dynamic_cast<MatrixMatrixFCOp *>(node->getOp())) {
                 auto *input = node->getParentNode(0);
                 auto *weight = node->getParentNode(1);
                 auto *bias = node->getParentNode(2);
@@ -114,7 +114,7 @@ IRGraph *getTrainNet(IRGraph *graph, TrainingConfig &config) {
 
                 gradNodeMap[node] = N;
                 net->pushOpNode(N);
-            } if (auto op = dynamic_cast<MatrixMatrixFCBiasOp *>(node->getOp())) {
+            } if (dynamic_cast<MatrixMatrixFCBiasOp *>(node->getOp())) {
                 auto *input = node->getParentNode(0);
                 auto *weight = node->getParentNode(1);
                 auto *bias = node->getParentNode(2);
@@ -129,7 +129,7 @@ IRGraph *getTrainNet(IRGraph *graph, TrainingConfig &config) {
 
                 gradNodeMap[node] = N;
                 net->pushOpNode(N);
-            } else if (auto op = dynamic_cast<MatrixTanhOp *>(node->getOp())) {
+            } else if (dynamic_cast<MatrixTanhOp *>(node->getOp())) {
                 SWLOG_DEBUG(2)
                     << "get Gradient node for op " << node->name() << "\n";
                 auto *input = node->getParentNode(0);
@@ -144,8 +144,7 @@ IRGraph *getTrainNet(IRGraph *graph, TrainingConfig &config) {
 
                 gradNodeMap[node] = N;
                 net->pushOpNode(N);
-            } else if (auto op =
-                           dynamic_cast<MatrixSoftmaxOp *>(node->getOp())) {
+            } else if (dynamic_cast<MatrixSoftmaxOp *>(node->getOp())) {
                 SWLOG_DEBUG(2)
                     << "get Gradient node for op " << node->name() << "\n";
                 auto *input = node->getParentNode(0);

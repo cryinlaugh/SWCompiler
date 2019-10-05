@@ -11,18 +11,35 @@
 #include <memory>
 #include <vector>
 #include <string>
-#include <limits.h>
+#include <map>
+#include <climits>
 
 enum class DataType { Float_t, Double_t, Int8_t, Int32_t };
 
-enum ParallelStrategy { SLICE, TILING };
+// TODO: remove SLICE, TILING and Use case
+enum ParallelStrategy { 
+    SLICE, 
+    TILING,  
+    MEM_SAVING,
+    COMM_SAVING
+};
 
 enum BytesProto {
     ONE_BYTE_AS_INT,
     FOUR_BYTES_AS_FLOAT
 };
 
+// enum type may not be enough for description
+enum NetTopology {
+    FC_MESH_NET, 
+    STAR_NET,
+    RING_NET,
+    TREE_NET
+};
+
+
 struct TrainingConfig {
+    std::string optimizer;
     float lr{0.001};
     float decay{0.001};
     float momentum{0.9};
@@ -39,18 +56,50 @@ struct TrainingConfig {
     BytesProto data_bytes{FOUR_BYTES_AS_FLOAT};
     std::string train_data_file;
     size_t train_data_samples{0};
+
 };
 
-struct CodegenConfig {
+struct Config {
     bool train_mode{false};
 
+    // cpu codegen config
+    bool mkldnn{false};
+
+    // Nvidia cuda codegen config
     bool cuda{false};
     bool cublas{false};
     bool cuda_stream{false};
 
     bool mpi{false};
+    int mpi_size{1};
 
     TrainingConfig train_config;
+
+    // dumplicate member as train
+    bool use_dataloader{false};
+    std::string dataloader_src;
+    BytesProto label_bytes{ONE_BYTE_AS_INT};
+    BytesProto data_bytes{FOUR_BYTES_AS_FLOAT};
+    size_t dataloader_samples{0};
+    size_t display{0};
+
+
+    // for parallel strategy selection
+    ParallelStrategy parallel_preference{MEM_SAVING}; 
+    bool force_data_parallel{false};
+    bool handcraft_parallel{false};
+    bool geneticalgo_opt_parallel{false};
+
+    bool enable_lowering{true};
+
+    // comment compute function calls to get pure communication time 
+    bool compute_op_annotation{false};
+    bool comm_op_annotation{false};
+
+    // if true, annotate dataloader and (TBD ?emitTensorInitializations)
+    bool benchmark{false};
+
+    NetTopology net_topo{FC_MESH_NET};
 };
 
 enum OpType { TENSOR_OP, BASIC_OP, DL_OP };
@@ -65,6 +114,36 @@ enum TensorType {
     D1 = 1,
     D0 = 0,
     UNKNOWN = -1
+};
+
+typedef enum {
+    layout_default = 0,
+
+    // for tensors
+    layout_nchw,
+    layout_nhwc,
+    layout_nc,
+    layout_cn
+} mem_layout_t;
+const std::map<int, std::string> MEM_LAYOUT = {{layout_default, "default"},
+    {layout_nchw, "nchw"},
+    {layout_nhwc, "nhwc"},
+    {layout_nc, "nc"},
+    {layout_cn, "cn"},
+};
+
+const std::map<std::string, std::string> dtype_mkldnn_datatype_map = {
+    {"float", "memory::data_type::f32"},
+    {"int", "memory::data_type::s32"}
+};
+
+const std::map<std::string, std::string> layout_mkldnn_format_tag_map = {
+    {"nhwc", "memory::format_tag::nhwc"},
+    {"nchw", "memory::format_tag::nchw"},
+    {"nc", "memory::format_tag::nc"},
+    {"cn", "memory::format_tag::cn"},
+    {"x", "memory::format_tag::x"},
+    {"xy", "memory::format_tag::nc"},
 };
 
 enum class TensorInitType { NONE, CONSTANT, ZERO, XAVIER, FILE, PARENTOP };

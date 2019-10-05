@@ -598,7 +598,7 @@ void vecAdd_f(int size, float *a, float *b, float *c) {
 /**
 * reference: Caffe
 */
-void argMax_f(const float *input, int *idx, int m, int n, int top_k) {
+void argMax_i(const float *input, int *idx, int m, int n, int top_k) {
     for(int i=0; i<m; i++) {
         std::vector<std::pair<float, int>> value_idx(n);
         for(int j=0; j<n; j++) {
@@ -608,6 +608,20 @@ void argMax_f(const float *input, int *idx, int m, int n, int top_k) {
 
         for(int j=0; j<top_k; j++) {
             idx[i*top_k+j] = value_idx[j].second;
+        }
+    }
+}
+
+// pred : m * n prediction of label
+// label: m * 1 label
+void accuracy_i(const int* pred, const int *label, int *accum_cnt, int m, int n) {
+    for(int i=0; i<m; i++) {
+        accum_cnt[1] += 1; // cnt
+        for(int j=0; j<n; j++) {
+            if(pred[i*n+j] == label[i]) {
+                accum_cnt[0] += 1; //right_cnt
+                break;
+            }
         }
     }
 }

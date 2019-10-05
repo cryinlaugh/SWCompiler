@@ -131,8 +131,23 @@ int main() {
     mlp_train->setTrainDataNodes(label_input, data_input);
     mlp_train->findInOut();
     mlp_train->updateTopology();
+    // add Display before passes to prevent eliminated by elimination pass
+    mlp_train->addDisplayTensorNodes(train_loss);
 
     dotGen(mlp_train, "mlp_train.dot");
+
+    Config config;
+    config.mpi = true;
+    config.mpi_size = 2;
+    config.train_mode = true;
+    config.train_config.train_data_file = "mnist_labels_images.bin";
+    config.train_config.label_bytes = BytesProto::ONE_BYTE_AS_INT;
+    config.train_config.data_bytes = BytesProto::FOUR_BYTES_AS_FLOAT;
+    config.train_config.train_data_samples = 60000;
+    config.train_config.snapshot = 1000;
+    config.train_config.display = 500;
+
+    mlp_train->setConfig(config);
 
     LoweringPass loweringpass(mlp_train);
     RenamingNodePass renamingpass(mlp_train);
@@ -153,21 +168,11 @@ int main() {
     //passManager.add((OptimizePass *)&elim);
     //
     mlp_train->updateTopology();
-    mlp_train->addDisplayTensorNodes(train_loss);
 
     // CHECKG(mlp_train);
 
     dotGen(mlp_train);
 
-    CodegenConfig config;
-
-    config.train_mode = true;
-    config.train_config.train_data_file = "mnist_labels_images.bin";
-    config.train_config.label_bytes = BytesProto::ONE_BYTE_AS_INT;
-    config.train_config.data_bytes = BytesProto::FOUR_BYTES_AS_FLOAT;
-    config.train_config.train_data_samples = 60000;
-    config.train_config.snapshot = 1000;
-    config.train_config.display = 500;
 
     codegen::ParallelCodegen *cg = new codegen::ParallelCodegen(mlp_train, config);
     string code = cg->generate();

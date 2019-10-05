@@ -85,8 +85,8 @@ void MatrixMatrixFCGradOp::einsumLowering(IRGraph *graph, IRNode *node)
     SWLOG_DEBUG(4) << "einsumLowering MatrixMatrixFCGradOp ..." << std::endl;
 
     // Op check;
-    assert(node->parentNum() == 4 &&
-           "FCGrad input should be 4: data, weight, output, outputGrad");
+    assert(node->parentNum() == 3 &&
+           "FCGrad input should be 4: data, weight, outputGrad");
     assert(node->childNum() == 2 && "FCGrad output should be 2: dataGrad, weightGrad");
 
     for (int i = 0; i < node->parentNum(); i++) {
@@ -100,8 +100,7 @@ void MatrixMatrixFCGradOp::einsumLowering(IRGraph *graph, IRNode *node)
     // Op info fetch
     auto *input = (TensorNode *)node->getParentNode(0);
     auto *weight = (TensorNode *)node->getParentNode(1);
-    auto *output = (TensorNode *)node->getParentNode(2);
-    auto *outputG = (TensorNode *)node->getParentNode(3);
+    auto *outputG = (TensorNode *)node->getParentNode(2);
 
     auto *inputG = (TensorNode *)node->getChildNode(0);
     auto *weightG = (TensorNode *)node->getChildNode(1);
@@ -120,8 +119,8 @@ void MatrixMatrixFCGradOp::einsumLowering(IRGraph *graph, IRNode *node)
             outputG, w_trans);
     
     LINKUPPER(inputG, dx);
-    std::cout << "FCGrad inputG " << inputG->name() << " link to " << dx->name()
-              << std::endl;
+    // std::cout << "FCGrad inputG " << inputG->name() << " link to " << dx->name()
+    //           << std::endl;
 
     // dw = XT*dy
     COP(op_x_t, "op_" + input->name() + "_T", MatrixTransposeOp, input);
@@ -130,12 +129,16 @@ void MatrixMatrixFCGradOp::einsumLowering(IRGraph *graph, IRNode *node)
             input->getTensor()->getShuffledTensorShape({1, 0}),
             op_x_t);
 
+    // 19.10.1 naive, incomplete implementation for find the batch dim
+    if(input->getTensor()->getMemLayoutTag() == "nc")
+        x_trans->setMemLayout(layout_cn);
+
     COP(dw, node->name() + "_dw_mm", MatrixMatrixMulOp, 
             x_trans, outputG);
    
     LINKUPPER(weightG, dw);
 
-    DESTROYUPPER(node, input, weight, output, outputG);
+    DESTROYUPPER(node, input, weight, outputG);
     DESTROYUPPER(inputG, node);
     DESTROYUPPER(weightG, node);
 
@@ -152,7 +155,7 @@ void MatrixMatrixFCBiasOp::einsumLowering(IRGraph *graph, IRNode *node)
 {
     SWLOG_DEBUG(4) << "einsumLowering MatrixMatrixFCBiasOp ..." << std::endl;
     
-    SWLOG_DEBUG(10) << node->name() << " lowering\n";
+    SWLOG_DEBUG(4) << node->name() << " lowering\n";
     // Op check;
     assert(node->parentNum() == 3 &&
            "FC input should be 3: data, weight, bias");
@@ -235,19 +238,19 @@ void MatrixMatrixFCBiasOp::einsumLowering(IRGraph *graph, IRNode *node)
 
 void MatrixMatrixFCBiasGradOp::einsumLowering(IRGraph *graph, IRNode *node)
 {
-    SWLOG_DEBUG(4) << "einsumLowering MatrixMatrixFCBiasGradOp ..." << std::endl;
-    for (int i = 0; i < node->parentNum(); i++) {
-        std::cout << node->getParentNode(i)->name() << std::endl;
-    }
+    // SWLOG_DEBUG(4) << "einsumLowering MatrixMatrixFCBiasGradOp ..." << std::endl;
+    // for (int i = 0; i < node->parentNum(); i++) {
+    //     std::cout << node->getParentNode(i)->name() << std::endl;
+    // }
 
-    for (int i = 0; i < node->childNum(); i++) {
-        std::cout << node->getChildNode(i)->name() << std::endl;
-    }
+    // for (int i = 0; i < node->childNum(); i++) {
+    //     std::cout << node->getChildNode(i)->name() << std::endl;
+    // }
     auto *input = (TensorNode *)node->getParentNode(0);
     auto *weight = (TensorNode *)node->getParentNode(1);
     auto *bias = (TensorNode *)node->getParentNode(2);
-    auto *output = (TensorNode *)node->getParentNode(3);
-    auto *outputG = (TensorNode *)node->getParentNode(4);
+    // auto *output = (TensorNode *)node->getParentNode(3);
+    auto *outputG = (TensorNode *)node->getParentNode(3);
 
     auto *inputG = (TensorNode *)node->getChildNode(0);
     auto *weightG = (TensorNode *)node->getChildNode(1);
@@ -259,17 +262,16 @@ void MatrixMatrixFCBiasGradOp::einsumLowering(IRGraph *graph, IRNode *node)
     // Y = XW + B e.g. 8*10 8*512 512*10 10
     // dx = dy*WT
     // may be we tanspose W again, we can optimize tanspose-transpose
-    auto op_w_t =
-        new OpNode("op_" + weight->name() + "_T", new MatrixTransposeOp());
-    op_w_t->exlinkUpperNode(weight);
+    COP(op_w_t, "op_" + weight->name() + "_T", MatrixTransposeOp, weight);
+
     Tensor *wt =
         new Tensor(weight->getTensor()->getShuffledTensorShape({1, 0}));
     auto w_trans = new TensorNode(weight->name() + "_T", wt, op_w_t);
 
     auto dx = new OpNode(node->name() + "_dx_mm", new MatrixMatrixMulOp());
     dx->exlinkUpperNode(outputG, w_trans);
-    std::cout << "FCGrad inputG " << inputG->name() << " link to " << dx->name()
-              << std::endl;
+    // std::cout << "FCGrad inputG " << inputG->name() << " link to " << dx->name()
+    //           << std::endl;
     inputG->exlinkUpperNode(dx);
 
 
@@ -293,10 +295,14 @@ void MatrixMatrixFCBiasGradOp::einsumLowering(IRGraph *graph, IRNode *node)
 
     // dw = XT*dy
     auto op_x_t =
-        new OpNode("op_" + X->name() + "_T", new TransposeOp({1, 0}));
+        new OpNode("op_" + X->name() + "_T", new MatrixTransposeOp());
     op_x_t->exlinkUpperNode(X);
     Tensor *xt = new Tensor(X->getTensor()->getShuffledTensorShape({1, 0}));
     auto x_trans = new TensorNode(X->name() + "_T", xt, op_x_t);
+
+    // 19.10.1 naive, incomplete implementation for find the batch dim
+    if(X->getTensor()->getMemLayoutTag() == "nc")
+        x_trans->setMemLayout(layout_cn);
 
     auto dw = new OpNode(node->name() + "_dw_mm", new MatrixMatrixMulOp());
     dw->exlinkUpperNode(x_trans, outputG);
@@ -307,7 +313,7 @@ void MatrixMatrixFCBiasGradOp::einsumLowering(IRGraph *graph, IRNode *node)
     db->exlinkUpperNode(outputG);
     biasG->exlinkUpperNode(db);
 
-    node->destroyUpperNode(input, weight, bias, output, outputG);
+    node->destroyUpperNode(input, weight, bias, outputG);
     inputG->destroyUpperNode(node);
     weightG->destroyUpperNode(node);
     biasG->destroyUpperNode(node);

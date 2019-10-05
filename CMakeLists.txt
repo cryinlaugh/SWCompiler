@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.12 FATAL_ERROR)
 project(SWCompiler C CXX)
 
+option(MKLDNN "Use mkldnn for cpu backend" OFF)
+
 # SWCompiler version
 set(SWCOMPILER_VERSION_MAJOR 0)
 set(SWCOMPILER_VERSION_MINOR 0)
@@ -22,6 +24,10 @@ if(LEVELDEBUG)
   else()
     add_definitions(-DLEVELDEBUG=100)
   endif()
+endif ()
+
+if(MKLDNN)
+    add_definitions(-DMKLDNN)
 endif ()
 
 set(SW_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})

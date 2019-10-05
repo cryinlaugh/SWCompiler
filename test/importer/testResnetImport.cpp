@@ -10,6 +10,7 @@
 #include <iostream>
 
 using namespace swc;
+using namespace swc::pass;
 using namespace std;
 
 int main() {
@@ -36,20 +37,24 @@ int main() {
     graph->pushOpNode(argmax_o, print_o);
     graph->pushTensorNode(top3_t);
 
+    auto *placeholder = new TensorNode("null", {0}, print_o);
+    graph->pushTensorNode(placeholder);
+    //---------------------------------------------------------------
+
     graph->findInOut();
     graph->updateTopology();
 
-    // Optimizer is a must because Codegen need label
-    pass::Optimizer *opt = new pass::Optimizer(graph);
-    opt->runOptimizer();
+    dotGen(graph, "resnet_import.dot");
+
+    Config config;
+    config.mkldnn = false;
+    graph->setConfig(config);
+
+    Engine engine(graph); 
+    engine.compile();
 
     dotGen(graph);
-
-    CodegenConfig config;
-
-    codegen::Codegen *cg = new codegen::Codegen(graph, config);
-    string code = cg->generate();
-    cout << code;
+    string code = engine.genCode();
 
     return 0;
 }

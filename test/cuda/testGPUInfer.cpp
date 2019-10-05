@@ -256,7 +256,7 @@ int main() {
 
     //==================================
     // nvcc -ccbin g++ -lcublas Graph.cu
-    CodegenConfig config;
+    Config config;
     config.cuda = true;
     config.cuda_stream = true;
     config.cublas = true;

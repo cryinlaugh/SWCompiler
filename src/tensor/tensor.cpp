@@ -108,13 +108,22 @@ size_t Tensor::getSizeInBytes() const {
 
 TensorShape *
 Tensor::getShuffledTensorShape(const std::vector<size_t> &shuffle) const {
-    std::vector<unsigned long> *shape = new std::vector<unsigned long>();
+    std::vector<size_t> *shape = new std::vector<unsigned long>();
     for (auto idx : shuffle) {
         if ((int)idx < shape_->getNDim())
             shape->push_back(shape_->getDim(idx));
     }
 
     return new TensorShape(shape);
+}
+std::vector<size_t> 
+    Tensor::getShuffledDims(const std::vector<size_t> &shuffle) const {
+    std::vector<size_t> dims;
+    for (auto idx : shuffle) {
+        if ((int)idx < shape_->getNDim())
+            dims.push_back(shape_->getDim(idx));
+    }
+    return dims;
 }
 std::pair<size_t, size_t> Tensor::viewAs2D(int n) {
     assert(n>=1 && n<=getNDim() && "illegal n");
@@ -126,6 +135,34 @@ std::pair<size_t, size_t> Tensor::viewAs2D(int n) {
     for(; i<getNDim(); i++)
         dim1 *= getDim(i);
     return {dim0, dim1};
+}
+
+std::string Tensor::getMemLayoutTag() const{
+
+    int ndim = getNDim();
+    switch(mem_layout_){
+    case layout_default:
+        if(ndim == 1)
+            return "n"; 
+        if(ndim == 2)
+            return "nc"; 
+        break;
+    case layout_nhwc:
+        return "nhwc";
+        break;
+    case layout_nchw:
+        return "nchw";
+        break;
+    case layout_nc:
+        return "nc";
+        break;
+    case layout_cn:
+        return "cn";
+        break;
+    default:
+        return "any"; 
+    }
+    return "any"; 
 }
 /*
 

@@ -15,10 +15,21 @@
 #include "op/dlOp/dlOp.h"
 #include "pass/AutodiffPass.h"
 
+#include "parallel/TilingLabel.h"
+
 using namespace swc::op;
 using namespace swc::pass;
 
 namespace swc {
+
+void TensorNode::destroy() {
+    //printf("free TensorNode:%s\n", name().c_str());
+    getLabel()->destroy();
+    getTensor()->destroy();
+    _tilingLabel = nullptr;
+    SWLOG_DEBUG(4) << "Destroy TensorNode: " << name() << "\n";
+};
+
 /// share tensor, that tensor_ point to
 TensorNode *TensorNode::clone() const {
     TensorNode *tn = new TensorNode(name()+"_cp");
@@ -38,6 +49,7 @@ TensorNode *TensorNode::deepClone() const {
     tn->setTensor(tensor);
     tn->setLabel(getLabel()); // mainly for training flag
     tn->setExternal(isExternal());
+    tn->setTilingLabel(_tilingLabel);
     return tn;
 }
 
@@ -71,7 +83,11 @@ void TensorNode::autoDiff(IRGraph* graph,
 
         if (methodType == SGD_METHOD) {
             SWLOG_DEBUG(4) << "SGD generate..." << std::endl;
-            auto *node_mirror = clone();
+            // 19.10.2 let SGD not output (because N is actually inout, 
+            // add mirror_node will cause difficulty for parallel strategy selection)
+            // auto *node_mirror = clone();
+
+            // graph->addLogicalOutNodes(node_mirror);
 
             auto *mom_t = new Tensor(this->getTensor()->getTensorShape());
             mom_t->setTensorInit(TensorInitType::CONSTANT, 0);
@@ -84,9 +100,11 @@ void TensorNode::autoDiff(IRGraph* graph,
             auto *SGDNode = new OpNode(this->name() + "_sgd", sgdOp);
 
             SGDNode->exlinkUpperNode(this, N, momentum);
-            node_mirror->exlinkUpperNode(SGDNode);
+            // node_mirror->exlinkUpperNode(SGDNode);
             graph->pushOpNode(SGDNode);
-            graph->pushTensorNode(node_mirror, momentum);
+            graph->pushTensorNode(momentum);
+            // graph->pushTensorNode(node_mirror, momentum);
+            graph->addLogicalOutNodes(SGDNode);
 
         }
         else if (methodType == ADAM_METHOD) {

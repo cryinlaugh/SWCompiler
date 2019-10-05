@@ -62,18 +62,18 @@ class AutodiffPass {
         std::string method_type_s(firstArg);
         METHOD_TYPE method_type = string2method(method_type_s);
         if(method_type == SGD_METHOD) {
-            SWLOG_INFO<<"Detect SGD method..."<<std::endl;
+            SWLOG_DEBUG(4) <<"Detect SGD method..."<<std::endl;
             _method = SGD_METHOD;
             _parameters = (SGD_PARAMETERS*)malloc(sizeof(SGD_PARAMETERS));
             getSGDParameters(args...);
         } 
         else if(method_type == ADAM_METHOD) {
-            SWLOG_INFO<<"Detect ADAM method..."<<std::endl;
+            SWLOG_DEBUG(4) <<"Detect ADAM method..."<<std::endl;
             _method = ADAM_METHOD;
             _parameters = (ADAM_PARAMETERS*)malloc(sizeof(ADAM_PARAMETERS));
             getADAMParameters(args...);
         } else {
-            SWLOG_INFO<<"Undefined method..."<<std::endl;
+            SWLOG_DEBUG(4) <<"Undefined method..."<<std::endl;
             abort();
         }
 
@@ -97,7 +97,12 @@ class AutodiffPass {
                            size_t batch) {} 
     void show();
 
-    void run(IRGraph* graph_train);
+    // if graph_train == nullptr
+    //   do autodiff on original graph directly
+    // else
+    //   copy graph to graph_train (weights shallow clone)
+    //   do autodiff on graph_train
+    void run(IRGraph* graph_train=nullptr);
     void destroy();
 
 };

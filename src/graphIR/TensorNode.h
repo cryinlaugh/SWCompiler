@@ -25,25 +25,22 @@ class TensorNode : public IRNode {
   public:
     TensorNode() : tensor_(NULL){};
     explicit TensorNode(std::string name, IRNode *parent = nullptr)
-        : IRNode(TENSOR_NODE, name, parent){};
+        : IRNode(TENSOR_NODE, name, parent){}
     explicit TensorNode(std::string name, Tensor *tensor,
                         IRNode *parent = nullptr)
         : IRNode(TENSOR_NODE, name, parent), tensor_(tensor){};
     explicit TensorNode(std::string name,
                         const std::initializer_list<size_t> &shape,
-                        IRNode *parent = nullptr)
+                        IRNode *parent = nullptr,
+                        DataType dtype = DataType::Float_t,
+                        mem_layout_t layout = layout_default)
         : IRNode(TENSOR_NODE, name, parent) {
-        tensor_ = new Tensor(shape);
+        tensor_ = new Tensor(shape, dtype, layout);
     }
 
-    ~TensorNode(){ destroy(); };
+    ~TensorNode(){ destroy(); }
 
-    void destroy() { 
-        //printf("free TensorNode:%s\n", name().c_str()); 
-        getLabel()->destroy();
-        getTensor()->destroy();
-        SWLOG_DEBUG(10) << "Destroy TensorNode: " << name() << "\n"; 
-    };
+    void destroy();
 
     void setTensor(Tensor *tensor) { tensor_ = tensor; }
     Tensor *getTensor() { return tensor_; }
@@ -54,12 +51,13 @@ class TensorNode : public IRNode {
 
     DataType getDataType() { return tensor_->getDataType(); }
     std::vector<unsigned long> getDims() { return tensor_->getDims(); }
+    size_t getNDim() { return tensor_->getNDim(); }
     TensorNode *clone() const;
     TensorNode *deepClone() const;
     std::string toString() const;
 
     //AutoDiff implementation in tensorNodes
-    void autoDiff(IRGraph* graph, 
+    void autoDiff(IRGraph* graph,
             std::unordered_map<IRNode*, IRNode*> &gradNodeMap,
             void* methodParams,
             pass::METHOD_TYPE methodType);
@@ -70,11 +68,14 @@ class TensorNode : public IRNode {
         _tilingLabel = tilinglabel;
     }
     TilingLabel* getTilingLabel() { return _tilingLabel; }
+
+    void setMemLayout(mem_layout_t layout) { tensor_->setMemLayout(layout); }
+    mem_layout_t getMemLayout() const { return tensor_->getMemLayout(); }
     
   private:
     Tensor *tensor_{nullptr};
-    
-    TilingLabel* _tilingLabel;
+
+    TilingLabel* _tilingLabel{nullptr};
 };
 
 } // namespace swc

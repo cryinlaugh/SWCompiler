@@ -10,8 +10,17 @@
 #include "OpNode.h"
 
 #include "graphIR/TensorNode.h"
+// for StrategyLabel class
+#include "parallel/TilingLabel.h"
 
 namespace swc {
+void OpNode::destroy() {
+    SWLOG_DEBUG(4) << "Destroy OpNode: " << name() << "\n"; 
+    getOp()->destroy();
+    getLabel()->destroy();
+    delete _strategyLabel;
+};
+
 /// must clone op_ because destructed in ctor
 OpNode *OpNode::clone() const {
     OpNode *opNode = new OpNode(name());

@@ -75,6 +75,7 @@ class Tensor {
   private:
     DataType dataType_;
     TensorShape *shape_;
+    mem_layout_t mem_layout_;
 
     TensorInitType initType_;
     TensorInitInfo initInfo_;
@@ -87,13 +88,21 @@ class Tensor {
         initType_ = TensorInitType::NONE;
     }
 
-    Tensor(TensorShape *shape, DataType dtype = DataType::Float_t) {
+    Tensor(TensorShape *shape, DataType dtype = DataType::Float_t, mem_layout_t layout = layout_default) {
         dataType_ = dtype;
         shape_ = shape;
         initType_ = TensorInitType::NONE;
+
+        if(layout == layout_default) {
+            // this framework use NHWC memory layout for 4D Tensors by default
+            mem_layout_ = (shape_->getNDim() == 4) ? layout_nhwc : layout_default; 
+        } else {
+            mem_layout_ = layout; 
+        }
     }
+
     Tensor(const std::initializer_list<size_t> &shape,
-           DataType dtype = DataType::Float_t) {
+            DataType dtype = DataType::Float_t, mem_layout_t layout = layout_default) {
         dataType_ = dtype;
         std::vector<size_t> *vec = new std::vector<size_t>();
         for (auto i : shape) {
@@ -102,6 +111,13 @@ class Tensor {
         }
         shape_ = new TensorShape(vec);
         initType_ = TensorInitType::NONE;
+
+        if(layout == layout_default) {
+            // this framework use NHWC memory layout for 4D Tensors by default
+            mem_layout_ = (shape_->getNDim() == 4) ? layout_nhwc : layout_default; 
+        } else {
+            mem_layout_ = layout; 
+        }
     }
 
     ~Tensor(){ destroy(); };
@@ -110,14 +126,23 @@ class Tensor {
         getTensorShape()->destroy();
     }
 
-    void reset(TensorShape *shape, DataType dtype = DataType::Float_t) {
+    void reset(TensorShape *shape, DataType dtype = DataType::Float_t, mem_layout_t layout = layout_default) {
         shape_ = shape;
         SWLOG_DEBUG(2) << "reset shape dims " << shape_->getNDim() << "\n";
         dataType_ = dtype;
+
+        if(layout == layout_default) {
+            // this framework use NHWC memory layout for 4D Tensors by default
+            mem_layout_ = (shape_->getNDim() == 4) ? layout_nhwc : layout_default; 
+        } else {
+            mem_layout_ = layout; 
+        }
     }
     Tensor *clone() const;
     TensorShape *
     getShuffledTensorShape(const std::vector<size_t> &shuffle) const;
+    std::vector<size_t> 
+    getShuffledDims(const std::vector<size_t> &shuffle) const;
 
     DataType getDataType() { return dataType_; }
 
@@ -147,6 +172,10 @@ class Tensor {
     TensorShape *getTensorShape() const { return shape_; }
     size_t size() const { return shape_->size(); }
     size_t getSizeInBytes() const;
+
+    void setMemLayout(mem_layout_t layout) { mem_layout_ = layout; }
+    mem_layout_t getMemLayout() const { return mem_layout_; }
+    std::string getMemLayoutTag() const;
 };
 
 } // namespace swc

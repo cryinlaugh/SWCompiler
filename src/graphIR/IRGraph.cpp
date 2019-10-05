@@ -11,6 +11,8 @@
 #include "graphIR/OpNode.h"
 #include "graphIR/TensorNode.h"
 #include "op/dlOp/dlOp.h"
+#include "op/basicOp/basicOps.h"
+#include "parallel/TilingLabel.h"
 
 #include "common.h"
 #include <cassert>
@@ -20,6 +22,16 @@
 #include <vector>
 
 namespace swc {
+
+IRGraph::~IRGraph(){
+    // std::cout << "dtor of IRGraph\n";
+    // not do clear of vector 
+    for(auto &tnode : _tensors)
+        tnode->destroy();
+    for(auto &onode : _ops)
+        onode->destroy();
+
+}
 
 IRNode *IRGraph::getNodeByName(std::string name) const {
     for (auto &node : _tensors)
@@ -233,7 +245,10 @@ void IRGraph::initTensorNodes() {
             if (irNode->nodeType() == OP_NODE) {
                 auto *node = (OpNode *)irNode;
                 auto *op = node->getOp();
-                if (dynamic_cast<MatrixMatrixFCOp *>(op) || dynamic_cast<MatrixMatrixFCBiasOp *>(op)) {
+                if (dynamic_cast<MatrixMatrixFCOp *>(op) 
+                        || dynamic_cast<MatrixMatrixFCBiasOp *>(op)
+                        || dynamic_cast<MatrixMatrixMulOp *>(op)
+                        ) {
                     auto *input = (TensorNode *)node->getParentNode(0);
                     auto idims =
                         ((TensorNode *)node->getParentNode(0))->getDims();
@@ -260,7 +275,8 @@ void IRGraph::initTensorNodes() {
                     out->setTensor(new Tensor({idims[0], idims[1]}));
                 }
 
-                if (dynamic_cast<ReluOp *>(op)) {
+                if (dynamic_cast<ReluOp *>(op) || 
+                    dynamic_cast<DropoutOp*>(op) ) {
 
                     auto *in = (TensorNode *)node->getParentNode(0);
                     auto *out = (TensorNode *)node->getChildNode(0);
@@ -352,6 +368,8 @@ void IRGraph::initTensorNodes() {
 void IRGraph::findInOut() {
     _inNodes.clear();
     _outNodes.clear();
+
+    /*
     typename std::vector<TensorNode *>::iterator tnIter;
 
     for (tnIter = _tensors.begin(); tnIter != _tensors.end(); tnIter++) {
@@ -362,7 +380,33 @@ void IRGraph::findInOut() {
         if ((*tnIter)->childNum() == 0)
             _outNodes.push_back(*tnIter);
     }
-    setOutMark();
+    */
+    // _inNodes could not be op
+    for(auto &tnode : _tensors) {
+        if(tnode->parentNum() == 0)
+            _inNodes.push_back(tnode);
+    }
+
+    for(auto &tnode : _tensors) {
+        if(tnode->childNum() == 0)
+            _outNodes.push_back(tnode);
+    }
+    for(auto &opnode : _ops) {
+        if(opnode->childNum() == 0)
+            _outNodes.push_back(opnode);
+    }
+
+    SWLOG_DEBUG(4) << "findInOut innodes:" << _inNodes.size() << " outnodes:" << _outNodes.size() << "\n";
+    /*
+    std::cout << "_inNodes\n";
+    for(auto node : _inNodes)
+        std::cout << node->name() << "\n"; 
+    std::cout << "_outNodes\n";
+    for(auto node : _outNodes)
+        std::cout << node->name() << "\n"; 
+    */
+    // OutMark should be decied by other rules but not simple topology out
+    // setOutMark();
 }
 
 template <typename T> void IRGraph::updateTopology(T node) {
@@ -383,8 +427,7 @@ template <typename T> void IRGraph::updateTopology(T node) {
 }
 
 void IRGraph::updateTopology() {
-    // findInOut();
-
+    /*
     typename std::vector<TensorNode *>::iterator tnIter;
     typename std::vector<OpNode *>::iterator opIter;
 
@@ -395,6 +438,16 @@ void IRGraph::updateTopology() {
 
     for (tnIter = _inNodes.begin(); tnIter != _inNodes.end(); tnIter++)
         updateTopology(*tnIter);
+    */
+
+    for(auto &tnode :_tensors)
+        tnode->setTopologyId(0);
+    for(auto &opnode :_ops)
+        opnode->setTopologyId(0);
+
+    for(auto &node : _inNodes)
+        updateTopology(node);
+
 
     updateTopoNodeList();
 }
@@ -463,29 +516,16 @@ void IRGraph::copyTo(IRGraph* graph) const {
     graph->setDeviceLabel(_dev);
     graph->findInOut();
     graph->updateTopology();
-    graph->updateTopoNodeList();
-
 }
 
+// 2019.10.1 modify clone as deepclone
 IRGraph *IRGraph::clone() const {
-    // TODO: add topo check before clone
     IRGraph *graph = new IRGraph();
-    /*
-    for(int i=0; i<this->topologyNum(); i++){
-        for(int j=0; j<this->getNumInTopoLevel(i); i++){
-            auto node = this->getNodeInTopo(i, j);
-            if(node->nodeType() == NodeType::OP_NODE){
-                graph->pushOpNode(static_cast<OpNode*>(node)->clone());
-            }else if(node->nodeType() == NodeType::TENSOR_NODE){
-                graph->pushTensorNode(static_cast<TensorNode*>(node)->clone());
-            }
-        }
-    }
-    */
+
     std::unordered_map<TensorNode *, TensorNode *> tensors_map;
     std::unordered_map<OpNode *, OpNode *> ops_map;
     for (auto &N : _tensors) {
-        TensorNode *tn = (N->isExternal()) ? N->clone() : N->deepClone();
+        TensorNode *tn = N->deepClone();
         tensors_map[N] = tn;
         graph->pushTensorNode(tn);
     }
@@ -495,17 +535,6 @@ IRGraph *IRGraph::clone() const {
         graph->pushOpNode(opn);
     }
 
-    // create links
-    /*
-    for(auto &N : _tensors){
-        auto tn = tensors_map[N];
-        for(int i=0; i<N->parentNum(); i++){
-            auto it = ops_map.find((OpNode*)N->getParentNode(i));
-            if(it != ops_map.end())
-                tn->exlinkUpperNode(it->second);
-        }
-    }
-    */
 
     // it worked, but remind that
     // static_cast may cause offset
@@ -523,6 +552,38 @@ IRGraph *IRGraph::clone() const {
             opn->exlinkUpperNode(parent);
         }
     }
+
+    // clone _logicalOutNodes
+    for(auto &node : _logicalOutNodes) {
+        if(node->nodeType() == TENSOR_NODE) {
+            graph->addLogicalOutNodes(tensors_map.at((TensorNode*)node)); 
+        }
+        else
+            graph->addLogicalOutNodes(ops_map.at((OpNode*)node)); 
+
+    }
+    // clone _input_data_node and _input_label_node
+    graph->setTrainDataNodes(tensors_map.at(_input_label_node),
+        tensors_map.at(_input_data_node));
+    
+    // clone _dispaly_nodes
+    for(auto &node : _display_nodes) {
+        graph->addDisplayTensorNodes(node);
+    }
+
+    // clone _config
+    graph->setConfig(_config);
+
+    // clone _dev
+    graph->setDeviceLabel(_dev);
+
+
+    SWLOG_DEBUG(4) << "updateTopology of deepcloned graph\n";
+    // updateTopoly
+    graph->findInOut();
+    graph->updateTopology();
+    
+    graph->resetParallelStrategy();
 
     return graph;
 }
@@ -549,8 +610,97 @@ void IRGraph::setDeviceLabel(Device dev) {
 void IRGraph::setOutMark() {
     for (unsigned int i = 0; i < _outNodes.size(); i++) {
         _outNodes[i]->getLabel()->setIsOut();
+        SWLOG_DEBUG(4) << "set out mark for " << _outNodes[i]->name() << "\n";
     }
 }
 
+// if remove node from _outNodes, we need to clear its mark
+void IRGraph::clearOutMark() {
+    for(auto out : _outNodes) {
+        out->getLabel()->setIsOut(0);
+    }
+}
+
+void IRGraph::setLogicalOutMark() {
+    for (unsigned int i = 0; i < _logicalOutNodes.size(); i++) {
+        _logicalOutNodes[i]->getLabel()->setIsOut();
+        SWLOG_DEBUG(4) << "set out mark for " << _logicalOutNodes[i]->name() << "\n";
+    }
+}
+
+size_t IRGraph::getCommCost() {
+    size_t cost = 0;
+    // _ops should keep with _nodesByTopology
+    for(auto opnode : _ops) {
+        // split these comm ops, because code may be different 
+        // in the future
+        if(dynamic_cast<ScatterOp*>(opnode->getOp()) ) {
+            cost += opnode->getCost(_config); 
+        }
+        if(dynamic_cast<GatherOp*>(opnode->getOp()) ) {
+            cost += opnode->getCost(_config); 
+        }
+        if(dynamic_cast<ReduceOp*>(opnode->getOp()) ) {
+            cost += opnode->getCost(_config); 
+        }
+        if(dynamic_cast<TransformOp*>(opnode->getOp()) ) {
+            cost += opnode->getCost(_config); 
+        }
+    }
+
+    return cost;
+}
+
+std::string IRGraph::getCommTrace() {
+    std::string trace;
+    for(auto opnode : _ops) {
+        // split these comm ops, because code may be different 
+        // in the future
+        if(dynamic_cast<ScatterOp*>(opnode->getOp()) 
+            || dynamic_cast<GatherOp*>(opnode->getOp()) 
+            || dynamic_cast<ReduceOp*>(opnode->getOp()) 
+            || dynamic_cast<TransformOp*>(opnode->getOp()) ) {
+
+            trace += opnode->getCostTrace(_config);
+        }
+    }
+    return trace;
+}
+
+void IRGraph::resetParallelStrategy() {
+    for(auto &tnode : _tensors) {
+        tnode->setTilingLabel(new TilingLabel());
+    }
+    for(auto &onode : _ops) {
+        onode->setStrategyLabel(nullptr);
+    }
+}
+
+void IRGraph::elimRedundantScatter() {
+    for(auto &opnode : _ops) {
+        auto *scatter = dynamic_cast<ScatterOp *>(opnode->getOp());
+        if(!scatter) {
+            continue;
+        }
+        if(scatter->getAxis() == -1)
+            continue;
+
+        // parent tensornode
+        auto *ptnode  = (TensorNode*)opnode->getParentNode(0); 
+        // childnode
+        auto *ctnode  = (TensorNode*)opnode->getChildNode(0); 
+
+        // this means ptnode is an topoInTensornode, and this scatter is its only child
+        if(ptnode->parentNum()==0 && ptnode->childNum()==1) {
+            SWLOG_DEBUG(6) << opnode->name() << " and its parent "
+                << ptnode->name() << " is redundant during batch iterations\n";
+            ctnode->destroyUpperNode(opnode);      
+            // !!! do not delNode because we are iterate on _ops
+            // this->delOpNode(opnode);
+            // this->delTensorNode(ptnode);
+        }
+         
+    } // for loop
+}
 
 } // namespace swc

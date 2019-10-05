@@ -51,6 +51,11 @@ class swc::pass::LabelingPass : public swc::pass::OptimizePass {
         }
     }
     void setLoweringMark() {
+        Config config = _graph->getConfig();
+        if(config.enable_lowering == false) {
+            return;
+        }
+
         int nTensorNodes = _graph->tensorNodeNum();
         int nOpNodes = _graph->opNodeNum();
 
@@ -65,6 +70,15 @@ class swc::pass::LabelingPass : public swc::pass::OptimizePass {
             OpNode *node = _graph->getOpNode(i);
             Label *label = node->getLabel();
             if ((label->getTypeNameLabel()).compare("MatrixMatrixFCBias") == 0) {
+                if(config.mkldnn)
+                    continue;
+
+                SWLOG_DEBUG(2)
+                    << label->getTypeNameLabel() << " "
+                    << label->getNodeNameLabel()
+                    << " operator is marked to be lowered." << std::endl;
+                label->setLowerMark();
+            } else if ((label->getTypeNameLabel()).compare("MatrixMatrixFC") == 0) {
                 SWLOG_DEBUG(2)
                     << label->getTypeNameLabel() << " "
                     << label->getNodeNameLabel()

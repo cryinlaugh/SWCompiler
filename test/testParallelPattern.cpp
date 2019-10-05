@@ -1,12 +1,9 @@
 #include <iostream>
 
 #include "SWC.h"
-#include "string.h"
-//#include "parallel/TilingLabel.h"
-//#include "parallel/ParallelPattern.h"
-//#include "pass/ParallelingPass.h"
 using namespace swc;
 using namespace swc::op;
+using namespace swc::pass;
 using namespace std;
 
 int main() {
@@ -100,6 +97,11 @@ int main() {
     mlp->findInOut();
     mlp->updateTopology();
 
+    Config config;
+    config.mpi = true;
+    config.mpi_size = 2;
+    mlp->setConfig(config);
+
     //data0->pushParentNode();
 
     //StrategyLabel* slabel = new StrategyLabel();
@@ -122,9 +124,8 @@ int main() {
     swc::pass::ParallelLabelingPass parallelLabelingpass(mlp);
     parallelLabelingpass.run();
 
-   swc::pass::ParallelLoweringPass parallelLoweringpass(mlp);
-   parallelLoweringpass.run();
-
+    ParallelLoweringPass parallelLoweringpass(mlp);
+    parallelLoweringpass.run();
 
 
     swc::pass::RenamingNodePass renamingpass(mlp);
@@ -133,35 +134,8 @@ int main() {
     swc::pass::EliminationPass elim(mlp);
     elim.run();
 
-    //std::vector<string>
-
-    //pass::Optimizer *opt = new pass::Optimizer(mlp);
-
-    //opt->runOptimizer();
-    //mlp->updateTopology();
-    /*
-    auto *argmax_o = new OpNode("argmax", new ArgMaxOp(3));
-    argmax_o->exlinkUpperNode(data4);
-    auto *top3_t =
-        new TensorNode("top3", new Tensor({8, 3}, DataType::Int32_t), argmax_o);
-    auto *print_o = new OpNode("print", new DebugOp());
-    print_o->exlinkUpperNode(top3_t);
-
-    TENSOR(placeholder, 0);
-    LINKUPPER(placeholder, print_o);
-
-    // define IR graph
-    GpT(mlp, top3_t, placeholder);
-    GpO(mlp, argmax_o, print_o);
-
-    mlp->findInOut();
-    mlp->updateTopology();
-    labelingpass.run();
-    */
-
     dotGen(mlp);
-    CodegenConfig config;
-    std::cout << "dotgen ok\n";
+
     codegen::ParallelCodegen *cg = new codegen::ParallelCodegen(mlp, config);
     string code = cg->generate();
     cout << code;

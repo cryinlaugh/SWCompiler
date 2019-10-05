@@ -8,6 +8,7 @@
 #define IMPORTER_CAFFE2IMPORTER_H
 #include <google/protobuf/text_format.h>
 #include <unordered_map>
+#include <vector>
 
 #include "graphIR/IRGraph.h"
 
@@ -56,6 +57,20 @@ class Caffe2Importer {
     Caffe2Importer(IRGraph *g, const std::string &netProtoFile,
                    const std::string &tensorProtoFile,
                    std::vector<TensorNode *> &udef_nodes);
+private:
+    std::vector<std::string> supported_ops_{
+        "Conv",
+        "SpatialBN",
+        "Relu",
+        "Sum",
+        "MaxPool",
+        "AveragePool",
+        "FC",
+        "Softmax",
+        "Dropout"
+    };
+
+    bool checkSupported(std::string opType);
 };
 } // namespace swc
 #endif

@@ -30,11 +30,10 @@ namespace codegen {
 class Codegen {
   public:
     Codegen() {}
-    Codegen(IRGraph *graph) : graph_(graph) {}
+    Codegen(IRGraph *graph);
     /// to be depreciated
-    Codegen(IRGraph *graph, CodegenConfig &config) : graph_(graph) {
-        config_ = config;
-    }
+    Codegen(IRGraph *graph, Config &config);
+
     ~Codegen() { destroy(); }
 
     /// ensure each Variable (Tensor) has unique name
@@ -48,7 +47,7 @@ class Codegen {
             << "\n";
     }
 
-    /// init Makefile wrt. CodegenConfig
+    /// init Makefile wrt. Config
     virtual void initMakefileBuilder();
 
     /// initialization before code emitting
@@ -57,8 +56,14 @@ class Codegen {
     /// emit CUDA related code. e.g. cuBlas handle, cudaStream creating
     void emitCUDAInit();
 
-    /// Dataloader for batch executions
+    // emit mkldnn related code e.g. engine
+    void emitMKLDNNInit();
+
+    /// Dataloader for train batch executions
     virtual void emitDataLoaderInit();
+    // Dataloader for infer batch executions
+    // TODO: modify config and merge this with emitDataLoaderInit() 
+    virtual void emitInferDataLoaderInit();
 
     /// create allocators for devices according to config
     /// and set baseptr name
@@ -148,6 +153,16 @@ class Codegen {
 
     // int getMPISendRecvTag(Tensor *);
     // bool delMPISendRecvTag(Tensor *);
+    //----------------------------------------------------------
+    void emit_mkldnn_memory_dims(std::string name, std::vector<size_t> dims);
+    // we know layout by tensor->getMemLayoutTag()
+    // but we may initialize desc to be format_tag::any
+    // or we can use pre-defined memory
+    void emit_mkldnn_memory_desc(std::string &name, std::string dims, Tensor *tensor, std::string layout_tag = std::string());
+    void emit_mkldnn_memory(std::string &name, Tensor *t, std::string dims, 
+        std::string engine, std::string handle, std::string layout_tag=std::string()); 
+    
+    //----------------------------------------------------------
 
 protected:
     void destroy();
@@ -162,7 +177,7 @@ protected:
 
     IRGraph *graph_;
 
-    CodegenConfig config_;
+    Config config_;
 
     std::unordered_map<std::string, int> names_map_;
 
@@ -174,6 +189,12 @@ protected:
     std::map<Tensor *, std::pair<std::string, uint64_t>>
         tensors_offset_map_;
 
+    /// for mkldnn memory
+    std::map<std::pair<Tensor *, std::string>, std::string> tensors_mkldnn_mem_map_;
+    // in mpi environment, run to specify handle just according to tensor* and name
+    // rank 0 and rank1 may share
+    // std::map<std::pair<Tensor *, std::string>, std::string> master_tensors_mkldnn_mem_map_;
+    // std::map<std::pair<Tensor *, std::string>, std::string> para_tensors_mkldnn_mem_map_;
 
     /// to use Device as key, we implement std::hash() of Device in common.h
     /// if implemented with std::map, we must define comparison of Device
@@ -183,7 +204,7 @@ protected:
 
 class ParallelCodegen : public Codegen {
 public:
-    ParallelCodegen(IRGraph *graph, CodegenConfig &config) : Codegen(graph, config) { }
+    ParallelCodegen(IRGraph *graph, Config &config) : Codegen(graph, config) { }
 
     /// add mpi header
     void emitHeader() override;

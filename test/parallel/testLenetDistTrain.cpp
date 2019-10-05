@@ -120,8 +120,22 @@ int main()
 
     lenet_train->findInOut();
     lenet_train->updateTopology();
+    lenet_train->addDisplayTensorNodes(train_loss);
 
     dotGen(lenet_train, "mlp_train.dot");
+
+    Config config;
+    config.mpi = true;
+    config.mpi_size = 2;
+    config.train_mode = true;
+    config.train_config.train_data_file = "mnist_labels_images.bin";
+    config.train_config.label_bytes = BytesProto::ONE_BYTE_AS_INT;
+    config.train_config.data_bytes = BytesProto::FOUR_BYTES_AS_FLOAT;
+    config.train_config.train_data_samples = 60000;
+    config.train_config.snapshot = 1000;
+    config.train_config.display = 500;
+
+    lenet_train->setConfig(config);
 
     LoweringPass loweringpass(lenet_train);
     RenamingNodePass renamingpass(lenet_train);
@@ -144,18 +158,9 @@ int main()
     
     // parallelLoweringpass  and elim will add/delete nodes
     lenet_train->updateTopology();
-    lenet_train->addDisplayTensorNodes(train_loss);
 
     dotGen(lenet_train);
 
-    CodegenConfig config;
-    config.train_mode = true;
-    config.train_config.train_data_file = "mnist_labels_images.bin";
-    config.train_config.label_bytes = BytesProto::ONE_BYTE_AS_INT;
-    config.train_config.data_bytes = BytesProto::FOUR_BYTES_AS_FLOAT;
-    config.train_config.train_data_samples = 60000;
-    config.train_config.snapshot = 1000;
-    config.train_config.display = 500;
 
     codegen::ParallelCodegen *cg = new codegen::ParallelCodegen(lenet_train, config);
 

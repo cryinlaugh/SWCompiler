@@ -10,7 +10,7 @@
 
 #include "EliminationPass.h"
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <string>
 
 #include "SWLOG.h"
@@ -34,7 +34,10 @@ void EliminationPass::destroy()
 void EliminationPass::run()
 {
     SWLOG_DEBUG(4) << "EliminationPass Run" << endl;
-    //graph_train = _graph;
+
+    // set isOut mark for logical out nodes (you want to keep)
+    // !!! (not topology order out nodes, e.g. we want to remove nodes for input_grad)
+    _graph->setLogicalOutMark();
 
     std::vector<IRNode*> topo_nodes;
 
@@ -42,7 +45,7 @@ void EliminationPass::run()
     for (int i = 0; i < _graph->topologyNum(); i++) {
         for (int j = 0; j < _graph->getNumInTopoLevel(i); j++) {
             auto node = _graph->getNodeInTopo(i, j);
-            SWLOG_DEBUG(4) << "TopoLevel.." << i << "\tType..."
+            SWLOG_DEBUG(2) << "TopoLevel.." << i << "\tType..."
                 << (node->nodeType() == TENSOR_NODE ? "TENSOR\t" : "OP\t")
                 << (node->name()) << std::endl;
             topo_nodes.push_back(node);
@@ -50,6 +53,66 @@ void EliminationPass::run()
     }
 
     //node elimination
+    for (auto it = topo_nodes.rbegin(); it != topo_nodes.rend(); it++) {
+        IRNode* irnode = *it;
+
+        SWLOG_DEBUG(2) << "[Node] " << irnode->name() << " " << irnode->getLabel()->getIsOut() 
+            << " " << irnode->childNum() << "\n";
+
+        if(irnode->getLabel()->getIsOut()
+            || irnode->childNum()>0) {
+            continue;
+        }
+
+
+        if (irnode->nodeType() == TENSOR_NODE) {
+            // parentNum of TensorNode should <= 1
+            auto parent_op = irnode->parentNum()>0 ? irnode->getParentNode(0) : nullptr;
+            if(parent_op && parent_op->childNum() > 1)
+                continue;
+
+            SWLOG_DEBUG(6) << "TensorNode " << irnode->name()
+                << " not marked out | out degree=0 | is only child of parent, "
+                << " Eliminate it!" << std::endl;
+
+            while(irnode->parentNum()) {
+                irnode->destroyUpperNode(irnode->getParentNode(0));
+            }
+
+            TensorNode* tnode = (TensorNode*)irnode;
+            _graph->delTensorNode(tnode);
+            tnode->destroy();
+
+            if (!delVecMember(topo_nodes, irnode)) {
+                std::cout << "Del irnode Failed" << irnode->name() << std::endl;
+                exit(0);
+            }
+
+            // break;
+
+        } else if(irnode->nodeType() == OP_NODE) {
+            // outdegree of Tensornode can be many, and order does not matter 
+            SWLOG_DEBUG(6) << "OpNode " << irnode->name()
+                << " not marked out | out degree=0,"
+                << " Eliminate it!" << std::endl;
+
+            while(irnode->parentNum()) {
+                irnode->destroyUpperNode(irnode->getParentNode(0));
+            }
+
+            OpNode* onode = (OpNode*)irnode;
+            _graph->delOpNode(onode);
+            onode->destroy();
+
+            if (!delVecMember(topo_nodes, irnode)) {
+                std::cout << "Del irnode Failed" << irnode->name() << std::endl;
+                exit(0);
+            }
+
+            // break;
+        }
+    }
+    /*
     int flag = 1;
     while(flag) {
         flag = 0;
@@ -59,7 +122,7 @@ void EliminationPass::run()
             if ((irnode->getLabel()->getIsOut() == 0) &&
                     (irnode->childNum() == 0)) {
 
-                SWLOG_DEBUG(4) << "Node " << irnode->name()
+                SWLOG_DEBUG(2) << "Node " << irnode->name()
                     << " is not marked out node and the out rank is zero. "
                     << " Eliminate it!" << std::endl;
 
@@ -86,7 +149,7 @@ void EliminationPass::run()
             }
         }
     }
-
+    */
     _graph->updateTopology();
 }
 

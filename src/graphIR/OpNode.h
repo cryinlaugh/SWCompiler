@@ -28,14 +28,7 @@ class OpNode : public IRNode {
         : IRNode(OP_NODE, name), op_(op){};
     ~OpNode(){};
 
-    void destroy() {
-        // printf("free OpNode:%s\n", name().c_str());
-        SWLOG_DEBUG(10) << "Destroy OpNode: " << name() << "\n"; 
-
-        getOp()->destroy();
-        getLabel()->destroy();
-        // this->~OpNode();
-    };
+    void destroy();
 
     void setOp(Op *op) { op_ = op; }
 
@@ -78,6 +71,11 @@ class OpNode : public IRNode {
         _strategyLabel = strategyLabel;
     }
     StrategyLabel* getStrategyLabel() { return _strategyLabel; }
+
+    size_t getCost(Config& config) {
+        return op_->getCost(this, config);
+    } 
+    std::string getCostTrace(Config &config) { return op_->getCostTrace(this, config); }
 
   private:
     Op *op_;

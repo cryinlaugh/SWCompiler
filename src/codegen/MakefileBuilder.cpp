@@ -34,5 +34,8 @@ std::string MakefileBuilder::generate() {
             << " -o $@"
             << "\n";
 
+    writer_ << "run:\n"
+            << "\t" << run_cmd_ << "\n";
+
     return writer_.get_code();
 }

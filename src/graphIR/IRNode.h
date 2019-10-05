@@ -13,6 +13,7 @@
 #include <iostream>
 #include <string>
 #include <unordered_map>
+#include <algorithm>
 
 #include "pass/Label.h"
 #include "pass/AutodiffPass.h"
@@ -103,6 +104,7 @@ class IRNode {
     inline NodeType nodeType() const { return _nodeType; }
     inline void setNodeType(NodeType nodeType) { _nodeType = nodeType; }
 
+    // called by tensornode, node order in [this->children's parents] matters
     void replaceUseKeepOrder(IRNode *node) {
         /*
         for(auto p : _parentNodes){
@@ -125,6 +127,38 @@ class IRNode {
             }
         }
     }
+    // called by tensornode, node order in [spec_child's parents] matters
+    void replaceUseKeepOrder(IRNode *spec_child, IRNode *node) {
+        SWLOG_DEBUG(4) << "replaceUseKeepOrder: " << spec_child->name() << " parent " 
+            << this->name() << "->" << node->name() <<"\n" ;
+        if(std::find(_childNodes.begin(), _childNodes.end(), spec_child) == _childNodes.end())
+            return;
+        // for(auto n : spec_child->getParentNodes())
+        //     std::cout<< n->name() << "\n";
+        // std::cout << "replaceUseKeepOrder for " << this->name() <<  " begin\n";
+        for (auto &cp : spec_child->getParentNodes()) {
+            if (cp == this) {
+                // order of parent matter
+                cp = node;
+                // original link to spec_child (may have other children)
+                this->delChildNode(spec_child);
+                // node is new added, so order does not matter
+                node->pushChildNode(spec_child);
+            }
+        }
+        // for(auto n : spec_child->getParentNodes())
+        //     std::cout<< n->name() << "\n";
+    }
+
+    // called by opnode, node order in this->children matters
+    void replaceOutKeepOrder(IRNode *node, int n) {
+        SWLOG_DEBUG(4) << "replaceOutKeepOrder: " << this->name() << " 's out " << n <<"\n" ;
+        
+        auto *orig_child = _childNodes.at(n);
+        _childNodes[n] = node;
+        node->pushParentNode(this);
+        orig_child->delParentNode(this);
+    }
 
     void setLabel(Label *label) { _label = label; }
     Label *getLabel() const { return _label; }
@@ -138,12 +172,12 @@ class IRNode {
 
     virtual void destroy(){};
     virtual void autoDiff(IRGraph* graph,
-                        std::unordered_map<IRNode*, IRNode*> &gradNodeMap){};
+                        std::unordered_map<IRNode*, IRNode*> &gradNodeMap){}
 
     virtual void autoDiff(IRGraph* graph,
                         std::unordered_map<IRNode*, IRNode*> &gradNodeMap,
                         void* methodParams,
-                        pass::METHOD_TYPE methodType){};
+                        pass::METHOD_TYPE methodType){}
 
     virtual void checkValid(){};
 
