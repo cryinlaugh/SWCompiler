@@ -152,6 +152,7 @@ public:
     }
 
     float getFitnessByGraphTransform(std::vector<int> identity) {
+        SWLOG_DEBUG(1) << "StrategySearchSpace getFitnessByGraphTransform begin\n";
         float communicationCost=0.0;
 
         IRGraph *graph = _irgraph->clone(); 
@@ -159,6 +160,7 @@ public:
         //而相应的tiling label还没有释放
         // std::cout << "copied graph address " << graph << std::endl;
 
+        SWLOG_DEBUG(1) << "StrategySearchSpace getFitnessByGraphTransform labeling copied graph\n";
         int opIndex = 0;
         for(auto op_strategy_idx : identity) {
             std::vector<int> opStrategy = getOpStrategyByIndex(opIndex, op_strategy_idx);
@@ -171,11 +173,13 @@ public:
             opIndex++;
         }
 
+        SWLOG_DEBUG(1) << "StrategySearchSpace getFitnessByGraphTransform begin ParallelLoweringPass\n";
         pass::ParallelLoweringPass *par_lowering_pass = new pass::ParallelLoweringPass(graph);
         par_lowering_pass->run();
         pass::EliminationPass *elimpass = new pass::EliminationPass(graph);
         elimpass->run();
 
+        SWLOG_DEBUG(1) << "StrategySearchSpace getFitnessByGraphTransform getComm\n";
         communicationCost = graph->getCommCost();
 
         // std::cout << "\n" << graph->getCommTrace() << "\n";
@@ -339,7 +343,7 @@ public:
             while(!isValid(identity)) {
                 identity = randomIdentity();
             }
-            _population.push_back(std::make_pair(identity, 0));
+            _population.push_back(std::make_pair(identity, getFitness(identity)));
         }
 
     }
@@ -347,11 +351,12 @@ public:
     void run() {
 
         for(size_t i=0; i<_numGenerations; i++) {
+            breed();
+
             if(_numGenerations<500 || i%10==0) {
                 std::cout << "generation" << i << " top5\n";
                 printTopKIdentity(5);
             }
-            breed();
         }
     }
 
@@ -365,7 +370,7 @@ public:
             auto &identity = _population.at(i).first;
             for(auto gene : identity)
                 std::cout << gene << " ";
-            std::cout << (size_t)getFitness(identity) << "\n";
+            std::cout << "(" << (size_t)_population.at(i).second << ")\n";
         }
     }
 };

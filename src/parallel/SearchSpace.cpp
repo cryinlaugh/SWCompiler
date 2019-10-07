@@ -59,11 +59,13 @@ void GeneticSearch::mutate(std::vector<int> & identity) {
 }
 
 void GeneticSearch::breed() {
+    SWLOG_DEBUG(7) << "updating fitness of Population size=" << _population.size() <<"...\n";
     for(auto &identity : _population) {
         if(identity.second == 0)
             identity.second = getFitness(identity.first);
     }
 
+    SWLOG_DEBUG(7) << "sort population by fitnee...\n";
     std::sort(
       _population.begin(),
       _population.end(),
@@ -75,6 +77,7 @@ void GeneticSearch::breed() {
         return a.second < b.second;
     });
 
+    SWLOG_DEBUG(7) << "start breed...\n";
     // elites directly enter next generation
     Population children(_population.begin(), _population.begin()+_numberElites);
 
@@ -107,7 +110,7 @@ void GeneticSearch::breed() {
 
             mutate(child);
             
-            children.push_back(std::make_pair(child, 0));
+            children.push_back(std::make_pair(child, getFitness(child)));
         }
     }
     _population = children;
