@@ -26,6 +26,12 @@ class ParallelGen;
 
 namespace op {
 
+enum activation_type{
+    SWC_ACTIVATION_RELU,
+    SWC_ACTIVATION_TANH,
+    SWC_ACTIVATION_SIGMOID
+};
+
 class Op {
   public:
     Op(OpType opType = BASIC_OP, int nInput = 0, int nOutput = 0,

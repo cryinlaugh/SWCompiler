@@ -651,7 +651,104 @@ class Conv2dGradOp : public Op {
     ~Conv2dGradOp();
     void destroy() {}
 };
+// https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/kernels/conv_ops_fused_impl.h
+// https://docs.nvidia.com/deeplearning/sdk/cudnn-developer-guide/index.html#cudnnActivationDescriptor_t
+// inherit from Conv2d may be simple
+// but current implementation is not suitable, e.g.initialization of _opClassName 
+class Conv2dWithActivationOp : public Op {
+    std::vector<size_t> kernels_;
+    std::vector<size_t> strides_;
+    std::vector<size_t> pads_;
+    int group_{1};
+    activation_type activation_{SWC_ACTIVATION_RELU};
+public:
+    Conv2dWithActivationOp(std::vector<size_t> &kernels, std::vector<size_t> &strides,
+             std::vector<size_t> &pads, activation_type activation)
+        : Op(DL_OP, 3, 1, std::string("Conv2dWithActivation")) {
+        kernels_.assign(kernels.begin(), kernels.end());
+        strides_.assign(strides.begin(), strides.end());
+        pads_.assign(pads.begin(), pads.end());
+        activation_ = activation;
 
+        this->_inputNDims.push_back(4);
+        this->_inputNDims.push_back(4);
+        this->_inputNDims.push_back(1);
+        this->_outputNDims.push_back(4);
+
+        this->_einOp =  1;
+        this->_einRep.push_back("n__c"); // in
+        this->_einRep.push_back("o__c"); // w
+        this->_einRep.push_back("o"); // b 
+        this->_einRep.push_back("n__o"); // out 
+    }
+    std::vector<size_t> getPads() {
+        return pads_;
+    }
+    std::vector<size_t> getKernels() {
+        return kernels_;
+    }
+    std::vector<size_t> getStrides() {
+        return strides_;
+    }
+    size_t getGroup() {
+        return group_;
+    }
+    activation_type getActivationType() { return activation_;}
+
+    ~Conv2dWithActivationOp();
+
+    void autoDiff(IRGraph* graph,
+        IRNode* opNode,
+        std::unordered_map<IRNode*, IRNode*>&gradNodeMap) override;
+};
+
+
+class Conv2dWithActivationGradOp : public Op {
+    std::vector<size_t> kernels_;
+    std::vector<size_t> strides_;
+    std::vector<size_t> pads_;
+    int group_{1};
+    activation_type activation_{SWC_ACTIVATION_RELU};
+
+  public:
+    Conv2dWithActivationGradOp(std::vector<size_t> &kernels, std::vector<size_t> &strides,
+             std::vector<size_t> &pads, activation_type activation)
+        : Op(DL_OP, 4, 3, std::string("Conv2dWithActivationGrad")) {
+        kernels_.assign(kernels.begin(), kernels.end());
+        strides_.assign(strides.begin(), strides.end());
+        pads_.assign(pads.begin(), pads.end());
+        activation_ = activation;
+
+        this->_inputNDims.push_back(4); // input
+        this->_inputNDims.push_back(4); // weight 
+        this->_inputNDims.push_back(4); // output
+        this->_inputNDims.push_back(4); // outputG
+
+        this->_outputNDims.push_back(4); // inputG
+        this->_outputNDims.push_back(4); // weightG 
+        this->_outputNDims.push_back(1); // biasG
+
+
+        this->_einOp =  1;
+        this->_einRep.push_back("n__c"); // in
+        this->_einRep.push_back("o__c"); // w
+        this->_einRep.push_back("n__o"); // out 
+        this->_einRep.push_back("n__o"); // outG 
+
+        this->_einRep.push_back("n__c"); // inG
+        this->_einRep.push_back("o__c"); // wG
+        this->_einRep.push_back("c");    // bG 
+    }
+
+    std::vector<size_t> getPads() { return pads_; }
+    std::vector<size_t> getKernels() { return kernels_; }
+    std::vector<size_t> getStrides() { return strides_; }
+    size_t getGroup() { return group_; }
+    activation_type getActivationType() { return activation_;}
+
+    ~Conv2dWithActivationGradOp();
+    void destroy() {}
+};
 class BatchNormalizationOp : public Op {
     float epsilon_;
 

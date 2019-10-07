@@ -316,6 +316,18 @@ void IRGraph::initTensorNodes() {
                     out->setTensor(new Tensor({idims[0], idims[1]}));
                     out->setTensor(new Tensor({idims[0], ohw[0], ohw[1], wdims[0]}));
                 }
+                if(auto *conv = dynamic_cast<Conv2dWithActivationOp*>(op)) {
+                    auto idims = ((TensorNode *)node->getParentNode(0))->getDims();
+                    auto wdims = ((TensorNode *)node->getParentNode(1))->getDims(); // OC K K IC
+                    auto kernels = conv->getKernels();
+                    auto strides = conv->getStrides();
+                    auto pads = conv->getPads();
+                    std::vector<size_t> ohw = inferConvOutDims(idims[1], idims[2], kernels, strides, pads);
+
+                    auto *out = (TensorNode *)node->getChildNode(0);
+                    out->setTensor(new Tensor({idims[0], idims[1]}));
+                    out->setTensor(new Tensor({idims[0], ohw[0], ohw[1], wdims[0]}));
+                }
                 if(auto *pool = dynamic_cast<MaxPoolOp *>(op)) {
                     auto idims = ((TensorNode *)node->getParentNode(0))->getDims();
                     auto kernels = pool->getKernels();
