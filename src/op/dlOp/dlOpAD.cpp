@@ -332,7 +332,7 @@ void Conv2dOp::autoDiff(IRGraph* graph,
 void DropoutOp::autoDiff(IRGraph* graph, IRNode* opNode, std::unordered_map<IRNode*, IRNode*>&gradNodeMap)
 {
     SWLOG_DEBUG(4) << "autoDiff: " << _opClassName   << std::endl;
-    auto *x = opNode->getParentNode(0);
+    //auto *x = opNode->getParentNode(0);
     auto *mask = opNode->getParentNode(1);
     auto *output = opNode->getChildNode(0);
 
@@ -342,12 +342,12 @@ void DropoutOp::autoDiff(IRGraph* graph, IRNode* opNode, std::unordered_map<IRNo
 
     auto *N = new OpNode(opNode->name() + "_grad",
             new ElementMulOp());
-    N->exlinkUpperNode(x, mask, output, outputGrad);
+    N->exlinkUpperNode(outputGrad, mask);
 
     gradNodeMap[opNode] = N;
     graph->pushOpNode(N);
 
-    for (int i = 0; i < opNode->parentNum(); i++) {
+    for (int i = 0; i < 1/*opNode->parentNum()*/; i++) {
 
         auto *tnode = (TensorNode *)(opNode->getParentNode(i));
         auto *tensor = tnode->getTensor();

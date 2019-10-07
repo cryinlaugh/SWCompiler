@@ -258,6 +258,11 @@ class DropoutOp: public Op {
         this->_inputNDims.push_back(2);
         this->_inputNDims.push_back(2); // _mask
         this->_outputNDims.push_back(2);
+
+        this->_einOp = 1;
+        this->_einRep.push_back("jk"); // label  
+        this->_einRep.push_back("jk"); // origin out
+        this->_einRep.push_back("jk"); // grad of input
         
     };
     ~DropoutOp();
@@ -362,6 +367,11 @@ public:
     ElementMulOp() : Op(DL_OP, 2, 1, std::string("ElementMul")) {
         this->_inputNDims.push_back(2);
         this->_outputNDims.push_back(2);
+
+        this->_einOp = 1;
+        this->_einRep.push_back("nc"); // label  
+        this->_einRep.push_back("nc"); // origin out
+        this->_einRep.push_back("nc"); // grad of input
     };
     ~ElementMulOp();
     void destroy() {};
