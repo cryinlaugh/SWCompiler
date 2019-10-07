@@ -142,7 +142,7 @@ void Engine::runParallelPasses() {
 
     passManager.run();
 
-    dotGen(graph_, "mlp_para_before_elim.dot");
+    //dotGen(graph_, "mlp_para_before_elim.dot");
 
     eliming->run();
 

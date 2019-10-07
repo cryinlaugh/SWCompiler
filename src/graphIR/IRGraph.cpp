@@ -489,6 +489,7 @@ void IRGraph::copyTo(IRGraph* graph) const {
 IRGraph *IRGraph::clone() const {
     IRGraph *graph = new IRGraph();
 
+    SWLOG_DEBUG(1) << "IRGraph::clone() clone tensornodes and opnodes\n";
     std::unordered_map<TensorNode *, TensorNode *> tensors_map;
     std::unordered_map<OpNode *, OpNode *> ops_map;
     for (auto &N : _tensors) {
@@ -503,6 +504,7 @@ IRGraph *IRGraph::clone() const {
     }
 
 
+    SWLOG_DEBUG(1) << "IRGraph::clone() link tensornodes and opnodes\n";
     // it worked, but remind that
     // static_cast may cause offset
     for (auto &N : _tensors) {
@@ -512,14 +514,17 @@ IRGraph *IRGraph::clone() const {
             tn->exlinkUpperNode(parent);
         }
     }
+    SWLOG_DEBUG(1) << "IRGraph::clone() link ops to parent\n";
     for (auto &N : _ops) {
         auto opn = ops_map[N];
         for (int i = 0; i < N->parentNum(); i++) {
+        SWLOG_DEBUG(1) << "IRGraph::clone() op->parentNum()= " << N->parentNum() << " p" << i << ": "  << N->getParentNode(i)->name() << "\n";
             auto parent = tensors_map[(TensorNode *)N->getParentNode(i)];
             opn->exlinkUpperNode(parent);
         }
     }
 
+    SWLOG_DEBUG(1) << "IRGraph::clone() addLogicalOutNodes\n";
     // clone _logicalOutNodes
     for(auto &node : _logicalOutNodes) {
         if(node->nodeType() == TENSOR_NODE) {
