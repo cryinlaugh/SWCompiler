@@ -369,9 +369,9 @@ public:
         this->_outputNDims.push_back(2);
 
         this->_einOp = 1;
-        this->_einRep.push_back("nc"); // label  
-        this->_einRep.push_back("nc"); // origin out
-        this->_einRep.push_back("nc"); // grad of input
+        this->_einRep.push_back("bc"); // label  
+        this->_einRep.push_back("bc"); // origin out
+        this->_einRep.push_back("bc"); // grad of input
     };
     ~ElementMulOp();
     void destroy() {};
@@ -541,10 +541,10 @@ public:
         this->_einOp =  1;
         // warning, strategy will be orderd by char 
         // so data parallel
-        this->_einRep.push_back("n__c"); // in
+        this->_einRep.push_back("b__c"); // in
         this->_einRep.push_back("o__c"); // w
         this->_einRep.push_back("o"); // b 
-        this->_einRep.push_back("n__o"); // out 
+        this->_einRep.push_back("b__o"); // out 
     };
     Conv2dOp(std::vector<size_t> &kernels, std::vector<size_t> &strides,
              std::vector<size_t> &pads)
@@ -558,10 +558,10 @@ public:
         this->_outputNDims.push_back(4);
 
         this->_einOp =  1;
-        this->_einRep.push_back("n__c"); // in
+        this->_einRep.push_back("b__c"); // in
         this->_einRep.push_back("o__c"); // w
         this->_einRep.push_back("o"); // b 
-        this->_einRep.push_back("n__o"); // out 
+        this->_einRep.push_back("b__o"); // out 
     }
     std::vector<size_t> getPads() {
         return pads_;
@@ -607,12 +607,12 @@ class Conv2dGradOp : public Op {
         this->_outputNDims.push_back(1); // biasG
 
         this->_einOp =  1;
-        this->_einRep.push_back("n__c"); // in
+        this->_einRep.push_back("b__c"); // in
         this->_einRep.push_back("o__c"); // w
-        this->_einRep.push_back("n__o"); // out 
-        this->_einRep.push_back("n__o"); // outG 
+        this->_einRep.push_back("b__o"); // out 
+        this->_einRep.push_back("b__o"); // outG 
 
-        this->_einRep.push_back("n__c"); // inG
+        this->_einRep.push_back("b__c"); // inG
         this->_einRep.push_back("o__c"); // wG
         this->_einRep.push_back("c");    // bG 
     };
@@ -632,14 +632,13 @@ class Conv2dGradOp : public Op {
         this->_outputNDims.push_back(4); // weightG 
         this->_outputNDims.push_back(1); // biasG
 
-
         this->_einOp =  1;
-        this->_einRep.push_back("n__c"); // in
+        this->_einRep.push_back("b__c"); // in
         this->_einRep.push_back("o__c"); // w
-        this->_einRep.push_back("n__o"); // out 
-        this->_einRep.push_back("n__o"); // outG 
+        this->_einRep.push_back("b__o"); // out 
+        this->_einRep.push_back("b__o"); // outG 
 
-        this->_einRep.push_back("n__c"); // inG
+        this->_einRep.push_back("b__c"); // inG
         this->_einRep.push_back("o__c"); // wG
         this->_einRep.push_back("c");    // bG 
     }
@@ -676,10 +675,10 @@ public:
         this->_outputNDims.push_back(4);
 
         this->_einOp =  1;
-        this->_einRep.push_back("n__c"); // in
+        this->_einRep.push_back("b__c"); // in
         this->_einRep.push_back("o__c"); // w
         this->_einRep.push_back("o"); // b 
-        this->_einRep.push_back("n__o"); // out 
+        this->_einRep.push_back("b__o"); // out 
     }
     std::vector<size_t> getPads() {
         return pads_;
@@ -730,12 +729,12 @@ class Conv2dWithActivationGradOp : public Op {
 
 
         this->_einOp =  1;
-        this->_einRep.push_back("n__c"); // in
+        this->_einRep.push_back("b__c"); // in
         this->_einRep.push_back("o__c"); // w
-        this->_einRep.push_back("n__o"); // out 
-        this->_einRep.push_back("n__o"); // outG 
+        this->_einRep.push_back("b__o"); // out 
+        this->_einRep.push_back("b__o"); // outG 
 
-        this->_einRep.push_back("n__c"); // inG
+        this->_einRep.push_back("b__c"); // inG
         this->_einRep.push_back("o__c"); // wG
         this->_einRep.push_back("c");    // bG 
     }
@@ -772,10 +771,8 @@ public:
         this->_outputNDims.push_back(4);
 
         this->_einOp = 1;
-        // warning, strategy will be orderd by char 
-        // so nhwc will cause strategy order 3 1 0 2
-        this->_einRep.push_back("nhwc"); // in
-        this->_einRep.push_back("nhwc"); // out
+        this->_einRep.push_back("bhwc"); // in
+        this->_einRep.push_back("bhwc"); // out
     }
     ~ReluOp();
     void checkValid(OpNode *node);
@@ -793,13 +790,11 @@ class ReluGradOp : public Op {
         this->_outputNDims.push_back(4);
 
         this->_einOp = 1;
-        // warning, strategy will be orderd by char 
-        // so nhwc will cause strategy order 3 1 0 2
-        this->_einRep.push_back("nhwc"); // in
+        this->_einRep.push_back("bhwc"); // in
         // this->_einRep.push_back("nhwc"); // out
-        this->_einRep.push_back("nhwc"); // outGrad
+        this->_einRep.push_back("bhwc"); // outGrad
 
-        this->_einRep.push_back("nhwc");
+        this->_einRep.push_back("bhwc");
     }
     ~ReluGradOp();
     void destroy() {}
@@ -816,8 +811,8 @@ public:
         this->_outputNDims.push_back(4);
 
         this->_einOp =  1;
-        this->_einRep.push_back("n__c"); // in
-        this->_einRep.push_back("n__c"); // out 
+        this->_einRep.push_back("b__c"); // in
+        this->_einRep.push_back("b__c"); // out 
     }
     MaxPoolOp(std::vector<size_t> &kernels, std::vector<size_t> &strides,
               std::vector<size_t> &pads)
@@ -829,8 +824,8 @@ public:
         this->_outputNDims.push_back(4);
 
         this->_einOp =  1;
-        this->_einRep.push_back("n__c"); // in
-        this->_einRep.push_back("n__c"); // out 
+        this->_einRep.push_back("b__c"); // in
+        this->_einRep.push_back("b__c"); // out 
     }
     ~MaxPoolOp();
     std::vector<size_t> getPads() {
@@ -867,11 +862,11 @@ class MaxPoolGradOp : public Op {
         this->_outputNDims.push_back(4);// inputG
 
         this->_einOp =  1;
-        this->_einRep.push_back("n__c"); // in
-        this->_einRep.push_back("n__c"); // out 
-        this->_einRep.push_back("n__c"); // outG 
+        this->_einRep.push_back("b__c"); // in
+        this->_einRep.push_back("b__c"); // out 
+        this->_einRep.push_back("b__c"); // outG 
 
-        this->_einRep.push_back("n__c"); // inG 
+        this->_einRep.push_back("b__c"); // inG 
     }
     MaxPoolGradOp(std::vector<size_t> &kernels, std::vector<size_t> &strides,
               std::vector<size_t> &pads)
@@ -887,11 +882,11 @@ class MaxPoolGradOp : public Op {
         this->_outputNDims.push_back(4);// inputG
 
         this->_einOp =  1;
-        this->_einRep.push_back("n__c"); // in
-        this->_einRep.push_back("n__c"); // out 
-        this->_einRep.push_back("n__c"); // outG 
+        this->_einRep.push_back("b__c"); // in
+        this->_einRep.push_back("b__c"); // out 
+        this->_einRep.push_back("b__c"); // outG 
 
-        this->_einRep.push_back("n__c"); // inG 
+        this->_einRep.push_back("b__c"); // inG 
 
     }
     ~MaxPoolGradOp();
@@ -912,8 +907,8 @@ public:
         this->_outputNDims.push_back(4);
 
         this->_einOp =  1;
-        this->_einRep.push_back("n__c"); // in
-        this->_einRep.push_back("n__c"); // out 
+        this->_einRep.push_back("b__c"); // in
+        this->_einRep.push_back("b__c"); // out 
     }
     AvgPoolOp(std::vector<size_t> &kernels, std::vector<size_t> &strides,
               std::vector<size_t> &pads)
@@ -925,8 +920,8 @@ public:
         this->_outputNDims.push_back(4);
 
         this->_einOp =  1;
-        this->_einRep.push_back("n__c"); // in
-        this->_einRep.push_back("n__c"); // out 
+        this->_einRep.push_back("b__c"); // in
+        this->_einRep.push_back("b__c"); // out 
     }
     ~AvgPoolOp();
     std::vector<size_t> getPads() {
