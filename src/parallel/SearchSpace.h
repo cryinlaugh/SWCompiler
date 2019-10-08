@@ -77,7 +77,7 @@ public:
 
     std::vector<int> getOpStrategy(int index){
     
-        return _op_strategies[index];
+        return _op_strategies.at(index);
     }
 
     size_t getSize() { return _op_strategies.size(); }
@@ -110,21 +110,24 @@ public:
 
     void printStrategySpace() {
         SWLOG_DEBUG(8) << "print StrategySearchSpace\n";
+        double total = 1;
         for(auto &op_strategy : _graph_strategies) {
             auto opnode = op_strategy->getOpNode();
             auto size = op_strategy->getSize();
             std::cout << opnode->name() << " : " << size << "\n";
+            total *= size;
         }
+        std::cout << "[Summary of Graph Strategy Space]" << "nodes: " << 
+            _graph_strategies.size() << " space= " << total << "\n";
     }
     
     OpNode* getOpNodeByIndex(int opIndex){
-        return _graph_strategies[opIndex]->getOpNode();
+        return _graph_strategies.at(opIndex)->getOpNode();
     }
 
     std::vector<int> getOpStrategyByIndex(int opIndex, int tilingIndex){
-       
-
-        return _graph_strategies[opIndex]->getOpStrategy(tilingIndex);
+        //std::cout << _graph_strategies.at(opIndex)->getOpNode()->name()<< " " << tilingIndex << "\n";
+        return _graph_strategies.at(opIndex)->getOpStrategy(tilingIndex);
     }
 
     std::vector<int> getGeneSpace() {
@@ -152,7 +155,7 @@ public:
     }
 
     float getFitnessByGraphTransform(std::vector<int> identity) {
-        SWLOG_DEBUG(1) << "StrategySearchSpace getFitnessByGraphTransform begin\n";
+        SWLOG_DEBUG(2) << "StrategySearchSpace getFitnessByGraphTransform begin\n";
         float communicationCost=0.0;
 
         IRGraph *graph = _irgraph->clone(); 
@@ -160,7 +163,7 @@ public:
         //而相应的tiling label还没有释放
         // std::cout << "copied graph address " << graph << std::endl;
 
-        SWLOG_DEBUG(1) << "StrategySearchSpace getFitnessByGraphTransform labeling copied graph\n";
+        SWLOG_DEBUG(2) << "StrategySearchSpace getFitnessByGraphTransform labeling copied graph\n";
         int opIndex = 0;
         for(auto op_strategy_idx : identity) {
             std::vector<int> opStrategy = getOpStrategyByIndex(opIndex, op_strategy_idx);
@@ -173,13 +176,13 @@ public:
             opIndex++;
         }
 
-        SWLOG_DEBUG(1) << "StrategySearchSpace getFitnessByGraphTransform begin ParallelLoweringPass\n";
+        SWLOG_DEBUG(2) << "StrategySearchSpace getFitnessByGraphTransform begin ParallelLoweringPass\n";
         pass::ParallelLoweringPass *par_lowering_pass = new pass::ParallelLoweringPass(graph);
         par_lowering_pass->run();
         pass::EliminationPass *elimpass = new pass::EliminationPass(graph);
         elimpass->run();
 
-        SWLOG_DEBUG(1) << "StrategySearchSpace getFitnessByGraphTransform getComm\n";
+        SWLOG_DEBUG(2) << "StrategySearchSpace getFitnessByGraphTransform getComm\n";
         communicationCost = graph->getCommCost();
 
         // std::cout << "\n" << graph->getCommTrace() << "\n";
@@ -307,6 +310,10 @@ private:
 
     double getFitness(const std::vector<int>& identity) {
         // return _sss->getFitness(identity); 
+        std::ostringstream os;
+        for(auto s : identity)
+            os << s << " ";
+        SWLOG_DEBUG(2) << "[GA getFitness] " << os.str() << "\n"; 
         return _sss->getFitnessByGraphTransform(identity); 
     }
     
@@ -334,7 +341,7 @@ public:
             if(identity.size() != geneSpace.size())
                 continue;
 
-            _population.push_back(std::make_pair(identity, 0)); 
+            _population.push_back(std::make_pair(identity, getFitness(identity))); 
             idx++;
         }
 
@@ -346,16 +353,21 @@ public:
             _population.push_back(std::make_pair(identity, getFitness(identity)));
         }
 
+        size_t top = populationSize < 5 ? populationSize : 5;
+        std::cout << "generation0" << " top" << top << " of " << populationSize << "\n";
+        printTopKIdentity(top);
+
     }
 
     void run() {
+        size_t top = _populationSize < 5 ? _populationSize : 5;
 
         for(size_t i=0; i<_numGenerations; i++) {
             breed();
 
             if(_numGenerations<500 || i%10==0) {
-                std::cout << "generation" << i << " top5\n";
-                printTopKIdentity(5);
+                std::cout << "generation" << i << " top" << top << " of " << _populationSize << "\n";
+                printTopKIdentity(top);
             }
         }
     }

@@ -17,8 +17,14 @@ std::vector<double> GeneticSearch::getNormAccumFitness() {
         fit[i] = identity.second > 0 ? identity.second :getFitness(identity.first); 
     }
 
-    // normalize fitness 
+    // !!!! add by wayne at 2019.10.08
     auto sum = std::accumulate(fit.begin(), fit.end(), 0.0);
+    for(size_t i=0; i<_populationSize; i++) {
+        fit[i] = sum / fit[i]; // caution!!! only did because our fitness is comm cost(ascend order), but fitness should be time 
+    }
+
+    // normalize fitness 
+    sum = std::accumulate(fit.begin(), fit.end(), 0.0);
     for(size_t i=0; i<_populationSize; i++) {
         fit[i] /= sum;
     }
