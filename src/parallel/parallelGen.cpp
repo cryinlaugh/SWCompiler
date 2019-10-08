@@ -30,7 +30,10 @@ vector<vector<int> > ParallelGen::generateStgy (OpNode* node) {
     int nOutput = testOp->_nOutputTensor;
     for(int iterT = 0; iterT < (nInput+nOutput); iterT ++){
         size_t dim_size =  testOp->_einRep[iterT].size();
-        if(dynamic_cast<SGDOp*>(testOp)) {
+        if(dynamic_cast<SGDOp*>(testOp)
+            || dynamic_cast<ReluOp*>(testOp)
+            || dynamic_cast<ReluGradOp*>(testOp)
+        ) {
             auto *tnode = iterT < nInput ? (TensorNode*)node->getParentNode(iterT):
                 (TensorNode*)node->getChildNode(iterT-nInput);
             dim_size = tnode->getNDim();

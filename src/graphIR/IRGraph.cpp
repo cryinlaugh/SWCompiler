@@ -276,11 +276,20 @@ void IRGraph::initTensorNodes() {
                 }
 
                 if (dynamic_cast<ReluOp *>(op) || 
-                    dynamic_cast<DropoutOp*>(op) ||
                     dynamic_cast<LRNOp*>(op) ){
 
                     auto *in = (TensorNode *)node->getParentNode(0);
                     auto *out = (TensorNode *)node->getChildNode(0);
+                    out->setTensor(new Tensor(in->getTensor()->getTensorShape()));
+                }
+                if (
+                    dynamic_cast<DropoutOp*>(op)){
+
+                    auto *in = (TensorNode *)node->getParentNode(0);
+                    auto *mask = (TensorNode *)node->getParentNode(1);
+                    auto *out = (TensorNode *)node->getChildNode(0);
+
+                    mask->setTensor(new Tensor(in->getTensor()->getTensorShape()));
                     out->setTensor(new Tensor(in->getTensor()->getTensorShape()));
                 }
 
