@@ -195,7 +195,80 @@ public:
 
     }
 
-    void runOptimizedLabeling(int p) {
+    void runHandCraftLabeling() {
+        std::vector<TensorNode * > topoTensorNodes;
+        std::vector<OpNode *> topoOpNodes;
+
+        for (int i = 0; i < _graph->topologyNum(); i++) {
+            for (int j = 0; j < _graph->getNumInTopoLevel(i); j++) {
+                IRNode * irnode = _graph->getNodeInTopo(i, j);
+                if(irnode->nodeType() == TENSOR_NODE) {
+                    topoTensorNodes.push_back(dynamic_cast<TensorNode *>(irnode));
+                } else if(irnode->nodeType() == OP_NODE) {
+                    topoOpNodes.push_back(dynamic_cast<OpNode*>(irnode));
+                }
+
+            }
+        }
+
+        for(unsigned long  i = 0; i < topoTensorNodes.size(); ++i) {
+            TensorNode * originNode = topoTensorNodes[i];
+            TilingLabel * tlabel =  new TilingLabel();
+            originNode->setTilingLabel(tlabel);
+        }
+
+        std::ostringstream oss;
+        std::ostream *os = &oss; 
+
+        *os<<topoOpNodes.size()<<std::endl;
+
+        StrategySearchSpace *sss = new StrategySearchSpace(_graph);
+
+        for(unsigned long i =0; i<topoOpNodes.size(); ++i){
+            OpNode * opNode = topoOpNodes[i];
+
+            if(opNode->getOp()->getEinOp()== 0){
+                *os << opNode->name()<<" can not be parallelized (einOp=0)\n";
+                continue;
+            }
+            
+            sss->addOpStrategyIfExist(opNode);
+        }
+
+        // op num in space may not be euqal to topoOpNodes.size() since we skip nodes whose einOp=0
+        sss->printStrategySpace();
+
+        // all 0 for mlp
+        std::vector<int> init0(sss->getOpNum());
+        for(auto &op_stgy_idx : init0)
+            op_stgy_idx = 0;
+
+        // for lenet, some different 
+        // mind that this will not get DP, because we cann not describe 
+        // do not parallelize SGD when search strategy now (possible fix is add this to strategy)
+        std::vector<int> lenet_init {0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0};
+        // std::vector<int> lenet_init2{0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0};
+        
+        // for vgg19 128-bit gene
+        // adapt form dp
+        std::vector<int> vgg_init{0, 2, 1, 2, 1, 1, 2, 1, 2, 1, 1, 2, 1, 2, 1, 2, 1, 2, 1, 1, 2, 1, 2, 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 2, 1, 2, 0, 0, 1, 2, 0, 0, 1, 2, 0, 0, 1, 1, 0, 0, 2, 1, 2, 0, 0, 1, 2, 0, 0, 1, 2, 0, 0, 1, 1, 0, 0, 2, 1, 2, 0, 0, 1, 1, 0, 0, 2, 1, 2, 0, 0, 0, 0, 0};        
+        // batch8 optimal
+        std::vector<int> vgg_init2{0, 1, 1, 2, 1, 1, 0, 1, 0, 1, 1, 2, 2, 2, 1, 0, 2, 1, 1, 2, 2, 0, 2, 1, 1, 2, 1, 0, 1, 0, 2, 0, 2, 0, 2, 1, 1, 1, 2, 1, 1, 2, 1, 2, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 2, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 2, 1, 0, 0, 2, 1, 0, 1, 0, 1, 0, 0, 2, 1, 0, 0, 1, 1, 2, 0, 0, 2, 0, 0, 0, 2, 3, 0, 1, 2, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0};
+
+        // for vgg19 fused
+        // dp based (sgd = 0)
+        std::vector<int> vggfused_init0{0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0};
+        // batch8_100_generation_890M
+        //std::vector<int> vggfused_init1{1, 1, 0, 1, 1, 0, 2, 0, 2, 1, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 2, 0, 0, 0, 0, 1, 0, 0, 1, 2, 1, 0, 0, 1, 0, 0, 0, 0, 2, 0, 1, 0, 0, 0, 0, 0, 0, 2, 1, 0, 0, 2, 0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0}; 
+        //udef.push_back(vggfused_init1);
+
+        
+        auto selected = init0;
+        assert(selected.size() == sss->getOpNum() && "illegal handcraft strategy, please check");
+        sss->addStrategyToGraph(init0);
+    }
+
+    void runOptimizedLabeling() {
 
         std::vector<TensorNode * > topoTensorNodes;
         std::vector<OpNode *> topoOpNodes;
@@ -244,22 +317,27 @@ public:
         
         std::vector<std::vector<int>> udef;
 
-        // all 0 for mlp
-        std::vector<int> init0(sss->getOpNum());
-        for(auto &op_stgy_idx : init0)
-            op_stgy_idx = 0;
-        udef.push_back(init0);
+        std::vector<int> dp_seed(sss->getOpNum(), 0);
+        udef.push_back(dp_seed);
+
 
         // for lenet, some different 
         // mind that this will not get DP, because we cann not describe 
         // do not parallelize SGD when search strategy now (possible fix is add this to strategy)
-        std::vector<int> lenet_init{0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0};
-        udef.push_back(lenet_init);
+        std::vector<int> lenet_init {0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0};
         
+        // for vgg19 128-bit gene
+        // adapt form dp
+        //std::vector<int> vgg_n8_p4_dp_init{0, 2, 1, 2, 1, 1, 2, 1, 2, 1, 1, 2, 1, 2, 1, 2, 1, 2, 1, 1, 2, 1, 2, 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 2, 1, 2, 0, 0, 1, 2, 0, 0, 1, 2, 0, 0, 1, 1, 0, 0, 2, 1, 2, 0, 0, 1, 2, 0, 0, 1, 2, 0, 0, 1, 1, 0, 0, 2, 1, 2, 0, 0, 1, 1, 0, 0, 2, 1, 2, 0, 0, 0, 0, 0};        
+
+
+        // for vgg19 fused
+        // dp based (sgd = 0)
+        //std::vector<int> vggfused_init0{0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0};
 
         GeneticSearch ga(sss->getGeneSpace(),
             udef, /*specified identities*/
-            200, /*populationSize*/
+            500, /*populationSize*/
             0.5, /*crossOverRate*/
             0.1, /*mutationRate*/
             20, /*numberElites*/
@@ -273,6 +351,7 @@ public:
 
         sss->addStrategyToGraph(best);
     }
+
     void run() {
         SWLOG_DEBUG(4) << "Start Paralleling Pass." << std::endl;
 
@@ -282,7 +361,9 @@ public:
         assert(parallel_degree>1 && "error, degree of parallellism unset, please set config.mpi_size");
 
         if(config.geneticalgo_opt_parallel) {
-            runOptimizedLabeling(parallel_degree);
+            runOptimizedLabeling();
+        }else if(config.handcraft_parallel) {
+            runHandCraftLabeling();
         }else {
             runLabeling(parallel_degree);
         }
