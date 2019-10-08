@@ -764,6 +764,50 @@ public:
     void destroy() {}
 };
 
+
+// TODO: LRN use scale_cache
+class LRNOp : public Op {
+    /* not important now
+    float alpha_;
+    float beta_;
+    size_t windowSize_;
+    float k_;
+    */
+
+public:
+    LRNOp() : Op(DL_OP, 1, 1, std::string("LRN")) {
+
+        this->_einOp =  1;
+        this->_einRep.push_back("b__c"); // in
+        this->_einRep.push_back("b__c"); // out 
+    }
+
+    void autoDiff(IRGraph* graph,
+        IRNode* opNode,
+        std::unordered_map<IRNode*, IRNode*>&gradNodeMap) override;
+};
+
+class LRNGradOp : public Op {
+    /* not important now
+    float alpha_;
+    float beta_;
+    size_t windowSize_;
+    float k_;
+    */
+
+public:
+    LRNGradOp() : Op(DL_OP, 3, 1, std::string("LRNGrad")) {
+
+        this->_einOp =  1;
+        this->_einRep.push_back("b__c"); // in
+        this->_einRep.push_back("b__c"); // out 
+        this->_einRep.push_back("b__c"); // outGrad 
+        //this->_einRep.push_back("b__c"); // scale 
+        //
+        this->_einRep.push_back("b__c"); // inGrad 
+    }
+};
+
 class ReluOp : public Op {
 public:
     ReluOp() : Op(DL_OP, 1, 1, std::string("Relu")) {
