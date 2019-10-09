@@ -16,6 +16,7 @@
 #include <vector>
 #include <set>
 #include <algorithm>
+#include <iomanip>
 #include "graphIR/OpNode.h"
 #include "graphIR/TensorNode.h"
 #include "graphIR/IRGraph.h"
@@ -194,6 +195,7 @@ public:
     }
 
     void addStrategyToGraph(std::vector<int> identity) {
+        std::cout << "----------selected strategy by op out---------------------\n";
         int opIndex = 0;
         for(auto op_strategy_idx : identity) {
             std::vector<int> opStrategy = getOpStrategyByIndex(opIndex, op_strategy_idx);
@@ -202,6 +204,14 @@ public:
             opNode->setStrategyLabel(new StrategyLabel(opStrategy));
 
             opIndex++;
+
+            std::cout << std::left << std::setw(3) << opIndex << " " 
+                << std::left << std::setw(3) 
+                << opStrategy.at(opNode->parentNum()) << " " 
+                << std::left << std::setw(15) 
+                << opNode->getChildNode(0)->name() << " " 
+                << std::left << std::setw(15) 
+                << opNode->name() << " children " << opNode->childNum() << "\n";
         }
 
     }
