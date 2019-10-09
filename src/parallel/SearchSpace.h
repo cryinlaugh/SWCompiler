@@ -145,9 +145,47 @@ public:
             std::vector<int> opStrategy = getOpStrategyByIndex(opIndex, op_strategy_idx);
             OpNode* opNode = getOpNodeByIndex(opIndex);
             //Performance opNode
-            communicationCost+=getCommunicationCost(opNode, opStrategy);
+            float cost = getCommunicationCost(opNode, opStrategy);
+ 
+            //cout << opNode->name() << " " << cost << "\n";
+            communicationCost += cost;
             opIndex++;
         }
+
+        //for(auto tensorNode:_irgraph->getLogicalOutNodes()){
+            //std::cout<<t->name()<<",";
+               
+            //std::map<TensorNode*, std::map<int, int>>::iterator outeriter= _tensorStrategiesMap.find(tensorNode);
+
+        
+
+        //}
+        //std::cout<<"\n";
+                
+        std::map<TensorNode*, std::map<int, int>>::iterator outeriter=_tensorStrategiesMap.begin();
+        while(outeriter != _tensorStrategiesMap.end()) {
+            IRNode * tensorNode =outeriter->first;
+            std::map<int,int > preTilings = outeriter->second;
+            std::vector<IRNode*> logicalOutNodes = _irgraph->getLogicalOutNodes();
+            std::vector<IRNode*>::iterator logicOutIterator = std::find(logicalOutNodes.begin(), logicalOutNodes.end(),tensorNode);
+            if(logicOutIterator!=logicalOutNodes.end()){
+                
+                std::map<int, int >::iterator inneriter = preTilings.find(-2);
+                if(inneriter!=preTilings.end()){
+                    //if(inneriter->second==0)
+                    if(inneriter->second==0){
+                        auto config = _irgraph->getConfig();
+                        float reduceCost=ReduceOp::getSimCost(outeriter->first->getTensor()->getSizeInBytes(),config, -2);
+                        std::cout<<"reduce "<<outeriter->first->name()<<": "<< reduceCost <<"\n";
+                        communicationCost+=reduceCost;
+                    }
+
+                }
+            }
+            outeriter++;
+        }
+        
+        this->_tensorStrategiesMap.clear();
         return communicationCost;
     }
 
@@ -199,94 +237,100 @@ public:
 
     }
 
-    float getCommunicationCost(OpNode * opNode, std::vector<int> opStrategy){
-        float  communicateCost =0.0;
+    float getCommunicationCost(OpNode * opNode, std::vector<int> opStrategy) {
+        float  communicateCost = 0.0;
+
+        float ScatterCost =0.0;
+        float TransformCost =0.0;
         auto config = _irgraph->getConfig();
-
-        for(unsigned long i=0;i<opNode->getParentNodes().size();i++){
-            int curTiling = opStrategy[i];          
-            TensorNode * curTensorNode = dynamic_cast<TensorNode*>(opNode->getParentNode(i)); 
-            std::map<TensorNode* ,std::set<int>>::iterator iter =  _inTensorStrategiesMap.find(curTensorNode); 
-            if(iter!=_inTensorStrategiesMap.end()){
-                std::set<int>  preTilings= iter->second;    
-               if(preTilings.find(curTiling)!=preTilings.end()){//find the same tiling as curtiling in preTilings    
-                   communicateCost += 0.0;
-                   //_inTensorStrategiesMap[curTensorNode].insert(curTiling);
-
-               }else{
-                   int smallestTiling = *std::min_element(preTilings.begin(),preTilings.end());
-                   //we think the smallest communicatecost comes from the smallest tiling number 
-                    
-                    communicateCost+=TransformOp::getSimCost(curTensorNode->getTensor()->getSizeInBytes(),config,smallestTiling,curTiling);
-                    _inTensorStrategiesMap[curTensorNode].insert(curTiling);
-
-               } 
-            }else{
-
-                if(curTensorNode->getParentNodes().size()!=0)
-                    communicateCost+=ScatterOp::getSimCost(curTensorNode->getTensor()->getSizeInBytes(),config,curTiling);
-                std::set<int> preTilings;
-                preTilings.insert(curTiling);
-                _inTensorStrategiesMap[curTensorNode]=preTilings;
-
-            }
-            
-            
-            
-            std::map<TensorNode* ,std::set<int>>::iterator outiter =  _outTensorStrategiesMap.find(curTensorNode);
-
-            if(outiter!=_outTensorStrategiesMap.end()){
-                std::set<int> preTilings = outiter->second;
-                if(preTilings.find(curTiling)!=preTilings.end())
-                    _outTensorStrategiesMap[curTensorNode].erase(curTiling);
-            }
-        } 
-
         
-        for(unsigned long i=0;i<opNode->getChildNodes().size();i++){
-            int curTiling = opStrategy[i];     
-            TensorNode * curTensorNode = dynamic_cast<TensorNode*>(opNode->getParentNode(i)); 
-            std::map<TensorNode* ,std::set<int>>::iterator iter =  _outTensorStrategiesMap.find(curTensorNode);
-            if(iter!=_outTensorStrategiesMap.end()){
-                std::set<int> preTilings = iter->second;
-                if(preTilings.find(curTiling)==preTilings.end())
-                    _outTensorStrategiesMap[curTensorNode].insert(curTiling);
-            }else{
-                std::set<int> preTilings;
-                preTilings.insert(curTiling);
-                _outTensorStrategiesMap[curTensorNode]=preTilings;
-            }
-            //TBC
-            //(void)curTiling;
-            //(void)iter;
+        std::map<TensorNode*, std::map<int, int>>::iterator outeriter;
 
-        }    
-
-        std::map<TensorNode* ,std::set<int>>::iterator iter = _outTensorStrategiesMap.begin();
-        while(iter!=_outTensorStrategiesMap.end()){
-            
-            std::set<int> leftTilings = iter->second;
-            if(leftTilings.find(-2)!=leftTilings.end()){
-                ReduceOp::getSimCost(iter->first->getTensor()->getSizeInBytes(),config, -2);
+        cout<<"-------------"<<opNode->name()<<"------";
+        for(auto p: opStrategy)
+            cout<< p <<" ";
+        cout<<"\n";
+        for(auto p: _tensorStrategiesMap) {
+            cout << p.first->name() << " "; 
+            for(auto pp : p.second) {
+                cout << "(" << pp.first << ":"  << pp.second << ") ";
             }
+            cout << "\n";
+        }
         
+        for(unsigned long i = 0; i < opNode->getParentNodes().size(); i++) {
+            int curTiling = opStrategy[i];
+            TensorNode * curTensorNode = dynamic_cast<TensorNode*>(opNode->getParentNode(i));
+            outeriter =  _tensorStrategiesMap.find(curTensorNode);
+
+            if(outeriter != _tensorStrategiesMap.end()) {
+                std::map<int, int >  preTilings = outeriter->second;
+
+                std::map<int, int >::iterator inneriter = preTilings.find(curTiling);
+                if(inneriter != preTilings.end()) {
+                    communicateCost += 0.0;
+                    outeriter->second.find(curTiling)->second=1;
+                    //inneriter->second = 1;
+                } else {
+                    std::pair<int, int> smallestTiling = *std::min_element(
+                            preTilings.begin(),
+                            preTilings.end(),
+                    [](const std::pair<const int, int> &a, const std::pair<const int, int> &b) {
+                        return a.first < b.first;
+                    });
+                    //we think the smallest communicatecost comes from the smallest tiling number
+                    std::cout << "size= " << curTensorNode->getTensor()->getSizeInBytes()
+                        << " pre=" << smallestTiling.first << " post=" << curTiling << "\n";
+                    TransformCost = TransformOp::getSimCost(curTensorNode->getTensor()->getSizeInBytes(), config, smallestTiling.first, curTiling);
+                    outeriter->second.find(smallestTiling.first)->second=1;
+                    _tensorStrategiesMap[curTensorNode].insert(make_pair(curTiling, 0));
+                    communicateCost += TransformCost;
+                }
+            } 
+            else {
+
+                if(curTensorNode->getParentNodes().size() != 0){//init only in 1st interation
+                    ScatterCost += ScatterOp::getSimCost(curTensorNode->getTensor()->getSizeInBytes(), config, curTiling);
+                    communicateCost += ScatterCost;
+                }else if(curTiling == -1){
+                    ScatterCost += ScatterOp::getSimCost(curTensorNode->getTensor()->getSizeInBytes(), config, curTiling);
+                    communicateCost += ScatterCost;
+
+                }
+                
+                
+                std::map<int, int> preTilings;
+                preTilings.insert(make_pair(curTiling, 0));
+                _tensorStrategiesMap[curTensorNode] = preTilings;
+            }
+        }
+        int nInput = opNode->parentNum();
+        for(unsigned long i = 0; i < opNode->getChildNodes().size(); i++) {
+            int curTiling = opStrategy[i+nInput];
+            TensorNode * curTensorNode = dynamic_cast<TensorNode*>(opNode->getChildNode(i));
+            outeriter =  _tensorStrategiesMap.find(curTensorNode);
+            if(outeriter != _tensorStrategiesMap.end()) {
+                std::map<int,int> preTilings = outeriter->second;
+                if(preTilings.find(curTiling) == preTilings.end())
+                    _tensorStrategiesMap[curTensorNode].insert(make_pair(curTiling,0));
+            } else {
+                std::map<int, int> preTilings;
+                preTilings.insert(make_pair(curTiling,0));
+                _tensorStrategiesMap[curTensorNode] = preTilings;
+            }
+
         }
 
-
-
-        
-
-
+        std::cout<<"getCommunicationCost:"<<communicateCost<<",scatter:"<<ScatterCost<<",trans:"<<TransformCost<<"\n";
         return communicateCost;
-}
+    }
  
 private:
     IRGraph * _irgraph;
     int _p; // parallel size = _irgraph->getConfig().mpi_size();
     std::vector<OpStrategy*> _graph_strategies;
 
-    std::map<TensorNode*,std::set<int>> _inTensorStrategiesMap;
-    std::map<TensorNode*,std::set<int>> _outTensorStrategiesMap;
+    std::map<TensorNode*, std::map<int, int>> _tensorStrategiesMap;
       
 };
            
@@ -340,8 +384,8 @@ private:
     void breed();
 
     double getFitness(const std::vector<int>& identity) {
-        // return _sss->getFitness(identity); 
-        return _sss->getFitnessByGraphTransform(identity); 
+        return _sss->getFitness(identity); 
+        //return _sss->getFitnessByGraphTransform(identity); 
     }
     
 public:
@@ -362,7 +406,7 @@ public:
         _sss(sss)
     {
         _population.reserve(_populationSize);
-        assert(identities.size() < _populationSize && "init identities num > populationSize"); 
+        assert(identities.size() <= _populationSize && "init identities num > populationSize"); 
         size_t idx = 0;
         for(auto identity : identities) {
             if(identity.size() != geneSpace.size())
@@ -387,7 +431,7 @@ public:
         for(size_t i=0; i<_numGenerations; i++) {
             if(_numGenerations<500 || i%10==0) {
                 std::cout << "generation" << i << " top5\n";
-                printTopKIdentity(5);
+                printTopKIdentity(2);
             }
             breed();
         }
@@ -402,8 +446,12 @@ public:
         for(size_t i=0; i<k; i++) {
             auto &identity = _population.at(i).first;
             for(auto gene : identity)
-                std::cout << gene << " ";
-            std::cout << (size_t)getFitness(identity) << "\n";
+                cout << gene << " ";
+            cout << "  get fitness begin ......" << "\n";
+            size_t fitness = (size_t)getFitness(identity);
+            for(auto gene : identity)
+                cout << gene << " ";
+            cout << " fitness=" << fitness << "\n";
         }
     }
 };
