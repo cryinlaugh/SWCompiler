@@ -308,7 +308,7 @@ void Conv2dOp::autoDiff(IRGraph* graph,
     auto *N = new OpNode(opNode->name() + "_grad",
             new Conv2dGradOp(kernels, strides, pads));
     // N->exlinkUpperNode(input, weight, bias, output, outputGrad);
-    N->exlinkUpperNode(input, weight, output, outputGrad);
+    N->exlinkUpperNode(input, weight, outputGrad);
 
     gradNodeMap[opNode] = N;
     graph->pushOpNode(N);
@@ -352,7 +352,7 @@ void Conv2dWithActivationOp::autoDiff(IRGraph* graph,
     auto *N = new OpNode(opNode->name() + "_grad",
             new Conv2dWithActivationGradOp(kernels, strides, pads, activation));
     // N->exlinkUpperNode(input, weight, bias, output, outputGrad);
-    N->exlinkUpperNode(input, weight, output, outputGrad);
+    N->exlinkUpperNode(input, weight, outputGrad);
 
     gradNodeMap[opNode] = N;
     graph->pushOpNode(N);
@@ -384,7 +384,8 @@ void LRNOp::autoDiff(IRGraph* graph, IRNode* opNode, std::unordered_map<IRNode*,
 
     auto *N =
         new OpNode(opNode->name() + "_grad", new LRNGradOp());
-    N->exlinkUpperNode(input, output, outputGrad);
+    //N->exlinkUpperNode(input, output, outputGrad);
+    N->exlinkUpperNode(input, outputGrad);
 
     gradNodeMap[opNode] = N;
     graph->pushOpNode(N);

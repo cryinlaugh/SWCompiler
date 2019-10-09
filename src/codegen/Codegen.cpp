@@ -1783,8 +1783,7 @@ void Codegen::emitFuncCall(OpNode *op) {
         auto *out = ((TensorNode *)op->getParentNode(3))->getTensor();
         auto *outputG = ((TensorNode *)op->getParentNode(4))->getTensor();
         */
-        auto *out = ((TensorNode *)op->getParentNode(2))->getTensor();
-        auto *outputG = ((TensorNode *)op->getParentNode(3))->getTensor();
+        auto *outputG = ((TensorNode *)op->getParentNode(2))->getTensor();
 
         auto *inputG = ((TensorNode *)op->getChildNode(0))->getTensor();
         auto *filterG = ((TensorNode *)op->getChildNode(1))->getTensor();
@@ -1805,7 +1804,7 @@ void Codegen::emitFuncCall(OpNode *op) {
         auto padsVar = op->name() + "_pads";
 
         writer_ << emitArrayDefAndInit(iDims, input->getDims());
-        writer_ << emitArrayDefAndInit(oDims, out->getDims());
+        //writer_ << emitArrayDefAndInit(oDims, out->getDims());
         writer_ << emitArrayDefAndInit(fDims, filter->getDims());
         // writer_ << emitArrayDefAndInit(bDims, bias->getDims());
         writer_ << emitArrayDefAndInit(kernelsVar, kernels);

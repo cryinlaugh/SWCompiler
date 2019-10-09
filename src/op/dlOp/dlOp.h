@@ -596,10 +596,9 @@ class Conv2dGradOp : public Op {
 
   public:
     // infered input/output maybe (5, 3), bias no need ,so we use (4, 3) 
-    Conv2dGradOp() : Op(DL_OP, 4, 3, std::string("Conv2dGrad")) {
+    Conv2dGradOp() : Op(DL_OP, 3, 3, std::string("Conv2dGrad")) {
         this->_inputNDims.push_back(4); // input
         this->_inputNDims.push_back(4); // weight 
-        this->_inputNDims.push_back(4); // output
         this->_inputNDims.push_back(4); // outputG
 
         this->_outputNDims.push_back(4); // inputG
@@ -609,7 +608,6 @@ class Conv2dGradOp : public Op {
         this->_einOp =  1;
         this->_einRep.push_back("b__c"); // in
         this->_einRep.push_back("o__c"); // w
-        this->_einRep.push_back("b__o"); // out 
         this->_einRep.push_back("b__o"); // outG 
 
         this->_einRep.push_back("b__c"); // inG
@@ -618,14 +616,13 @@ class Conv2dGradOp : public Op {
     };
     Conv2dGradOp(std::vector<size_t> &kernels, std::vector<size_t> &strides,
              std::vector<size_t> &pads)
-        : Op(DL_OP, 4, 3, std::string("Conv2dGrad")) {
+        : Op(DL_OP, 3, 3, std::string("Conv2dGrad")) {
         kernels_.assign(kernels.begin(), kernels.end());
         strides_.assign(strides.begin(), strides.end());
         pads_.assign(pads.begin(), pads.end());
 
         this->_inputNDims.push_back(4); // input
         this->_inputNDims.push_back(4); // weight 
-        this->_inputNDims.push_back(4); // output
         this->_inputNDims.push_back(4); // outputG
 
         this->_outputNDims.push_back(4); // inputG
@@ -635,7 +632,6 @@ class Conv2dGradOp : public Op {
         this->_einOp =  1;
         this->_einRep.push_back("b__c"); // in
         this->_einRep.push_back("o__c"); // w
-        this->_einRep.push_back("b__o"); // out 
         this->_einRep.push_back("b__o"); // outG 
 
         this->_einRep.push_back("b__c"); // inG
@@ -712,7 +708,7 @@ class Conv2dWithActivationGradOp : public Op {
   public:
     Conv2dWithActivationGradOp(std::vector<size_t> &kernels, std::vector<size_t> &strides,
              std::vector<size_t> &pads, activation_type activation)
-        : Op(DL_OP, 4, 3, std::string("Conv2dWithActivationGrad")) {
+        : Op(DL_OP, 3, 3, std::string("Conv2dWithActivationGrad")) {
         kernels_.assign(kernels.begin(), kernels.end());
         strides_.assign(strides.begin(), strides.end());
         pads_.assign(pads.begin(), pads.end());
@@ -720,7 +716,6 @@ class Conv2dWithActivationGradOp : public Op {
 
         this->_inputNDims.push_back(4); // input
         this->_inputNDims.push_back(4); // weight 
-        this->_inputNDims.push_back(4); // output
         this->_inputNDims.push_back(4); // outputG
 
         this->_outputNDims.push_back(4); // inputG
@@ -731,7 +726,6 @@ class Conv2dWithActivationGradOp : public Op {
         this->_einOp =  1;
         this->_einRep.push_back("b__c"); // in
         this->_einRep.push_back("o__c"); // w
-        this->_einRep.push_back("b__o"); // out 
         this->_einRep.push_back("b__o"); // outG 
 
         this->_einRep.push_back("b__c"); // inG
@@ -796,11 +790,11 @@ class LRNGradOp : public Op {
     */
 
 public:
-    LRNGradOp() : Op(DL_OP, 3, 1, std::string("LRNGrad")) {
+    LRNGradOp() : Op(DL_OP, 2, 1, std::string("LRNGrad")) {
 
         this->_einOp =  1;
         this->_einRep.push_back("b__c"); // in
-        this->_einRep.push_back("b__c"); // out 
+        //this->_einRep.push_back("b__c"); // out 
         this->_einRep.push_back("b__c"); // outGrad 
         //this->_einRep.push_back("b__c"); // scale 
         //
