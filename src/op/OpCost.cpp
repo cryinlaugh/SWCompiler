@@ -53,13 +53,14 @@ size_t ScatterOp::getCost(OpNode *node, Config& config){
 
 // axis(strategy): -1 rep , i scatter 
 size_t ScatterOp::getSimCost(size_t bytes, Config& config, int axis) {
-    (void)config;
-    (void)axis;
-    return comSizeModel(bytes, SCATTER, config);
+    //(void)config;
+    //(void)axis;
+    //return comSizeModel(bytes, SCATTER, config);
     if(axis == -1)
         return comSizeModel(bytes, BCAST, config);
-    if(axis >= 0)
+    else //if(axis >= 0)
         return comSizeModel(bytes, SCATTER, config);
+    
 }
 
 std::string ScatterOp::getCostTrace(OpNode *node, Config& config){
@@ -240,12 +241,12 @@ size_t TransformOp::getSimCost(size_t bytes, Config& config, int pre, int post) 
     int degree = config.mpi_size; 
 
     // para_tensor size
-    size_t size = bytes / degree;
+    size_t size = bytes; // pre==-2 ? bytes : bytes / degree;
 
     size_t comm = 0;
     // i->j: each work send and recv size in total (pieces of data) 
     if(pre>=0 && post>=0)
-        comm = comSizeModel(size, RECV_SEND, config);
+        comm = comSizeModel(size/degree, RECV_SEND, config);
 
     // i->j: master recv size, then broadcast size
     if(pre>=0 && post==-1)
