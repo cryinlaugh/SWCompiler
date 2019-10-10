@@ -676,8 +676,10 @@ void IRGraph::elimRedundantScatter() {
         if(!scatter) {
             continue;
         }
+        /*
         if(scatter->getAxis() == -1)
             continue;
+        */
 
         // parent tensornode
         auto *ptnode  = (TensorNode*)opnode->getParentNode(0); 
@@ -689,7 +691,7 @@ void IRGraph::elimRedundantScatter() {
             SWLOG_DEBUG(6) << opnode->name() << " and its parent "
                 << ptnode->name() << " is redundant during batch iterations\n";
             ctnode->destroyUpperNode(opnode);      
-            // !!! do not delNode because we are iterate on _ops
+            // !!! do not delOpNode because we are iterate on _ops
             // this->delOpNode(opnode);
             // this->delTensorNode(ptnode);
         }
