@@ -79,13 +79,6 @@ public:
                 continue;
             }
 
-            // important!!!
-            // data parallel, sgd should not be parallelized
-            if(_graph->getConfig().force_data_parallel
-                && dynamic_cast<SGDOp*>(originNode->getOp())) {
-                continue;
-            }
-
             std::vector<std::vector<int> > strategies = ParallelGen::generateStgy(originNode);
             int strategy_size = strategies.size();
             if(strategy_size == 0){
@@ -151,24 +144,6 @@ public:
                     }
                 }
 
-                // handful specify some strategy
-                // remind to comment if(data_parallel) skip SGD code
-                // in line 82-87
-                /*
-                if(originNode->name() == "fc0_o") {
-                    random_s_idx = 2;
-                    best = legal_strategies[random_s_idx];
-                }
-                if(originNode->name() == "fc0_o_grad") {
-                    random_s_idx = 2;
-                    best = legal_strategies[random_s_idx];
-                }
-                if(originNode->name() == "fc1_w_sgd") {
-                    continue;
-                }
-                */
-
-
                 *os << "-----legal strategies------\n";
                 for(auto sgy : legal_strategies){
                     for(auto s: sgy)
@@ -189,6 +164,7 @@ public:
             }
 
         } // for topoOpNodes 
+
         for(auto i :identity)
          *os << i <<" "; 
         *os << "\n";
@@ -238,10 +214,7 @@ public:
         // op num in space may not be euqal to topoOpNodes.size() since we skip nodes whose einOp=0
         sss->printStrategySpace();
 
-        // all 0 for mlp
-        std::vector<int> init0(sss->getOpNum());
-        for(auto &op_stgy_idx : init0)
-            op_stgy_idx = 0;
+        std::vector<int> dp_seed(sss->getOpNum(), 0);
 
         // for lenet, some different 
         // mind that this will not get DP, because we cann not describe 
