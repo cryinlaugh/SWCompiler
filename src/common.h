@@ -100,6 +100,9 @@ struct Config {
     bool benchmark{false};
 
     NetTopology net_topo{FC_MESH_NET};
+
+    // if true, distributed [sgd or whatever] optimizer 
+    bool decentralized_optimizer{false};
 };
 
 enum OpType { TENSOR_OP, BASIC_OP, DL_OP };

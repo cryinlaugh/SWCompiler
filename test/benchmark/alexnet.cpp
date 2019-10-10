@@ -275,7 +275,11 @@ int main()
     config.geneticalgo_opt_parallel = true;
     // config.handcraft_parallel = true;
 
+    // optimzer
+    config.decentralized_optimizer = true;
+
     alexnet->setConfig(config);
+    std::cout << "alexnet_b" << MINIBATCH << "_p" << config.mpi_size << "\n";
 
     dotGen(alexnet, "alexnet_infer.dot");
 

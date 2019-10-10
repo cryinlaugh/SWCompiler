@@ -136,9 +136,8 @@ int main()
     /* not do lowering for node liek FC, FCGrad etc.*/
     config.enable_lowering = false;
 
-    // config.force_data_parallel = true;
-    config.geneticalgo_opt_parallel = true;
-    // config.handcraft_parallel = true;
+    // optimzer
+    config.decentralized_optimizer = true;
     
 
     lenet->setConfig(config);
