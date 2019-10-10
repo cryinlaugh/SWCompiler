@@ -345,6 +345,11 @@ std::string Codegen::generate() {
     fout << makefile_builder_.generate();
     fout.close();
 
+    swmakefile_builder_.addCXXSrc("Graph.cpp");
+    fout.open("SW_Makefile", std::fstream::out);
+    fout << swmakefile_builder_.generate();
+    fout.close();
+
     return headerWriter_.get_code() + writer_.get_code();
 }
 

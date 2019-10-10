@@ -72,6 +72,15 @@ void ParallelCodegen::initMakefileBuilder() {
     std::string run_cmd = "mpirun -n "  + std::to_string(config.mpi_size) 
         +" " + makefile_builder_.getExecutable();
     makefile_builder_.setRunCmd(run_cmd);
+
+
+    //tmp for sw x86
+    swmakefile_builder_.setCXXCompiler("~/3rdParty/mvapich2.2/mpi2_gcc4-8/bin/mpic++");
+    std::string sw_run_cmd = "bsub -q q_x86_share -N "  + std::to_string(config.mpi_size) 
+        + " -np 1 " + "-o run_log.txt "
+        + "./" + makefile_builder_.getExecutable();
+    swmakefile_builder_.setRunCmd(sw_run_cmd);
+
 }
 
 void ParallelCodegen::emitHeader() {

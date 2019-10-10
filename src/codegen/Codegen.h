@@ -174,6 +174,7 @@ protected:
     CodeWriter headerWriter_;
     CodeWriter writer_;
     MakefileBuilder makefile_builder_;
+    MakefileBuilder swmakefile_builder_;
 
     IRGraph *graph_;
 
