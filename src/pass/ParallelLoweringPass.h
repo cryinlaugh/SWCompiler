@@ -26,8 +26,37 @@ class swc::pass::ParallelLoweringPass: public swc::pass::OptimizePass {
 public:
     ParallelLoweringPass(IRGraph *graph): OptimizePass(graph) {
     }
-    ~ParallelLoweringPass() {};
 
+    ~ParallelLoweringPass() {}
+
+    void run() {
+        SWLOG_DEBUG(6) << "Start Paralleling Pass.\n";
+
+        auto parallel_degree = _graph->getConfig().mpi_size;
+        assert(parallel_degree>1 && "error, degree of parallellism unset, please set config.mpi_size");
+
+        auto config = _graph->getConfig();
+
+        if(config.parallel_preference == ParallelStrategy::MEM_SAVING) {
+            SWLOG_DEBUG(6) << "runMemSavingLowering\n";
+            runMemSavingLowering(parallel_degree);
+        }
+        else if(config.parallel_preference == ParallelStrategy::COMM_SAVING) {
+            SWLOG_DEBUG(6) << "runCommSavingLowering\n";
+            //runCommSavingLowering(parallel_degree);
+            runExpCommSavingLowering(parallel_degree);
+        }
+
+        _graph->updateTopology();
+
+        if(config.benchmark) {
+            _graph->elimRedundantScatter();
+        }
+
+        SWLOG_DEBUG(4) << "Finish Paralleling pass.\n";
+    }
+
+    // to be depreciated
     void runMemSavingLowering(int parallel_num) {
 
         // get tensor nodes and op nodes in topology order
@@ -166,6 +195,8 @@ public:
 
     }
 
+    void runExpCommSavingLowering(int parallel_num);
+
     void runCommSavingLowering(int parallel_num) {
         // get tensor nodes and op nodes in topology order
         std::vector<TensorNode * > topoTensorNodes;
@@ -303,29 +334,6 @@ public:
     } // runCommSavingLowering
 
 
-    void run() {
-        SWLOG_DEBUG(6) << "Start Paralleling Pass.\n";
-
-        auto parallel_degree = _graph->getConfig().mpi_size;
-        assert(parallel_degree>1 && "error, degree of parallellism unset, please set config.mpi_size");
-
-        auto config = _graph->getConfig();
-
-        if(config.parallel_preference == ParallelStrategy::MEM_SAVING) {
-            SWLOG_DEBUG(6) << "runMemSavingLowering\n";
-            runMemSavingLowering(parallel_degree);
-        }
-        else if(config.parallel_preference == ParallelStrategy::COMM_SAVING) {
-            SWLOG_DEBUG(6) << "runCommSavingLowering\n";
-            runCommSavingLowering(parallel_degree);
-        }
-
-        if(config.benchmark) {
-            _graph->elimRedundantScatter();
-        }
-
-        SWLOG_DEBUG(4) << "Finish Paralleling pass.\n";
-    }
 
 };
 
