@@ -40,6 +40,7 @@ size_t  comSizeModel2(size_t size, COMM_TYPE type, Config& config)
 
 
     switch(type) {
+        // caution size is serial size of data except for recv/send
         case RECV_SEND: return size;
         case REDUCE_SEND: return size * log(degree)/log(2) + size;
         case RECV_BCAST: return size * log(degree)/log(2) + size;

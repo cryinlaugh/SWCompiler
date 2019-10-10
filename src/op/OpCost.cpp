@@ -53,13 +53,12 @@ size_t ScatterOp::getCost(OpNode *node, Config& config){
 
 // axis(strategy): -1 rep , i scatter 
 size_t ScatterOp::getSimCost(size_t bytes, Config& config, int axis) {
-    (void)config;
-    (void)axis;
-    return comSizeModel(bytes, SCATTER, config);
     if(axis == -1)
         return comSizeModel(bytes, BCAST, config);
     if(axis >= 0)
         return comSizeModel(bytes, SCATTER, config);
+
+    return 0;
 }
 
 std::string ScatterOp::getCostTrace(OpNode *node, Config& config){
@@ -93,9 +92,15 @@ size_t GatherOp::getCost(OpNode *node, Config& config) {
     auto *to = (TensorNode*)node->getChildNode(0);
     size_t size = to->getTensor()->getSizeInBytes(); 
 
+    int axis = this->axis_;
     //  i: master recv size/p to each worker
     // -2: master reduce size to all workers
-    return comSizeModel(size, GATHER, config);
+    if(axis == -2)
+        return comSizeModel(size, REDUCE, config);
+    if(axis >= 0)
+        return comSizeModel(size, GATHER, config);
+
+    return 0;
 }
 
 std::string GatherOp::getCostTrace(OpNode *node, Config& config) {
@@ -128,14 +133,19 @@ std::string GatherOp::getCostTrace(OpNode *node, Config& config) {
 
 size_t GatherOp::getSimCost(size_t bytes, Config& config, int axis) {
     (void) config;
-    (void) axis;
-    return comSizeModel(bytes, GATHER, config);
+    if(axis == -2)
+        return comSizeModel(bytes, REDUCE, config);
+    if(axis >= 0)
+        return comSizeModel(bytes, GATHER, config);
+
+    return 0;
 }
 
 size_t TransformOp::getCost(OpNode *node, Config& config) {
-    (void) config;
     auto *from = (TensorNode*)node->getParentNode(0);
     size_t size = from->getTensor()->getSizeInBytes(); 
+
+    int degree =  config.mpi_size;
 
     int pre = this->preAxis_;   // pre {i, -1, -2}
     int post = this->postAxis_; // post{i, -1}
@@ -147,9 +157,9 @@ size_t TransformOp::getCost(OpNode *node, Config& config) {
     if(pre>=0 && post>=0)
         comm = comSizeModel(size, RECV_SEND, config);
 
-    // i->j: master recv size, then broadcast size
+    // i->j: master recv size*degree, then broadcast size*degree
     if(pre>=0 && post==-1)
-        comm = comSizeModel(size, RECV_BCAST, config);
+        comm = comSizeModel(size*degree, RECV_BCAST, config);
 
     // -2->i: a.master reduce then send size/p to each worker
     //  or b.each worker reduce its own part(not continuous)
