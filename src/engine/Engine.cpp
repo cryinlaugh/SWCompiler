@@ -51,10 +51,10 @@ void Engine::compile() {
 
     // transform mkl-dnn supported operators to
     // nchw layout format
-    if(config.mkldnn)
+    if(config.mkldnn) {
         transformForMKLDNN();
-
-    optimize();
+        optimize();
+    }
 
 }
 

@@ -198,8 +198,8 @@ void Codegen::initMakefileBuilder() {
 
     makefile_builder_.addCXXSrc("Graph.cpp");
     if(config_.train_mode) {
-        makefile_builder_.addCXXSrc("utils/DataLoader.cpp");
         if(!config_.benchmark) {
+            makefile_builder_.addCXXSrc("utils/DataLoader.cpp");
             makefile_builder_.addCXXSrc("caffe2.pb.cc");
             makefile_builder_.addLib("protobuf");
             makefile_builder_.addLib("gflags");
@@ -233,8 +233,8 @@ void Codegen::emitHeader() {
 
     headerWriter_<< "#include <iostream>\n"
             << "#include <random>\n"
-            << "#include <stdlib.h>\n"
-            << "#include <math.h>\n"
+            << "#include <cstdlib>\n"
+            << "#include <cmath>\n"
             // << "#include <chrono>\n"
             << "#include <sys/time.h>\n"
             << "#include \"utils/image.h\"\n";
@@ -260,7 +260,9 @@ void Codegen::emitHeader() {
     headerWriter_ << "#include \"utils/kernels.h\"\n";
 
     if (config_.train_mode) {
-        headerWriter_ << "#include \"utils/DataLoader.h\"\n";
+        if (!config_.benchmark) {
+            headerWriter_ << "#include \"utils/DataLoader.h\"\n";
+        }
     }
 
     if(config_.use_dataloader) {
@@ -1809,9 +1811,9 @@ void Codegen::emitFuncCall(OpNode *op) {
         auto padsVar = op->name() + "_pads";
 
         writer_ << emitArrayDefAndInit(iDims, input->getDims());
-        //writer_ << emitArrayDefAndInit(oDims, out->getDims());
+        writer_ << emitArrayDefAndInit(oDims, outputG->getDims());
         writer_ << emitArrayDefAndInit(fDims, filter->getDims());
-        // writer_ << emitArrayDefAndInit(bDims, bias->getDims());
+         writer_ << emitArrayDefAndInit(bDims, biasG->getDims());
         writer_ << emitArrayDefAndInit(kernelsVar, kernels);
         writer_ << emitArrayDefAndInit(stridesVar, strides);
         writer_ << emitArrayDefAndInit(padsVar, pads);

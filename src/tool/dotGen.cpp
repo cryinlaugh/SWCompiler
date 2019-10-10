@@ -214,6 +214,10 @@ void dotGen(IRGraph *graph, std::string dotFileName) {
     dotfile << dot_Total;
     dotfile << dot_end << std::endl;
 
+}
+void svgGen(IRGraph *graph, std::string dotFileName) {
+    dotGen(graph, dotFileName);
+
     // make svg
     // std::string svgFileName = "IRGraph.svg";
     std::string svgFileName =
@@ -223,6 +227,7 @@ void dotGen(IRGraph *graph, std::string dotFileName) {
 
     char *cmd = (char *)dotGenCMD.data();
 
+    (void)cmd;
     assert(system(cmd) == 0);
 }
 

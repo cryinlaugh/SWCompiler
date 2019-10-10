@@ -8,6 +8,7 @@
 #define _SEARCHSPACE_H
 
 #include <iostream>
+#include <sstream>
 #include <vector>
 #include <cassert>
 #include <random>
@@ -67,6 +68,15 @@ public:
             
             if(legal)
                 _op_strategies.push_back(strategy);
+        }
+
+        std::ostringstream oss;
+        std::ostream *os = &std::cout; 
+        *os << "-----" << opNode->name() << " legal strategies------\n";
+        for(auto sgy : _op_strategies){
+            for(auto s: sgy)
+                *os << s <<" ";
+            *os<<"\n";
         }
         
     }

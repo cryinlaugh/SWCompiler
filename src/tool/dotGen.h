@@ -8,6 +8,7 @@ namespace swc {
 class IRGraph;
 
 void dotGen(IRGraph *graph, std::string file = "IRGraph.dot");
+void svgGen(IRGraph *graph, std::string file = "IRGraph.dot");
 
 } // namespace swc
 

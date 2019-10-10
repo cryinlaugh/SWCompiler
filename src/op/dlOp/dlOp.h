@@ -612,7 +612,7 @@ class Conv2dGradOp : public Op {
 
         this->_einRep.push_back("b__c"); // inG
         this->_einRep.push_back("o__c"); // wG
-        this->_einRep.push_back("c");    // bG 
+        this->_einRep.push_back("o");    // bG 
     };
     Conv2dGradOp(std::vector<size_t> &kernels, std::vector<size_t> &strides,
              std::vector<size_t> &pads)
@@ -636,7 +636,7 @@ class Conv2dGradOp : public Op {
 
         this->_einRep.push_back("b__c"); // inG
         this->_einRep.push_back("o__c"); // wG
-        this->_einRep.push_back("c");    // bG 
+        this->_einRep.push_back("o");    // bG 
     }
 
     std::vector<size_t> getPads() { return pads_; }

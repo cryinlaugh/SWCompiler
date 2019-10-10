@@ -224,7 +224,7 @@ void ParallelCodegen::emitExecute() {
         writer_ << "double time = TIME_MS(ts, te);\n"; 
         writer_ << "if(rank == 0) {\n";
         writer_.indentInc();
-        writer_ << R"(cout << "Rank " << rank << " : time cost " << time << " ms" << endl;)" << "\n";
+        writer_ << R"(cout << "Rank " << rank << " : time cost (ms)\n" << time << endl;)" << "\n";
         writer_.indentDec();
         writer_ << "} // if rank\n";
     }
@@ -700,6 +700,8 @@ void ParallelCodegen::transformOpDispatcher(OpNode *node) {
     auto odims = out_tensor->getDims();
     int n = in_tensor->getNDim();
 
+    SWLOG_DEBUG(4)<< "// " << node->name() << " n=" << n << " transform parallel strategy "
+            << ki << "->" << ko << "\n";
 
     if(ki>=0 && ko>=0) {
 
@@ -841,6 +843,14 @@ void ParallelCodegen::transformOpDispatcher(OpNode *node) {
 
         return;
     }
+
+    if(ki==-1 && ko>=0) {
+        writer_ << "// memcpy, no communication cost\n";
+        return;
+    }
+
+    SWLOG_ERROR << "error, unimplemented transform\n";
+    exit(0);
 }
 
 void ParallelCodegen::reduceOpDispatcher(OpNode *op) {

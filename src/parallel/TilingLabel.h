@@ -53,7 +53,7 @@ public:
     }
 
     // guarantee: has history strategies 
-    int selectTransPreStrategy(int strategy) {
+    int selectTransPreStrategy(int strategy=0) {
         // we may use strategy later
         (void)strategy;
         std::ostringstream os;
