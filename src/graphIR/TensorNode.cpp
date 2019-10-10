@@ -83,12 +83,6 @@ void TensorNode::autoDiff(IRGraph* graph,
 
         if (methodType == SGD_METHOD) {
             SWLOG_DEBUG(4) << "SGD generate..." << std::endl;
-            // 19.10.2 let SGD not output (because N is actually inout, 
-            // add mirror_node will cause difficulty for parallel strategy selection)
-            // auto *node_mirror = clone();
-
-            // graph->addLogicalOutNodes(node_mirror);
-
             auto *mom_t = new Tensor(this->getTensor()->getTensorShape());
             mom_t->setTensorInit(TensorInitType::CONSTANT, 0);
             auto *momentum = new TensorNode("momentum", mom_t);
@@ -100,11 +94,17 @@ void TensorNode::autoDiff(IRGraph* graph,
             auto *SGDNode = new OpNode(this->name() + "_sgd", sgdOp);
 
             SGDNode->exlinkUpperNode(this, N, momentum);
-            // node_mirror->exlinkUpperNode(SGDNode);
             graph->pushOpNode(SGDNode);
-            graph->pushTensorNode(momentum);
-            // graph->pushTensorNode(node_mirror, momentum);
-            graph->addLogicalOutNodes(SGDNode);
+
+            // 19.10.2 let SGD not output (because N is actually inout, 
+            // add mirror_node will cause difficulty for parallel strategy selection)
+            auto *node_mirror = clone();
+            node_mirror->exlinkUpperNode(SGDNode);
+            graph->pushTensorNode(node_mirror, momentum);
+            graph->addLogicalOutNodes(node_mirror);
+
+            //graph->pushTensorNode(momentum);
+            //graph->addLogicalOutNodes(SGDNode);
 
         }
         else if (methodType == ADAM_METHOD) {
