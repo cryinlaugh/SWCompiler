@@ -374,7 +374,7 @@ public:
         }
 
         size_t top = populationSize < 5 ? populationSize : 5;
-        std::cout << "generation0" << " top" << top << " of " << populationSize << "\n";
+        std::cout << "generation init" << " first" << top << " of " << populationSize << " (unordered)\n";
         printTopKIdentity(top);
 
     }

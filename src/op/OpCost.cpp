@@ -211,6 +211,7 @@ std::string TransformOp::getCostTrace(OpNode *node, Config& config) {
         stream << name << " " << "SendRecv " << size << " " << norm_comm << " " << suffix << "\n";
     }
 
+//-------------below should not occur because i lower transform---------------------
     // i->j: master recv size, then broadcast size
     if(pre>=0 && post==-1) {
         stream << name << " " << "Recv " << size << " " << "0" << " " << suffix << "\n"
@@ -229,10 +230,11 @@ std::string TransformOp::getCostTrace(OpNode *node, Config& config) {
     // -2->-1 a. allreduce size
     // or b. master reduce size, then broadcast size
     if(pre==-2 && post==-1) {
-        stream << name << " " << "Reduce " << size << " " << "0" << " " << suffix << "\n"
-            << name << " " << "Bcast " << size << " " << norm_comm << " " << suffix << "\n";
+        stream << name << " " << "Reduce " << size << " " << norm_comm/2 << " " << suffix << "\n"
+            << name << " " << "Bcast " << size << " " << norm_comm/2 << " " << suffix << "\n";
         // stream << name << " " << "AllReduce," << size << "\n";
     }
+//-------------above should not occur because i lower transform---------------------
 
     // -1->i a. each worker already has replicate,  
     // if continuous, just let post pointer reference to its own part

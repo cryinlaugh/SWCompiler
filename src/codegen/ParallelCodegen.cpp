@@ -532,15 +532,19 @@ void ParallelCodegen::masterWorkerDispatcher(OpNode *op,
 
             masterWriter_ << "// rank 0 memcpy from " << fname << " to " << tname
                     << "\n";
-            if(axis == 0) {
-                masterWriter_ << tname << " = " << fname << ";\n";
+            if(!config_.benchmark) { 
+                if(axis == 0) {
+                    masterWriter_ << tname << " = " << fname << ";\n";
+                }else {
+                    masterWriter_ << "MPI_Sendrecv(" << fname << ", "
+                        << "1, " << sendType << ", " << "0, " << tag << ", "
+                        << tname << ", " << out_count << ", "
+                        << DTYPE_MPI_DATATYPE_MAP.at(dtype) << ", "
+                        << "0, " << tag
+                        << ",  MPI_COMM_WORLD, &status);\n";
+                }
             }else {
-                masterWriter_ << "MPI_Sendrecv(" << fname << ", "
-                    << "1, " << sendType << ", " << "0, " << tag << ", "
-                    << tname << ", " << out_count << ", "
-                    << DTYPE_MPI_DATATYPE_MAP.at(dtype) << ", "
-                    << "0, " << tag
-                    << ",  MPI_COMM_WORLD, &status);\n";
+                    masterWriter_ << "// rank 0 memcpy or Self Sendrecv skipped in benchmark mode;\n";
             }
             /*
             // masterWriter_ << "for(int r=1; r<=" << degree <<"; r++) {\n";
@@ -639,13 +643,17 @@ void ParallelCodegen::masterWorkerDispatcher(OpNode *op,
 
             masterWriter_ << "// rank 0 memcpy in " << fname << " to " << tname
                     << "\n";
-            masterWriter_ << "MPI_Sendrecv(" << fname << ", "
-                    << in_count << ", "
-                    << DTYPE_MPI_DATATYPE_MAP.at(dtype) << ", "
-                    << "0, " << tag << ", "
-                    << tname << ", "
-                    << "1, " << recvType << ", " << "0, " << tag << ", "
-                    << "MPI_COMM_WORLD, &status);\n";
+            if(!config_.benchmark) { 
+                masterWriter_ << "MPI_Sendrecv(" << fname << ", "
+                        << in_count << ", "
+                        << DTYPE_MPI_DATATYPE_MAP.at(dtype) << ", "
+                        << "0, " << tag << ", "
+                        << tname << ", "
+                        << "1, " << recvType << ", " << "0, " << tag << ", "
+                        << "MPI_COMM_WORLD, &status);\n";
+            }else {
+                    masterWriter_ << "// rank 0 memcpy or Self Sendrecv skipped in benchmark mode;\n";
+            }
             /*
             masterWriter_ << "for(int r=1; r<" << degree << "; r++) {\n";
             masterWriter_.indentInc();
@@ -756,7 +764,12 @@ void ParallelCodegen::transformOpDispatcher(OpNode *node) {
                 << "int " << src << ", " << dest << ";\n";
                 // << "int dest, src;\n";
 
-        writer_ << "for(int i=0; i<nprocs; i++) {\n";
+        if(!config_.benchmark)
+            writer_ << "for(int i=0; i<nprocs; i++) {\n";
+        else {
+            writer_ << "//disable self sendrecv so i count form 1\n";
+            writer_ << "for(int i=1; i<nprocs; i++) {\n";
+        }
         writer_.indentInc();
 
         writer_ << src << " = " << "(rank + nprocs - i) % nprocs;\n"
@@ -823,16 +836,20 @@ void ParallelCodegen::transformOpDispatcher(OpNode *node) {
 
         masterWriter_ << "// rank 0 memcpy from " << fname << " to " << tname
                 << "\n";
-        if(ko == 0) {
-            masterWriter_ << tname << " = " << fname << ";\n";
-        } else {
-            int tag_r0 = getMPISendRecvTag(in_tensor);
-            masterWriter_ << "MPI_Sendrecv(" << fname << ", "
-                << "1, " << sendType << ", " << "0, " << tag_r0 << ", "
-                << tname << ", " << out_count << ", "
-                << DTYPE_MPI_DATATYPE_MAP.at(dtype) << ", "
-                << "0, " << tag_r0
-                << ",  MPI_COMM_WORLD, &status);\n";
+        if(!config_.benchmark) { 
+            if(ko == 0) {
+                masterWriter_ << tname << " = " << fname << ";\n";
+            } else {
+                int tag_r0 = getMPISendRecvTag(in_tensor);
+                masterWriter_ << "MPI_Sendrecv(" << fname << ", "
+                    << "1, " << sendType << ", " << "0, " << tag_r0 << ", "
+                    << tname << ", " << out_count << ", "
+                    << DTYPE_MPI_DATATYPE_MAP.at(dtype) << ", "
+                    << "0, " << tag_r0
+                    << ",  MPI_COMM_WORLD, &status);\n";
+            }
+        }else {
+                masterWriter_ << "// rank 0 memcpy or Self Sendrecv skipped in benchmark mode;\n";
         }
 
         workerWriter_ << "MPI_Recv(" << tname << ", " << out_count << ", "
