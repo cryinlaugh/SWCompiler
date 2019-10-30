@@ -259,8 +259,8 @@ int main()
     config.train_config.max_iters = 100;
     config.train_config.display = 50;
 
-    //config.compute_op_annotation = true;
-    //config.comm_op_annotation = true;
+    // config.compute_op_annotation = true;
+    // config.comm_op_annotation = true;
     
     config.parallel_preference = COMM_SAVING;
     // config.parallel_preference = MEM_SAVING;
@@ -271,8 +271,8 @@ int main()
     config.enable_lowering = false;
 
     /* about parallel strategy*/
-    //config.force_data_parallel = true;
-    config.geneticalgo_opt_parallel = true;
+    // config.force_data_parallel = true;
+    // config.geneticalgo_opt_parallel = true;
     // config.handcraft_parallel = true;
 
     // optimzer
@@ -281,7 +281,7 @@ int main()
     alexnet->setConfig(config);
     std::cout << "alexnet_b" << MINIBATCH << "_p" << config.mpi_size << "\n";
 
-    dotGen(alexnet, "alexnet_infer.dot");
+    svgGen(alexnet, "alexnet_infer.dot");
 
     Engine engine(alexnet);
     engine.compile();

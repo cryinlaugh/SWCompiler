@@ -216,29 +216,24 @@ public:
 
         std::vector<int> dp_seed(sss->getOpNum(), 0);
 
-        // for lenet, some different 
-        // mind that this will not get DP, because we cann not describe 
-        // do not parallelize SGD when search strategy now (possible fix is add this to strategy)
-        std::vector<int> lenet_init {0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0};
-        // std::vector<int> lenet_init2{0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0};
+        /* for lenet, some different 
+        mind that this will not get DP, because we cann not describe 
+        do not parallelize SGD when search strategy now (possible fix is add this to strategy)
+        c: channel of w
+        */
+        // auto lenet_conv0_c = {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        // auto lenet_conv0_c_conv0Grad_c = {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
+        // auto lenet_conv1_c_conv1Grad_c = {0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0};
         
-        // for vgg19 128-bit gene
-        // adapt form dp
-        std::vector<int> vgg_init{0, 2, 1, 2, 1, 1, 2, 1, 2, 1, 1, 2, 1, 2, 1, 2, 1, 2, 1, 1, 2, 1, 2, 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 2, 1, 2, 0, 0, 1, 2, 0, 0, 1, 2, 0, 0, 1, 1, 0, 0, 2, 1, 2, 0, 0, 1, 2, 0, 0, 1, 2, 0, 0, 1, 1, 0, 0, 2, 1, 2, 0, 0, 1, 1, 0, 0, 2, 1, 2, 0, 0, 0, 0, 0};        
-        // batch8 optimal
-        std::vector<int> vgg_init2{0, 1, 1, 2, 1, 1, 0, 1, 0, 1, 1, 2, 2, 2, 1, 0, 2, 1, 1, 2, 2, 0, 2, 1, 1, 2, 1, 0, 1, 0, 2, 0, 2, 0, 2, 1, 1, 1, 2, 1, 1, 2, 1, 2, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 2, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 2, 1, 0, 0, 2, 1, 0, 1, 0, 1, 0, 0, 2, 1, 0, 0, 1, 1, 2, 0, 0, 2, 0, 0, 0, 2, 3, 0, 1, 2, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0};
 
-        // for vgg19 fused
-        // dp based (sgd = 0)
-        std::vector<int> vggfused_init0{0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0};
-        // batch8_100_generation_890M
-        //std::vector<int> vggfused_init1{1, 1, 0, 1, 1, 0, 2, 0, 2, 1, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 2, 0, 0, 0, 0, 1, 0, 0, 1, 2, 1, 0, 0, 1, 0, 0, 0, 0, 2, 0, 1, 0, 0, 0, 0, 0, 0, 2, 1, 0, 0, 2, 0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0}; 
-        //udef.push_back(vggfused_init1);
-
+        //vgg b32_p8
+        // auto vgg_b32_p8 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 2, 0, 0, 1, 0, 0, 2, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        //vgg b32_p4
+    //    auto vgg_b32_p4 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 2, 0, 0, 0, 0, 0, 1, 2, 1, 2, 0, 0, 0, 2, 1, 1, 1, 0, 0, 2, 0, 0, 0, 0, 0, 2, 1, 1, 2, 1, 0, 1, 1, 1, 2, 1, 1, 1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         
-        auto selected = init0;
+        auto selected = dp_seed;
         assert(selected.size() == sss->getOpNum() && "illegal handcraft strategy, please check");
-        sss->addStrategyToGraph(init0);
+        sss->addStrategyToGraph(selected);
     }
 
     void runOptimizedLabeling() {
@@ -295,26 +290,15 @@ public:
 
 
         // for lenet, some different 
-        // mind that this will not get DP, because we cann not describe 
-        // do not parallelize SGD when search strategy now (possible fix is add this to strategy)
         std::vector<int> lenet_init {0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0};
         
-        // for vgg19 128-bit gene
-        // adapt form dp
-        //std::vector<int> vgg_n8_p4_dp_init{0, 2, 1, 2, 1, 1, 2, 1, 2, 1, 1, 2, 1, 2, 1, 2, 1, 2, 1, 1, 2, 1, 2, 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 2, 1, 2, 0, 0, 1, 2, 0, 0, 1, 2, 0, 0, 1, 1, 0, 0, 2, 1, 2, 0, 0, 1, 2, 0, 0, 1, 2, 0, 0, 1, 1, 0, 0, 2, 1, 2, 0, 0, 1, 1, 0, 0, 2, 1, 2, 0, 0, 0, 0, 0};        
-
-
-        // for vgg19 fused
-        // dp based (sgd = 0)
-        //std::vector<int> vggfused_init0{0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0};
-
         GeneticSearch ga(sss->getGeneSpace(),
             udef, /*specified identities*/
             500, /*populationSize*/
             0.5, /*crossOverRate*/
             0.1, /*mutationRate*/
             20, /*numberElites*/
-            200, /*numGenerations*/
+            100, /*numGenerations*/
             sss /*StrategySearchSpace*/
             );
         

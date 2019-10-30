@@ -29,6 +29,7 @@ size_t  comSizeModel1(size_t size, COMM_TYPE type, Config& config)
         case BCAST: return size;
         default: assert("invalid communication type\n"); 
     }
+    return -1;
 }
 
 
@@ -52,6 +53,7 @@ size_t  comSizeModel2(size_t size, COMM_TYPE type, Config& config)
         case BCAST: return size * log2(degree);
         default: assert("invalid communication type\n"); 
     }
+    return -1;
 }
 
 //The third type of cost model:
@@ -73,5 +75,6 @@ size_t  comSizeModel3(size_t size, COMM_TYPE type, Config& config)
         case BCAST: return size * log2(degree);
         default: assert("invalid communication type\n"); 
     }
+    return -1;
 }
 

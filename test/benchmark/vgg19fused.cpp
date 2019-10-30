@@ -442,8 +442,8 @@ int main()
     config.enable_lowering = false;
 
     /* about parallel strategy*/
-    //config.force_data_parallel = true;
-    config.geneticalgo_opt_parallel = true;
+    config.force_data_parallel = true;
+    // config.geneticalgo_opt_parallel = true;
     // config.handcraft_parallel = true;
 
     vgg19->setConfig(config);

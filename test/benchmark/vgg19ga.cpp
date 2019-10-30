@@ -518,8 +518,8 @@ int main()
     config.train_config.max_iters = 100;
     config.train_config.display = 50;
 
-    //config.compute_op_annotation = true;
-    //config.comm_op_annotation = true;
+    // config.compute_op_annotation = true;
+    // config.comm_op_annotation = true;
     
     config.parallel_preference = COMM_SAVING;
     // config.parallel_preference = MEM_SAVING;
@@ -530,20 +530,24 @@ int main()
     config.enable_lowering = false;
 
     /* about parallel strategy*/
-    //config.force_data_parallel = true;
-    config.geneticalgo_opt_parallel = true;
+    config.force_data_parallel = true;
+    // config.geneticalgo_opt_parallel = true;
+    // config.handcraft_parallel = true;
+
     // optimzer
     config.decentralized_optimizer = true;
     vgg19->setConfig(config);
 
+    std::cout << "vgg_b" << MINIBATCH << "_p" << config.mpi_size << "\n";
+
     vgg19->setConfig(config);
 
-    dotGen(vgg19, "vgg19_infer.dot");
+    svgGen(vgg19, "vgg19_infer.dot");
 
     Engine engine(vgg19);
     engine.compile();
 
-    //dotGen(vgg19, "vgg19_train.dot");
+    dotGen(vgg19, "vgg19_train.dot");
     cout << vgg19->getCommTrace() << "\n";
     cout << vgg19->getCommCost() << "\n";
 

@@ -136,18 +136,22 @@ int main()
     /* not do lowering for node liek FC, FCGrad etc.*/
     config.enable_lowering = false;
 
+    config.force_data_parallel = true;
+    //config.geneticalgo_opt_parallel = true;
+    //config.handcraft_parallel = true;
+
     // optimzer
     config.decentralized_optimizer = true;
     
 
     lenet->setConfig(config);
 
-    dotGen(lenet, "lenet_infer.dot");
+    svgGen(lenet, "lenet_infer.dot");
 
     Engine engine(lenet);
     engine.compile();
 
-    dotGen(lenet, "lenet_train.dot");
+    svgGen(lenet, "lenet_train.dot");
 
     cout << lenet->getCommTrace() << "\n";
     cout << lenet->getCommCost() << "\n";
