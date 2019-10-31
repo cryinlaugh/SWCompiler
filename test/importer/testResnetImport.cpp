@@ -47,7 +47,7 @@ int main() {
     dotGen(graph, "resnet_import.dot");
 
     Config config;
-    config.mkldnn = false;
+    config.mkldnn = true;
     graph->setConfig(config);
 
     Engine engine(graph); 

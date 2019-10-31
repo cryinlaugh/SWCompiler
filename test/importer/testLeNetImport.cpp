@@ -46,14 +46,14 @@ int main() {
     Config config;
     // default is 0(infer); this code explicitly set it
     config.train_mode = 0; 
-    config.mkldnn = false;
+    config.mkldnn = true;
 
     graph->setConfig(config);
 
     Engine engine(graph); 
     engine.compile();
 
-    dotGen(graph, "lenet_import_compiled.dot");
+    svgGen(graph, "lenet_import_compiled.dot");
     string code = engine.genCode();
     // cout << code;
 

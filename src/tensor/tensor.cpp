@@ -143,7 +143,7 @@ std::string Tensor::getMemLayoutTag() const{
     switch(mem_layout_){
     case layout_default:
         if(ndim == 1)
-            return "n"; 
+            return "x"; 
         if(ndim == 2)
             return "nc"; 
         break;

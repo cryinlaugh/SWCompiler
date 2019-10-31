@@ -2544,6 +2544,8 @@ void Codegen::emit_mkldnn_memory_desc(std::string &name, std::string mkldnn_dims
 
     std::string layout = layout_tag.length()==0 ?
         tensor->getMemLayoutTag() : layout_tag;
+    
+    SWLOG_DEBUG(2) << "emit_mkldnn_memory_desc for " << name << " " << layout << "\n";
 
     auto tensor_layout = std::make_pair(tensor, layout);
 
